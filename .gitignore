@@ -2,3 +2,10 @@
 node_modules/
 verify.js
 01-hr-system-rebuild/__clean.py
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
