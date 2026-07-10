@@ -1,0 +1,4 @@
+﻿.DS_Store
+node_modules/
+verify.js
+01-hr-system-rebuild/__clean.py
