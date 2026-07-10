@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>年休假计划</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 链接按钮 hover 样式 */
+    .btn.link:hover { color: #0093A0; }
+    /* 分段表格 */
+    .seg-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+    .seg-table th, .seg-table td { border:1px solid #eef3f6; padding:7px 10px; }
+    .seg-table th { background:#f0f5f7; font-weight:600; color:#3d5266; font-size:13px; }
+    .seg-table th:nth-child(1), .seg-table td:nth-child(1),
+    .seg-table th:nth-child(2), .seg-table td:nth-child(2) { min-width:130px; }
+    .seg-table th:nth-child(3), .seg-table td:nth-child(3) { width:60px; text-align:center; }
+    .seg-table th:nth-child(4), .seg-table td:nth-child(4) { width:60px; text-align:center; }
+    .seg-table input[type=date] { border:none; background:transparent; font:inherit; width:100%; min-width:120px; }
+    .seg-total { text-align:right; font-size:14px; color:#1d2733; margin-top:8px; }
+    .seg-total strong { color:#00AAB7; }
+    .seg-err { color:#d14343; background:#fff0f0; border:1px solid #fecaca; border-radius:6px; padding:8px 12px; font-size:13px; margin-top:8px; display:none; }
+    /* 提示横幅 */
+    .info-banner { background:#fff9e8; border:1px solid #f4d898; border-radius:8px; padding:10px 16px; font-size:13px; color:#75540d; margin-bottom:16px; }
+    /* 我的计划卡片 */
+    .my-plan-card { background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.05); position:relative; overflow:hidden; }
+    .my-plan-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,#00AAB7,#5dcdd6); }
+    .my-plan-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .my-plan-title { font-size:15px; font-weight:600; color:#1d2733; display:flex; align-items:center; gap:8px; }
+    .my-plan-title .year-tag { background:#e6f7f9; color:#00838c; font-size:12px; font-weight:500; padding:2px 8px; border-radius:4px; }
+    .my-plan-info { display:flex; flex-wrap:wrap; gap:24px; }
+    .my-plan-item { display:flex; flex-direction:column; gap:2px; }
+    .my-plan-item .label { font-size:12px; color:#8fa3b0; }
+    .my-plan-item .value { font-size:14px; color:#1d2733; font-weight:500; }
+    .my-plan-item .value.highlight { color:#00AAB7; font-weight:600; }
+    .my-plan-status { display:flex; align-items:center; gap:12px; }
+    /* 弹框 */
+    .modal-mask { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:2000; align-items:center; justify-content:center; }
+    .modal-mask.show { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:24px 28px; width:600px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); position:relative; }
+    .modal-box h3 { font-size:15px; font-weight:600; color:#1d2733; margin-bottom:16px; }
+    .modal-close { position:absolute; top:16px; right:16px; width:28px; height:28px; border:none; background:transparent; font-size:20px; color:#8fa3b0; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:4px; transition:background .15s,color .15s; }
+    .modal-close:hover { background:#f0f5f7; color:#3d5266; }
+    .mrow { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; font-size:14px; color:#5f7080; }
+    .mrow input, .mrow select, .mrow textarea { border:1px solid #dfe5ec; border-radius:6px; padding:8px 10px; font:inherit; box-sizing:border-box; width:100%; }
+    .mrow input { height:34px; padding:0 10px; }
+    .mrow textarea { min-height:60px; resize:vertical; }
+    .mrow input:focus, .mrow select:focus, .mrow textarea:focus { border-color:#00AAB7; outline:none; box-shadow:0 0 0 2px rgba(0,170,183,.15); }
+    .mrow input:disabled { background:#f5f7fa; color:#5f7080; }
+    .mrow textarea:disabled { background:#f5f7fa; color:#5f7080; resize:none; }
+    .mrow-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .mrow-grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+    .modal-emp { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:11px 14px; margin-bottom:16px; font-size:13px; color:#5f7080; }
+    .modal-emp strong { color:#1a2533; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
+    .char-count { font-size:11px; color:#aab5be; text-align:right; margin-top:2px; }
+    /* 计划休假安排 - 左右布局 */
+    .plan-arrange { display:flex; align-items:center; gap:16px; }
+    .plan-total { font-size:15px; font-weight:600; color:#1d2733; min-width:28px; flex-shrink:0; text-align:right; }
+    .plan-segs { display:flex; flex-direction:column; gap:2px; }
+    .plan-seg-item { font-size:13px; color:#5f7080; line-height:1.7; white-space:nowrap; }
+    .plan-seg-days { color:#00AAB7; }
+  </style>
+</head>
+<body data-module="attendance">
+<main class="page-content" data-title="年休假计划"
+  data-desc="员工年初申报本年度休假计划，系统根据工龄自动计算应休天数。计划仅作参考，不作为审批依据。">
+
+  <div class="info-banner">
+    工龄计算规则：1-10年 → 应休 <strong>5天</strong>；10-20年 → <strong>10天</strong>；20年及以上 → <strong>15天</strong>
+  </div>
+
+  <!-- 我的年休假计划卡片 -->
+  <div class="my-plan-card" id="myPlanCard">
+    <div class="my-plan-header">
+      <div class="my-plan-title">
+        我的年休假计划
+        <span class="year-tag">2026年</span>
+      </div>
+      <div class="my-plan-status">
+        <span class="status amber" id="myPlanStatus">未提交</span>
+        <button class="btn primary" id="myPlanBtn" onclick="fillMyPlan()">填写计划</button>
+      </div>
+    </div>
+    <div class="my-plan-info">
+      <div class="my-plan-item">
+        <span class="label">姓名</span>
+        <span class="value" id="myName">张三</span>
+      </div>
+      <div class="my-plan-item">
+        <span class="label">单位(部门)</span>
+        <span class="value" id="myDept">人力资源部（党委组织部）</span>
+      </div>
+      <div class="my-plan-item">
+        <span class="label">参加工作时间</span>
+        <span class="value" id="myWorkDate">2012-07-01</span>
+      </div>
+      <div class="my-plan-item">
+        <span class="label">应休假天数</span>
+        <span class="value highlight" id="myEntitled">10天</span>
+      </div>
+      <div class="my-plan-item" style="min-width:240px;">
+        <span class="label">计划休假安排</span>
+        <div id="myPlanArrange" class="plan-arrange" style="margin-top:2px;">
+          <span class="plan-total" style="color:#8fa3b0;">—</span>
+        </div>
+      </div>
+      <div class="my-plan-item">
+        <span class="label">提交时间</span>
+        <span class="value" id="mySubmitDate">—</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="filter-bar">
+    <label class="field">年份：
+      <select id="filterYear">
+        <option value="2026" selected>2026年</option>
+        <option value="2025">2025年</option>
+        <option value="">全部年份</option>
+      </select>
+    </label>
+    <label class="field">单位(部门)：
+      <select id="filterDept">
+        <option value="">全部部门</option>
+        <option>人力资源部（党委组织部）</option>
+        <option>财务资产部</option>
+        <option>开发管理部</option>
+        <option>质量安全环保部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+      </select>
+    </label>
+    <label class="field">姓名：<input id="filterName" placeholder="请输入姓名"></label>
+    <label class="field">提交状态：
+      <select id="filterStatus">
+        <option value="">全部状态</option>
+        <option value="已提交">已提交</option>
+        <option value="未提交">未提交</option>
+      </select>
+    </label>
+    <button class="btn primary" onclick="doSearch()">查询</button>
+    <button class="btn" onclick="doReset()">重置</button>
+  </section>
+
+  <section class="card table-card">
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>年份</th>
+          <th>姓名</th>
+          <th>单位(部门)</th>
+          <th>参加工作时间</th>
+          <th>应休假天数</th>
+          <th style="min-width:280px;">计划休假安排</th>
+          <th>提交时间</th>
+          <th>提交状态</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- 新增/查看计划弹框 -->
+  <div class="modal-mask" id="planModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('planModal')">&times;</button>
+      <h3 id="planModalTitle">新增年休假计划</h3>
+      <div class="mrow-grid">
+        <div class="mrow"><span>单位(部门)</span><input id="planDept" value="人力资源部（党委组织部）" disabled></div>
+        <div class="mrow"><span>姓名</span><input id="planName" value="张三" disabled></div>
+      </div>
+      <div class="mrow-grid3">
+        <div class="mrow"><span>参加工作时间</span><input id="planWorkDate" value="2012-07-01" disabled></div>
+        <div class="mrow"><span>应休假天数</span><input id="planEntitled" value="10天" disabled></div>
+        <div class="mrow"><span>提交时间</span><input type="text" id="planSubmitDate" value="2026-01-15" disabled></div>
+      </div>
+      <div class="mrow">
+        <span>计划休假时间 <span id="segHint" style="color:#aab5be;font-size:12px;">（支持分段填写多个时间段，合计不超过应休天数）</span></span>
+        <table class="seg-table" id="segTable">
+          <thead><tr><th>开始日期</th><th>结束日期</th><th>天数</th><th></th></tr></thead>
+          <tbody id="segBody">
+            <tr>
+              <td><input type="date" class="seg-start" oninput="calcSeg(this)"></td>
+              <td><input type="date" class="seg-end" oninput="calcSeg(this)"></td>
+              <td class="seg-days">—</td>
+              <td><button type="button" class="btn link danger" onclick="removeSeg(this)">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn" style="margin-top:6px;font-size:13px;" id="addSegBtn" onclick="addSeg()">+ 添加时间段</button>
+        <div class="seg-total">计划休假天数 <strong id="totalPlanned">0</strong> 天 / 应休假天数 <strong id="totalEntitled">10</strong> 天</div>
+        <div class="seg-err" id="segErr">计划天数超过应休天数，请调整</div>
+      </div>
+      <div class="mrow">
+        <span>备注</span>
+        <textarea id="planRemark" maxlength="200" placeholder="可选" oninput="updateCharCount()"></textarea>
+        <div class="char-count" id="charCountWrap"><span id="charCount">0</span>/200</div>
+      </div>
+      <div class="modal-footer" id="modalFooter">
+        <button class="btn" onclick="closeModal('planModal')">取消</button>
+        <button class="btn primary" onclick="submitPlan()">提交计划</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+// 全部数据（含年份、状态）
+var allData = [
+  // 2026年数据
+  { year:2026, name:'张三', dept:'人力资源部（党委组织部）', workDate:'2012-07-01', entitled:10, planned:0, planTimeStr:'—', submitDate:'—', status:'未提交', segs:[], remark:'', isCurrentUser:true },
+  { year:2026, name:'李四', dept:'财务资产部', workDate:'2020-03-15', entitled:5, planned:5, planTimeStr:'2026-08-03 至 08-07（5天）', submitDate:'2026-01-10', status:'已提交', segs:[{s:'2026-08-03',e:'2026-08-07',d:5}], remark:'' },
+  { year:2026, name:'王五', dept:'开发管理部', workDate:'2004-08-20', entitled:15, planned:15, planTimeStr:'2026-05-01 至 05-10（10天）<br>2026-12-23 至 12-27（5天）', submitDate:'2026-01-08', status:'已提交', segs:[{s:'2026-05-01',e:'2026-05-10',d:10},{s:'2026-12-23',e:'2026-12-27',d:5}], remark:'五一前后错峰休假，年底再休完剩余天数' },
+  { year:2026, name:'赵敏', dept:'质量安全环保部', workDate:'2015-09-01', entitled:10, planned:10, planTimeStr:'2026-02-08 至 02-17（10天）', submitDate:'2026-01-05', status:'已提交', segs:[{s:'2026-02-08',e:'2026-02-17',d:10}], remark:'春节后延长休假' },
+  { year:2026, name:'孙涛', dept:'地质工程部', workDate:'2018-03-20', entitled:5, planned:5, planTimeStr:'2026-07-15 至 07-19（5天）', submitDate:'2026-01-12', status:'已提交', segs:[{s:'2026-07-15',e:'2026-07-19',d:5}], remark:'暑期带孩子旅游' },
+  { year:2026, name:'周婷', dept:'地面建设工程部', workDate:'2010-06-15', entitled:10, planned:0, planTimeStr:'—', submitDate:'—', status:'未提交', segs:[], remark:'' },
+  { year:2026, name:'吴强', dept:'党群工作部（纪委办公室）', workDate:'2008-02-28', entitled:15, planned:15, planTimeStr:'2026-04-01 至 04-08（8天）<br>2026-09-28 至 10-04（7天）', submitDate:'2026-01-09', status:'已提交', segs:[{s:'2026-04-01',e:'2026-04-08',d:8},{s:'2026-09-28',e:'2026-10-04',d:7}], remark:'清明 + 国庆前后各休一段' },
+  { year:2026, name:'郑雪', dept:'生产指挥中心', workDate:'2019-11-01', entitled:5, planned:5, planTimeStr:'2026-06-02 至 06-06（5天）', submitDate:'2026-01-15', status:'已提交', segs:[{s:'2026-06-02',e:'2026-06-06',d:5}], remark:'端午前后休假' },
+  { year:2026, name:'陈刚', dept:'办公室（党委办公室）', workDate:'2003-04-10', entitled:15, planned:0, planTimeStr:'—', submitDate:'—', status:'未提交', segs:[], remark:'' },
+  { year:2026, name:'刘芳', dept:'计划经营部', workDate:'2016-08-22', entitled:5, planned:5, planTimeStr:'2026-11-02 至 11-06（5天）', submitDate:'2026-01-11', status:'已提交', segs:[{s:'2026-11-02',e:'2026-11-06',d:5}], remark:'11月休假' },
+  // 2025年数据
+  { year:2025, name:'张三', dept:'人力资源部（党委组织部）', workDate:'2012-07-01', entitled:10, planned:10, planTimeStr:'2025-07-01 至 07-05（5天）<br>2025-10-01 至 10-05（5天）', submitDate:'2025-01-08', status:'已提交', segs:[{s:'2025-07-01',e:'2025-07-05',d:5},{s:'2025-10-01',e:'2025-10-05',d:5}], remark:'2025年休假计划' },
+  { year:2025, name:'李四', dept:'财务资产部', workDate:'2020-03-15', entitled:5, planned:5, planTimeStr:'2025-09-15 至 09-19（5天）', submitDate:'2025-01-06', status:'已提交', segs:[{s:'2025-09-15',e:'2025-09-19',d:5}], remark:'' },
+  { year:2025, name:'王五', dept:'开发管理部', workDate:'2004-08-20', entitled:15, planned:15, planTimeStr:'2025-03-01 至 03-10（10天）<br>2025-08-01 至 08-05（5天）', submitDate:'2025-01-05', status:'已提交', segs:[{s:'2025-03-01',e:'2025-03-10',d:10},{s:'2025-08-01',e:'2025-08-05',d:5}], remark:'' }
+];
+
+// 当前登录用户信息（原型演示用，假设是张三）
+var currentUser = {
+  name: '张三',
+  dept: '人力资源部（党委组织部）',
+  workDate: '2012-07-01',
+  entitled: 10
+};
+
+// 当前年份
+var currentYear = 2026;
+
+// 渲染我的年休假计划卡片
+function renderMyPlanCard(){
+  var myPlan = allData.find(function(item){
+    return item.isCurrentUser && item.year === currentYear;
+  });
+  if(!myPlan) return;
+
+  document.getElementById('myName').textContent = myPlan.name;
+  document.getElementById('myDept').textContent = myPlan.dept;
+  document.getElementById('myWorkDate').textContent = myPlan.workDate;
+  document.getElementById('myEntitled').textContent = myPlan.entitled + '天';
+  
+  // 计划休假安排：左边合计天数，右边分段明细（与列表格式一致）
+  var planArrangeEl = document.getElementById('myPlanArrange');
+  if(myPlan.segs && myPlan.segs.length > 0){
+    var planArrangeHtml = '<span class="plan-total">' + myPlan.planned + '</span>';
+    planArrangeHtml += '<div class="plan-segs">';
+    myPlan.segs.forEach(function(seg){
+      var endShort = seg.e.substring(5); // MM-DD
+      planArrangeHtml += '<div class="plan-seg-item">' + seg.s + ' 至 ' + endShort + ' <span class="plan-seg-days">(' + seg.d + '天)</span></div>';
+    });
+    planArrangeHtml += '</div>';
+    planArrangeEl.innerHTML = planArrangeHtml;
+  } else {
+    planArrangeEl.innerHTML = '<span style="color:#8fa3b0;">—</span>';
+  }
+  
+  // 提交时间
+  document.getElementById('mySubmitDate').textContent = myPlan.submitDate || '—';
+
+  var statusEl = document.getElementById('myPlanStatus');
+  var btnEl = document.getElementById('myPlanBtn');
+
+  if(myPlan.status === '已提交'){
+    statusEl.className = 'status green';
+    statusEl.textContent = '已提交';
+    btnEl.textContent = '查看详情';
+    btnEl.className = 'btn';
+    btnEl.onclick = function(){ viewMyPlan(); };
+  } else {
+    statusEl.className = 'status amber';
+    statusEl.textContent = '未提交';
+    btnEl.textContent = '填写计划';
+    btnEl.className = 'btn primary';
+    btnEl.onclick = function(){ fillMyPlan(); };
+  }
+}
+
+// 查看我的计划详情
+function viewMyPlan(){
+  var myPlanIdx = allData.findIndex(function(item){
+    return item.isCurrentUser && item.year === currentYear;
+  });
+  if(myPlanIdx >= 0){
+    viewPlan(myPlanIdx);
+  }
+}
+
+// 筛选并渲染表格
+function renderTable(){
+  var filterYear = document.getElementById('filterYear').value;
+  var filterDept = document.getElementById('filterDept').value;
+  var filterName = document.getElementById('filterName').value.trim();
+  var filterStatus = document.getElementById('filterStatus').value;
+
+  var filtered = allData.filter(function(item){
+    if(filterYear && String(item.year) !== filterYear) return false;
+    if(filterDept && item.dept !== filterDept) return false;
+    if(filterName && item.name.indexOf(filterName) === -1) return false;
+    if(filterStatus && item.status !== filterStatus) return false;
+    return true;
+  });
+
+  var tbody = document.getElementById('tableBody');
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#8fa3b0;padding:40px;">暂无数据</td></tr>';
+    return;
+  }
+
+  var html = '';
+  filtered.forEach(function(item, idx){
+    var statusClass = item.status === '已提交' ? 'green' : 'amber';
+    var actionBtn = '';
+    // 当前用户 + 当前年度 + 未提交 → 填写计划
+    if(item.isCurrentUser && item.year === currentYear && item.status === '未提交'){
+      actionBtn = '<a class="btn link" href="#" onclick="fillMyPlan();return false;">填写计划</a>';
+    } else {
+      // 找到该数据在 allData 中的索引（用于 viewPlan）
+      var dataIdx = allData.indexOf(item);
+      actionBtn = '<a class="btn link" href="#" onclick="viewPlan('+dataIdx+');return false;">查看详情</a>';
+    }
+    
+    // 构建计划休假安排：左边合计天数，右边分段明细
+    var planArrangeHtml = '';
+    if(item.segs && item.segs.length > 0){
+      planArrangeHtml = '<div class="plan-arrange">';
+      planArrangeHtml += '<span class="plan-total">' + item.planned + '</span>';
+      planArrangeHtml += '<div class="plan-segs">';
+      item.segs.forEach(function(seg){
+        var endShort = seg.e.substring(5); // MM-DD
+        planArrangeHtml += '<div class="plan-seg-item">' + seg.s + ' 至 ' + endShort + ' <span class="plan-seg-days">(' + seg.d + '天)</span></div>';
+      });
+      planArrangeHtml += '</div></div>';
+    } else {
+      planArrangeHtml = '<span style="color:#8fa3b0;">—</span>';
+    }
+    
+    html += '<tr>';
+    html += '<td class="col-seq">'+(idx+1)+'</td>';
+    html += '<td>'+item.year+'</td>';
+    html += '<td>'+item.name+'</td>';
+    html += '<td>'+item.dept+'</td>';
+    html += '<td>'+item.workDate+'</td>';
+    html += '<td>'+item.entitled+'</td>';
+    html += '<td>'+planArrangeHtml+'</td>';
+    html += '<td>'+item.submitDate+'</td>';
+    html += '<td><span class="status '+statusClass+'">'+item.status+'</span></td>';
+    html += '<td class="col-action">'+actionBtn+'</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// 查询
+function doSearch(){
+  renderTable();
+}
+
+// 重置
+function doReset(){
+  document.getElementById('filterYear').value = '2026';
+  document.getElementById('filterDept').value = '';
+  document.getElementById('filterName').value = '';
+  document.getElementById('filterStatus').value = '';
+  renderTable();
+}
+
+function fillMyPlan(){
+  document.getElementById('planModalTitle').textContent = '填写年休假计划（'+currentYear+'）';
+  document.getElementById('planDept').value = currentUser.dept;
+  document.getElementById('planName').value = currentUser.name;
+  document.getElementById('planWorkDate').value = currentUser.workDate;
+  document.getElementById('planEntitled').value = currentUser.entitled + '天';
+  document.getElementById('planSubmitDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('totalEntitled').textContent = currentUser.entitled;
+  document.getElementById('segBody').innerHTML = '<tr><td><input type="date" class="seg-start" oninput="calcSeg(this)"></td><td><input type="date" class="seg-end" oninput="calcSeg(this)"></td><td class="seg-days">—</td><td><button type="button" class="btn link danger" onclick="removeSeg(this)">删除</button></td></tr>';
+  // 恢复表头第4列显示
+  var thList = document.querySelectorAll('#segTable thead th');
+  if(thList[3]) thList[3].style.display = '';
+  // 恢复提示文字显示
+  document.getElementById('segHint').style.display = '';
+  document.getElementById('charCountWrap').style.display = '';
+  document.getElementById('planRemark').value = '';
+  document.getElementById('planRemark').disabled = false;
+  document.getElementById('addSegBtn').style.display = '';
+  document.getElementById('segErr').style.display = 'none';
+  updateTotal();
+  updateCharCount();
+  document.getElementById('modalFooter').style.display = '';
+  document.getElementById('planModal').classList.add('show');
+}
+
+function viewPlan(idx){
+  var p = allData[idx];
+  document.getElementById('planModalTitle').textContent = p.name + '的年休假计划（' + p.year + '）';
+  document.getElementById('planDept').value = p.dept;
+  document.getElementById('planName').value = p.name;
+  document.getElementById('planWorkDate').value = p.workDate;
+  document.getElementById('planEntitled').value = p.entitled + '天';
+  document.getElementById('planSubmitDate').value = p.submitDate || '—';
+  document.getElementById('totalEntitled').textContent = p.entitled;
+  // 只读模式：只显示3列，不显示删除列
+  var rows = '';
+  if(p.segs && p.segs.length > 0){
+    rows = p.segs.map(function(s){ return '<tr><td><input type="date" class="seg-start" value="'+s.s+'" disabled></td><td><input type="date" class="seg-end" value="'+s.e+'" disabled></td><td class="seg-days">'+s.d+'</td></tr>'; }).join('');
+  } else {
+    rows = '<tr><td colspan="3" style="text-align:center;color:#8fa3b0;">暂无计划</td></tr>';
+  }
+  document.getElementById('segBody').innerHTML = rows;
+  // 隐藏表头第4列
+  var thList = document.querySelectorAll('#segTable thead th');
+  if(thList[3]) thList[3].style.display = 'none';
+  // 隐藏提示文字
+  document.getElementById('segHint').style.display = 'none';
+  document.getElementById('charCountWrap').style.display = 'none';
+  document.getElementById('planRemark').value = p.remark || '';
+  document.getElementById('planRemark').disabled = true;
+  document.getElementById('addSegBtn').style.display = 'none';
+  document.getElementById('segErr').style.display = 'none';
+  updateTotal();
+  document.getElementById('modalFooter').style.display = 'none';
+  document.getElementById('planModal').classList.add('show');
+}
+
+function addSeg(){
+  var row = document.createElement('tr');
+  row.innerHTML = '<td><input type="date" class="seg-start" oninput="calcSeg(this)"></td><td><input type="date" class="seg-end" oninput="calcSeg(this)"></td><td class="seg-days">—</td><td><button type="button" class="btn link danger" onclick="removeSeg(this)">删除</button></td>';
+  document.getElementById('segBody').appendChild(row);
+}
+
+function removeSeg(btn){ btn.closest('tr').remove(); updateTotal(); }
+
+function calcSeg(inp){
+  var row = inp.closest('tr');
+  var s = row.querySelector('.seg-start').value;
+  var e = row.querySelector('.seg-end').value;
+  if(s && e && e >= s){
+    var days = Math.round((new Date(e) - new Date(s)) / 86400000) + 1;
+    row.querySelector('.seg-days').textContent = days;
+  } else {
+    row.querySelector('.seg-days').textContent = '—';
+  }
+  updateTotal();
+}
+
+function updateTotal(){
+  var total = 0;
+  document.querySelectorAll('#segBody .seg-days').forEach(function(td){
+    var v = parseInt(td.textContent);
+    if(!isNaN(v)) total += v;
+  });
+  var entitled = parseInt(document.getElementById('totalEntitled').textContent) || 0;
+  document.getElementById('totalPlanned').textContent = total;
+  var err = document.getElementById('segErr');
+  if(total > entitled){
+    err.textContent = '计划休假天数（' + total + '天）超过应休天数（' + entitled + '天），请调整';
+    err.style.display = '';
+  } else {
+    err.style.display = 'none';
+  }
+}
+
+function updateCharCount(){
+  var len = document.getElementById('planRemark').value.length;
+  document.getElementById('charCount').textContent = len;
+}
+
+function submitPlan(){
+  var total = parseInt(document.getElementById('totalPlanned').textContent) || 0;
+  var entitled = parseInt(document.getElementById('totalEntitled').textContent) || 0;
+  var err = document.getElementById('segErr');
+  if(total > entitled){
+    err.textContent = '计划休假天数（' + total + '天）超过应休天数（' + entitled + '天），请调整后再提交';
+    err.style.display = 'block';
+    return;
+  }
+  if(total === 0){
+    err.textContent = '请至少填写一个计划休假时间段';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+
+  // 收集填写的时间段数据
+  var segs = [];
+  var planTimeArr = [];
+  document.querySelectorAll('#segBody tr').forEach(function(tr){
+    var startInput = tr.querySelector('.seg-start');
+    var endInput = tr.querySelector('.seg-end');
+    var daysCell = tr.querySelector('.seg-days');
+    if(startInput && endInput && daysCell){
+      var s = startInput.value;
+      var e = endInput.value;
+      var d = parseInt(daysCell.textContent);
+      if(s && e && !isNaN(d)){
+        segs.push({s:s, e:e, d:d});
+        // 格式化显示：2026-07-01 至 07-05（5天）
+        var endShort = e.substring(5); // 取 MM-DD
+        planTimeArr.push(s + ' 至 ' + endShort + '（' + d + '天）');
+      }
+    }
+  });
+
+  // 更新当前用户在 allData 中的记录
+  var myPlanIdx = allData.findIndex(function(item){
+    return item.isCurrentUser && item.year === currentYear;
+  });
+  if(myPlanIdx >= 0){
+    var today = new Date().toISOString().slice(0,10);
+    allData[myPlanIdx].status = '已提交';
+    allData[myPlanIdx].planned = total;
+    allData[myPlanIdx].segs = segs;
+    allData[myPlanIdx].planTimeStr = planTimeArr.join('<br>');
+    allData[myPlanIdx].submitDate = today;
+    allData[myPlanIdx].remark = document.getElementById('planRemark').value;
+  }
+
+  closeModal('planModal');
+
+  // 刷新卡片和列表
+  renderMyPlanCard();
+  renderTable();
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+});
+
+// 页面加载时渲染表格（默认2026年）
+window.addEventListener('load', function(){
+  renderMyPlanCard();
+  renderTable();
+});
+</script>
+</body>
+</html>

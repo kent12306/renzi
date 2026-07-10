@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>考勤台账</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* ── 工具栏 ── */
+    .cal-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+    .view-toggle{display:flex;border:1px solid #dfe5ec;border-radius:6px;overflow:hidden;}
+    .vbtn{height:34px;padding:0 16px;border:none;border-right:1px solid #dfe5ec;background:#fff;color:#5f7080;font:inherit;font-size:13px;cursor:pointer;transition:background .12s,color .12s;}
+    .vbtn:last-child{border-right:none;}
+    .vbtn:hover{background:#f0f5f7;}
+    .vbtn.active{background:#00AAB7;color:#fff;}
+    .period-nav{display:flex;align-items:center;gap:8px;}
+    .period-label{font-size:15px;font-weight:600;color:#1d2733;min-width:110px;text-align:center;}
+    .nav-btn{width:30px;height:30px;border:1px solid #dfe5ec;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#5f7080;transition:border-color .12s,color .12s;}
+    .nav-btn:hover{border-color:#00AAB7;color:#00AAB7;}
+
+    /* ── Gantt 月视图 ── */
+    .gantt-outer{overflow-x:auto;border:1px solid #dfe5ec;border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+    .gantt-inner{display:table;width:max-content;min-width:100%;}
+    .gantt-hrow{display:flex;position:sticky;top:0;z-index:4;background:#f8fafc;border-bottom:1px solid #dfe5ec;}
+    .gantt-name-hdr{flex-shrink:0;width:130px;padding:10px 14px;border-right:1px solid #dfe5ec;font-size:12px;font-weight:600;color:#5f7080;position:sticky;left:0;z-index:5;background:#f8fafc;}
+    .gantt-day-hdr{flex-shrink:0;width:36px;text-align:center;border-right:1px solid #eef3f6;padding:6px 0;}
+    .gantt-day-hdr .hd{font-size:11px;color:#8fa3b0;font-weight:500;}
+    .gantt-day-hdr .dn{font-size:13px;font-weight:600;color:#3d5266;margin-top:2px;}
+    .gantt-day-hdr.today .hd{color:#00AAB7;}
+    .gantt-day-hdr.today .dn{color:#00AAB7;}
+    .gantt-day-hdr.weekend .dn{color:#b7791f;}
+    .gantt-day-hdr.weekend .hd{color:#b7791f;}
+
+    .gantt-row{display:flex;border-bottom:1px solid #eef3f6;min-height:60px;}
+    .gantt-row:last-child{border-bottom:none;}
+    .gantt-row:hover .gantt-name-cell{background:#f8fafc;}
+    .gantt-name-cell{flex-shrink:0;width:130px;padding:12px 14px;border-right:1px solid #eef3f6;position:sticky;left:0;z-index:2;background:#fff;display:flex;flex-direction:column;justify-content:center;transition:background .12s;}
+    .gn-name{font-size:13px;font-weight:600;color:#1d2733;}
+    .gn-sub{font-size:11px;color:#8fa3b0;margin-top:2px;}
+    .gantt-days-area{position:relative;display:flex;flex:1;}
+    .gantt-day-col{flex-shrink:0;width:36px;height:100%;border-right:1px solid #eef3f6;}
+    .gantt-day-col.today{background:#f0fbfc;}
+    .gantt-day-col.weekend{background:#fafbfc;}
+    .gantt-ev{position:absolute;height:28px;top:50%;transform:translateY(-50%);border-radius:6px;display:flex;align-items:center;padding:0 9px;font-size:12px;font-weight:500;cursor:pointer;overflow:hidden;white-space:nowrap;z-index:1;box-shadow:0 1px 2px rgba(0,0,0,.06);}
+    .gantt-ev:hover{filter:brightness(.96);z-index:2;}
+    .gantt-ev.nj{background:#e8f7ef;color:#137d52;}
+    .gantt-ev.sj{background:#edf1f5;color:#475569;}
+    .gantt-ev.bj{background:#fff7e6;color:#b7791f;}
+    .gantt-ev.hj{background:#fce7f3;color:#9d174d;}
+    .gantt-ev.sb{background:#fff7ed;color:#c2410c;}
+    .gantt-ev.bx{background:#ede9fe;color:#7c3aed;}
+  </style>
+  <style>
+    /* ── 周视图 ── */
+    .atd-layout{display:grid;grid-template-columns:216px 1fr;gap:12px;align-items:start;}
+    .emp-list-card{overflow:hidden;position:sticky;top:16px;}
+    .emp-search{padding:10px 12px;border-bottom:1px solid #eef3f6;}
+    .emp-search input{width:100%;height:32px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font:inherit;font-size:13px;box-sizing:border-box;}
+    .emp-search input:focus{border-color:#00AAB7;outline:none;}
+    .emp-list{max-height:calc(100vh - 200px);overflow-y:auto;}
+    .emp-item{display:flex;flex-direction:column;padding:10px 14px;cursor:pointer;border-bottom:1px solid #eef3f6;transition:background .12s;position:relative;}
+    .emp-item:hover{background:#f0f5f7;}
+    .emp-item.active{background:#e6f7f9;}
+    .emp-item.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#00AAB7;border-radius:0 3px 3px 0;}
+    .emp-name{font-size:14px;font-weight:600;color:#1d2733;}
+    .emp-sub{font-size:11px;color:#8fa3b0;margin-top:2px;}
+    .week-cal{background:#fff;border:1px solid #dfe5ec;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+    .week-head{display:grid;grid-template-columns:repeat(7,1fr);}
+    .week-hcell{padding:10px 8px;border-right:1px solid #eef3f6;border-bottom:2px solid #eef3f6;text-align:center;}
+    .week-hcell:last-child{border-right:none;}
+    .week-hcell.today{border-bottom-color:#00AAB7;}
+    .week-hcell .wd{font-size:11px;font-weight:600;color:#5f7080;}
+    .week-hcell .wdate{font-size:24px;font-weight:700;color:#1d2733;margin-top:2px;}
+    .week-hcell.today .wdate{color:#00AAB7;}
+    .week-hcell.weekend .wd,.week-hcell.weekend .wdate{color:#b7791f;}
+    .week-body{display:grid;grid-template-columns:repeat(7,1fr);}
+    .week-cell{padding:8px 6px;border-right:1px solid #eef3f6;min-height:180px;}
+    .week-cell:last-child{border-right:none;}
+    .week-cell.weekend{background:#fafbfc;}
+    .week-cell.today{background:#f0fbfc;}
+    .week-ev{padding:7px 9px;border-radius:6px;margin-bottom:6px;cursor:pointer;}
+    .week-ev .we-lbl{font-size:12px;font-weight:600;}
+    .week-ev .we-info{font-size:11px;opacity:.8;margin-top:2px;}
+    .week-ev.nj{background:#e8f7ef;color:#137d52;}
+    .week-ev.sj{background:#edf1f5;color:#475569;}
+    .week-ev.bj{background:#fff7e6;color:#b7791f;}
+    .week-ev.hj{background:#fce7f3;color:#9d174d;}
+    .week-ev.sb{background:#fff7ed;color:#c2410c;border-left:3px solid #c2410c;padding-left:6px;}
+    .week-ev.bx{background:#ede9fe;color:#7c3aed;}
+    /* ── 图例 + 弹框 ── */
+    .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;}
+    .legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#5f7080;}
+    .ld{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+    .atd-stats{display:flex;gap:8px;margin-left:auto;}
+    .atd-stat{text-align:center;padding:5px 14px;background:#fff;border:1px solid #dfe5ec;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .atd-stat .sv{font-size:16px;font-weight:700;color:#1d2733;}
+    .atd-stat .sl{font-size:11px;color:#8fa3b0;margin-top:1px;}
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;width:400px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:15px;font-weight:600;color:#1d2733;margin-bottom:14px;}
+    .dg{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;}
+    .dg dt{color:#5f7080;} .dg dd{color:#1d2733;font-weight:500;margin:0;}
+    .modal-footer{display:flex;justify-content:flex-end;margin-top:18px;}
+  </style>
+</head>
+<body data-module="attendance">
+<main class="page-content" data-title="考勤台账"
+  data-desc="月视图：横向时间轴展示全员出勤；周视图：选中人员查看单周详情。">
+
+  <!-- 工具栏 -->
+  <div class="cal-bar">
+    <div class="view-toggle">
+      <button class="vbtn active" id="btnMonth" onclick="switchView('month')">月</button>
+      <button class="vbtn"        id="btnWeek"  onclick="switchView('week')">周</button>
+    </div>
+    <!-- 月视图：年月下拉 -->
+    <div id="monthNavWrap" style="display:flex;align-items:center;gap:8px;">
+      <div class="field">
+        <span>年</span>
+        <select id="yearSel" onchange="onYMChange()" style="width:80px;">
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+      <div class="field">
+        <span>月</span>
+        <select id="monthSel" onchange="onYMChange()" style="width:76px;">
+          <option value="0">1月</option><option value="1">2月</option><option value="2">3月</option>
+          <option value="3">4月</option><option value="4">5月</option><option value="5" selected>6月</option>
+          <option value="6">7月</option><option value="7">8月</option><option value="8">9月</option>
+          <option value="9">10月</option><option value="10">11月</option><option value="11">12月</option>
+        </select>
+      </div>
+      <div class="field" id="typeFilterWrap">
+        <span>假期类型</span>
+        <select id="typeFilter" onchange="renderAll()">
+          <option value="">全部类型</option>
+          <option value="nj">年假</option>
+          <option value="sj">事假</option>
+          <option value="bj">病假</option>
+          <option value="hj">婚/产/陪产/丧假</option>
+          <option value="sb">加班</option>
+          <option value="bx">补休</option>
+        </select>
+      </div>
+      <div class="field" id="deptWrap">
+        <span>部门</span>
+        <select id="deptFilter" onchange="renderAll()">
+          <option value="">全部部门</option>
+          <option>办公室（党委办公室）</option>
+          <option>计划经营部</option>
+          <option>财务资产部</option>
+          <option>人力资源部（党委组织部）</option>
+          <option>质量安全环保部</option>
+          <option>开发管理部</option>
+          <option>地质工程部</option>
+          <option>地面建设工程部</option>
+          <option>党群工作部（纪委办公室）</option>
+          <option>生产指挥中心</option>
+        </select>
+      </div>
+      <div class="field" id="monthSearchWrap">
+        <span>姓名/编号</span>
+        <input id="monthSearch" placeholder="请输入" oninput="renderAll()"
+          style="width:120px;height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font:inherit;font-size:13px;">
+      </div>
+      <button class="btn" id="resetFiltersBtn" onclick="resetFilters()">重置</button>
+    </div>
+    <!-- 周视图：前后导航 -->
+    <div class="period-nav" id="weekNavWrap" style="display:none;">
+      <button class="nav-btn" id="prevPeriod">‹</button>
+      <span class="period-label" id="periodLabel"></span>
+      <button class="nav-btn" id="nextPeriod">›</button>
+    </div>
+    <!-- 周视图：统计 -->
+    <div class="atd-stats" id="statsWrap" style="display:none;">
+      <div class="atd-stat"><div class="sv" id="sLeave">—</div><div class="sl">请假（天）</div></div>
+      <div class="atd-stat"><div class="sv" id="sOt">—</div><div class="sl">加班（时）</div></div>
+      <div class="atd-stat"><div class="sv" id="sComp">—</div><div class="sl">补休余额（时）</div></div>
+    </div>
+    <!-- 图例 -->
+    <div class="legend" style="margin-left:auto;">
+      <div class="legend-item"><div class="ld" style="background:#e8f7ef;border:1px solid #b7e4cb;"></div>年假</div>
+      <div class="legend-item"><div class="ld" style="background:#edf1f5;border:1px solid #cbd5e1;"></div>事假</div>
+      <div class="legend-item"><div class="ld" style="background:#fff7e6;border:1px solid #f0d9a8;"></div>病假</div>
+      <div class="legend-item"><div class="ld" style="background:#fce7f3;border:1px solid #f0b3d5;"></div>婚/产/陪产/丧假</div>
+      <div class="legend-item"><div class="ld" style="background:#fff7ed;border:1px solid #fed7aa;"></div>加班</div>
+      <div class="legend-item"><div class="ld" style="background:#ede9fe;border:1px solid #c4b5fd;"></div>补休</div>
+    </div>
+  </div>
+
+  <!-- 月视图：Gantt -->
+  <div id="monthView">
+    <div class="gantt-outer"><div id="ganttInner"></div></div>
+  </div>
+
+  <!-- 周视图：左人员列表 + 右周历 -->
+  <div class="atd-layout" id="weekView" style="display:none;">
+    <aside class="card emp-list-card">
+      <div class="emp-search"><input id="empSearch" placeholder="搜索姓名…" oninput="renderAll()"></div>
+      <div class="emp-list" id="empListCon"></div>
+    </aside>
+    <div id="weekCalWrap"></div>
+  </div>
+
+  <!-- 弹框 -->
+  <div class="modal-mask" id="detailModal">
+    <div class="modal-box">
+      <h3 id="detailTitle">考勤详情</h3>
+      <dl class="dg" id="detailBody"></dl>
+      <div class="modal-footer"><button class="btn" onclick="closeModal('detailModal')">关闭</button></div>
+    </div>
+  </div>
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+var COL_W=36, ROW_H=56, EV_H=28;
+var EMPLOYEES=[
+  {id:1, no:'XT2025001', name:'张三', dept:'人力资源部（党委组织部）', post:'培训、员工管理',events:[
+    {type:'nj',label:'年假',from:'2026-06-05',to:'2026-06-06',days:2,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-10',to:'2026-06-10',hours:8,reason:'月报汇总',status:'已批准'},
+    {type:'sj',label:'事假',from:'2026-06-18',to:'2026-06-18',days:1,reason:'家庭事务',status:'待审批'}]},
+  {id:2, no:'XT2025002', name:'李四', dept:'人力资源部（党委组织部）', post:'劳动组织、社保公积金管理',events:[
+    {type:'sb',label:'加班',from:'2026-06-02',to:'2026-06-02',hours:4,reason:'缴费截止前核账',status:'已批准'},
+    {type:'nj',label:'年假',from:'2026-06-23',to:'2026-06-27',days:5,status:'已批准'}]},
+  {id:3, no:'XT2025003', name:'王晓梅', dept:'财务资产部', post:'总账',events:[
+    {type:'bj',label:'病假',from:'2026-06-03',to:'2026-06-04',days:2,status:'已批准'},
+    {type:'bx',label:'补休',from:'2026-06-12',to:'2026-06-12',hours:4,reason:'5月加班换算',status:'已批准'}]},
+  {id:4, no:'XT2025004', name:'陈刚', dept:'财务资产部', post:'出纳',events:[
+    {type:'sj',label:'事假',from:'2026-06-09',to:'2026-06-09',days:1,reason:'子女入学手续',status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-25',to:'2026-06-25',hours:6,reason:'月末对账',status:'已批准'}]},
+  {id:5, no:'XT2025005', name:'刘建国', dept:'开发管理部', post:'采气场站管理',events:[
+    {type:'sb',label:'加班',from:'2026-06-06',to:'2026-06-08',hours:24,reason:'现场应急',status:'已批准'},
+    {type:'hj',label:'婚假',from:'2026-06-20',to:'2026-06-22',days:3,status:'已批准'}]},
+  {id:6, no:'XT2025006', name:'孙亮', dept:'开发管理部', post:'集输综合管理',events:[
+    {type:'nj',label:'年假',from:'2026-06-16',to:'2026-06-19',days:4,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-28',to:'2026-06-28',hours:8,reason:'月报',status:'待审批'}]},
+  {id:7, no:'XT2025007', name:'赵文', dept:'地质工程部', post:'科技管理',events:[
+    {type:'sj',label:'事假',from:'2026-06-15',to:'2026-06-16',days:2,reason:'个人事务',status:'已批准'},
+    {type:'nj',label:'年假',from:'2026-06-24',to:'2026-06-27',days:4,status:'待审批'}]},
+  {id:8, no:'XT2025008', name:'周慧', dept:'地质工程部', post:'矿权资源管理',events:[
+    {type:'bj',label:'病假',from:'2026-06-11',to:'2026-06-13',days:3,status:'已批准'}]},
+  {id:9, no:'XT2025009', name:'吴磊', dept:'地面建设工程部', post:'综合管理',events:[
+    {type:'bj',label:'病假',from:'2026-06-08',to:'2026-06-10',days:3,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-22',to:'2026-06-22',hours:4,reason:'方案评审',status:'已批准'}]},
+  {id:10,no:'XT2025010', name:'郑敏', dept:'地面建设工程部', post:'结算、审计',events:[
+    {type:'nj',label:'年假',from:'2026-06-01',to:'2026-06-03',days:3,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-15',to:'2026-06-16',hours:16,reason:'审计现场',status:'已批准'}]},
+  {id:11,no:'XT2025011', name:'黄俊', dept:'质量安全环保部', post:'工业安全管理',events:[
+    {type:'hj',label:'陪产假',from:'2026-06-02',to:'2026-06-16',days:15,status:'已批准'}]},
+  {id:12,no:'XT2025012', name:'冯雪', dept:'质量安全环保部', post:'质量计量管理',events:[
+    {type:'sj',label:'事假',from:'2026-06-04',to:'2026-06-04',days:1,reason:'体检',status:'已批准'},
+    {type:'bx',label:'补休',from:'2026-06-18',to:'2026-06-18',hours:8,reason:'5月加班换算',status:'已批准'}]},
+  {id:13,no:'XT2025013', name:'唐明', dept:'办公室（党委办公室）', post:'综合管理',events:[
+    {type:'nj',label:'年假',from:'2026-06-29',to:'2026-06-30',days:2,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-05',to:'2026-06-05',hours:4,reason:'文件印发',status:'已批准'}]},
+  {id:14,no:'XT2025014', name:'林静', dept:'计划经营部', post:'合同管理',events:[
+    {type:'bj',label:'病假',from:'2026-06-17',to:'2026-06-18',days:2,status:'已批准'}]},
+  {id:15,no:'XT2025015', name:'徐涛', dept:'党群工作部（纪委办公室）', post:'纪检管理',events:[
+    {type:'sb',label:'加班',from:'2026-06-13',to:'2026-06-13',hours:6,reason:'专项检查',status:'已批准'},
+    {type:'sj',label:'事假',from:'2026-06-26',to:'2026-06-26',days:1,reason:'个人事务',status:'已批准'}]},
+  {id:16,no:'XT2025016', name:'杨洋', dept:'生产指挥中心', post:'综合管理',events:[
+    {type:'nj',label:'年假',from:'2026-06-09',to:'2026-06-11',days:3,status:'已批准'},
+    {type:'sb',label:'加班',from:'2026-06-20',to:'2026-06-21',hours:16,reason:'调度值班',status:'已批准'}]}
+];
+var curView='month', curDate=new Date(2026,5,1), curEmpId=1;
+function pad(n){return n<10?'0'+n:''+n;}
+function ds(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+var DS=['一','二','三','四','五','六','日'];
+function evtsOn(emp,date){return emp.events.filter(function(e){return date>=e.from&&date<=e.to;});}
+function onYMChange(){
+  var y=parseInt(document.getElementById('yearSel').value);
+  var m=parseInt(document.getElementById('monthSel').value);
+  curDate=new Date(y,m,1);
+  renderAll();
+}
+function resetFilters(){
+  document.getElementById('typeFilter').value='';
+  document.getElementById('deptFilter').value='';
+  document.getElementById('monthSearch').value='';
+  renderAll();
+}
+function filteredEmps(){
+  var dept=((document.getElementById('deptFilter')||{}).value)||'';
+  var monthKw=((document.getElementById('monthSearch')||{}).value||'').trim();
+  var weekKw=((document.getElementById('empSearch')||{}).value||'').trim();
+  var kw=monthKw||weekKw;
+  return EMPLOYEES.filter(function(e){
+    var matchDept=!dept||e.dept===dept;
+    var matchKw=!kw||e.name.indexOf(kw)>=0||e.no.indexOf(kw)>=0;
+    return matchDept&&matchKw;
+  });
+}
+</script>
+<script>
+// ── Gantt 月视图 ──────────────────────────────────────
+function buildGantt(){
+  var gi=document.getElementById('ganttInner'); if(!gi) return;
+  var y=curDate.getFullYear(), m=curDate.getMonth();
+  // 同步下拉选中
+  var ys=document.getElementById('yearSel'); if(ys) ys.value=String(y);
+  var ms=document.getElementById('monthSel'); if(ms) ms.value=String(m);
+  var dim=new Date(y,m+1,0).getDate();
+  var todayStr=ds(new Date());
+  var emps=filteredEmps();
+
+  // 表头行
+  var hrow='<div class="gantt-hrow"><div class="gantt-name-hdr">姓名</div>';
+  for(var d=1;d<=dim;d++){
+    var dStr=y+'-'+pad(m+1)+'-'+pad(d);
+    var dow=new Date(y,m,d).getDay();
+    var isW=(dow===0||dow===6), isT=(dStr===todayStr);
+    var cls='gantt-day-hdr'+(isW?' weekend':'')+(isT?' today':'');
+    var dowLabel=DS[dow===0?6:dow-1];
+    hrow+='<div class="'+cls+'"><div class="hd">'+dowLabel+'</div><div class="dn">'+(isT?'今':d)+'</div></div>';
+  }
+  hrow+='</div>';
+
+  // 数据行
+  var rows='';
+  emps.forEach(function(emp){
+    rows+='<div class="gantt-row"><div class="gantt-name-cell"><div class="gn-name">'+emp.name+'</div><div class="gn-sub">'+emp.no+'</div></div>';
+    rows+='<div class="gantt-days-area">';
+    // 背景格
+    for(var d=1;d<=dim;d++){
+      var dStr=y+'-'+pad(m+1)+'-'+pad(d);
+      var dow=new Date(y,m,d).getDay(), isW=(dow===0||dow===6), isT=(dStr===todayStr);
+      rows+='<div class="gantt-day-col'+(isT?' today':'')+(isW&&!isT?' weekend':'')+'"></div>';
+    }
+    // 事件条（按类型筛选，合并连续日期为一个块）
+    var typeFilter=(document.getElementById('typeFilter')||{value:''}).value;
+    var placed={};
+    emp.events.forEach(function(ev,idx){
+      if(typeFilter && ev.type!==typeFilter) return;
+      var s=new Date(Math.max(new Date(ev.from),new Date(y,m,1)));
+      var e=new Date(Math.min(new Date(ev.to),new Date(y,m+1,0)));
+      if(s>e) return;
+      var startDay=s.getDate(), endDay=e.getDate();
+      var left=(startDay-1)*COL_W+2;
+      var width=(endDay-startDay+1)*COL_W-4;
+      rows+='<div class="gantt-ev '+ev.type+'" style="left:'+left+'px;width:'+width+'px;" onclick="showDetail('+emp.id+','+idx+')">'+ev.label+'</div>';
+    });
+    rows+='</div></div>';
+  });
+
+  if(!emps.length) rows='<div style="padding:24px;text-align:center;color:#8fa3b0;font-size:13px;">无匹配人员</div>';
+  if(!emps.length) rows='<div style="padding:24px;text-align:center;color:#8fa3b0;font-size:13px;">无匹配人员</div>';
+  document.getElementById('ganttInner').innerHTML=hrow+rows;
+}
+</script>
+<script>
+// ── 周视图 ──────────────────────────────────────────
+function weekMonday(d){var x=new Date(d);x.setHours(0,0,0,0);var dow=x.getDay();x.setDate(x.getDate()-(dow===0?6:dow-1));return x;}
+
+function buildWeek(){
+  var emps=filteredEmps();
+  if(!emps.find(function(e){return e.id===curEmpId;})) curEmpId=(emps[0]||{}).id||1;
+  var emp=EMPLOYEES.find(function(e){return e.id===curEmpId;});
+
+  // 人员列表
+  var listHtml='';
+  emps.forEach(function(e){
+    listHtml+='<div class="emp-item'+(e.id===curEmpId?' active':'')+'" onclick="curEmpId='+e.id+';buildWeek();"><div class="emp-name">'+e.name+'</div><div class="emp-sub">'+e.dept+'</div></div>';
+  });
+  document.getElementById('empListCon').innerHTML=listHtml||'<div style="padding:20px;text-align:center;color:#8fa3b0;font-size:13px;">无匹配</div>';
+
+  if(!emp){document.getElementById('weekCalWrap').innerHTML='';return;}
+
+  // 统计
+  var lv=0,ot=0,cp=0;
+  emp.events.forEach(function(e){
+    if(['nj','sj','bj','hj'].indexOf(e.type)>=0&&e.days) lv+=e.days;
+    if(e.type==='sb'&&e.hours) ot+=e.hours;
+    if(e.type==='bx'&&e.hours) cp+=e.hours;
+  });
+  document.getElementById('sLeave').textContent=lv||'0';
+  document.getElementById('sOt').textContent=ot||'0';
+  document.getElementById('sComp').textContent=cp||'0';
+
+  var mon=weekMonday(curDate);
+  var sun=new Date(mon); sun.setDate(sun.getDate()+6);
+  var fmt=function(d){return(d.getMonth()+1)+'月'+d.getDate()+'日';};
+  document.getElementById('periodLabel').textContent=curDate.getFullYear()+'年 '+fmt(mon)+' – '+fmt(sun);
+  var today=ds(new Date());
+  var head='<div class="week-head">',body='<div class="week-body">';
+  for(var i=0;i<7;i++){
+    var d=new Date(mon); d.setDate(d.getDate()+i);
+    var dStr=ds(d),dow=d.getDay(),isW=(dow===0||dow===6),isT=(dStr===today);
+    head+='<div class="week-hcell'+(isW?' weekend':'')+(isT?' today':'')+'"><div class="wd">'+DS[i]+'</div><div class="wdate">'+d.getDate()+'</div></div>';
+    var evs=[];emp.events.forEach(function(e,idx){if(dStr>=e.from&&dStr<=e.to) evs.push({e:e,idx:idx});});
+    body+='<div class="week-cell'+(isW?' weekend':'')+(isT?' today':'')+(evs.length===0?' ':'')+'">'; 
+    evs.forEach(function(x){
+      var ev=x.e,info=ev.days?ev.days+'天':(ev.hours?ev.hours+'小时':'');
+      if(ev.reason) info+=(info?' · ':'')+ev.reason;
+      body+='<div class="week-ev '+ev.type+'" onclick="showDetail('+emp.id+','+x.idx+')"><div class="we-lbl">'+ev.label+'</div>'+(info?'<div class="we-info">'+info+'</div>':'')+'</div>';
+    });
+    body+='</div>';
+  }
+  document.getElementById('weekCalWrap').innerHTML='<div class="week-cal">'+head+'</div><div class="week-cal" style="border-top:none;border-radius:0 0 8px 8px;margin-top:-1px;">'+body+'</div></div>';
+}
+
+// ── 视图切换 ──────────────────────────────────────────
+function switchView(v){
+  curView=v;
+  document.getElementById('btnMonth').classList.toggle('active',v==='month');
+  document.getElementById('btnWeek').classList.toggle('active',v==='week');
+  document.getElementById('monthView').style.display=v==='month'?'':'none';
+  document.getElementById('weekView').style.display=v==='week'?'':'none';
+  document.getElementById('monthNavWrap').style.display=v==='month'?'flex':'none';
+  document.getElementById('weekNavWrap').style.display=v==='week'?'flex':'none';
+  document.getElementById('statsWrap').style.display=v==='week'?'':'none';
+  renderAll();
+}
+// 初始化
+window.onerror=function(m){document.title='JSERR:'+m;};resetFilters();switchView('week');
+function renderAll(){ curView==='month'?buildGantt():buildWeek(); }
+
+document.getElementById('prevPeriod').addEventListener('click',function(){
+  if(curView==='month') curDate.setMonth(curDate.getMonth()-1);
+  else curDate.setDate(curDate.getDate()-7);
+  renderAll();
+});
+document.getElementById('nextPeriod').addEventListener('click',function(){
+  if(curView==='month') curDate.setMonth(curDate.getMonth()+1);
+  else curDate.setDate(curDate.getDate()+7);
+  renderAll();
+});
+
+function showDetail(empId,idx){
+  var emp=EMPLOYEES.find(function(e){return e.id===empId;});
+  var ev=emp&&emp.events[idx];if(!ev)return;
+  var r='<dt>申请人</dt><dd>'+emp.name+'（'+emp.dept+'）</dd><dt>类型</dt><dd>'+ev.label+'</dd>';
+  if(ev.from===ev.to) r+='<dt>日期</dt><dd>'+ev.from+'</dd>';
+  else r+='<dt>时间段</dt><dd>'+ev.from+' 至 '+ev.to+(ev.days?'，共 '+ev.days+' 天':'')+'</dd>';
+  if(ev.hours) r+='<dt>时长</dt><dd>'+ev.hours+' 小时</dd>';
+  if(ev.reason) r+='<dt>事由</dt><dd>'+ev.reason+'</dd>';
+  r+='<dt>状态</dt><dd>'+ev.status+'</dd>';
+  document.getElementById('detailTitle').textContent=emp.name+' · '+ev.label;
+  document.getElementById('detailBody').innerHTML=r;
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show');});});
+
+try { resetFilters(); } catch(e) {}
+window.addEventListener('load', resetFilters);
+</script>
+</body>
+</html>

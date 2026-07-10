@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>社保缴纳台账</title>
+<link rel="stylesheet" href="../shared/prototype.css">
+<style>
+/* ── 社保台账大表 ── */
+.ins-scroll { border:1px solid #e0e8ec; border-radius:8px; overflow:auto; max-height:calc(100vh - 220px); }
+.ins-table { border-collapse:separate; border-spacing:0; font-size:12px; white-space:nowrap; min-width:1600px; width:100%; }
+.ins-table th, .ins-table td { padding:8px 10px; border-bottom:1px solid #eef3f6; vertical-align:middle; background:#fff; }
+.ins-table th { position:sticky; top:0; z-index:4; background:#f0f5f7; }
+/* 固定左侧列（序号+姓名+项目+单位+服务单位+三级单位=6列） */
+.ins-table .fix-l { position:sticky; z-index:5; background:#fff; }
+.ins-table thead .fix-l { background:#e6f7f9; z-index:6; }.c0{left:0;width:42px;text-align:center}.c1{left:42px;width:60px}.c2{left:102px;width:96px}.c3{left:198px;width:76px}.c4{left:274px;width:72px}.c5{left:346px;width:84px;border-right:2px solid #00AAB7}
+/* 固定右侧操作列 */
+.fix-r{position:sticky;right:0;z-index:5;background:#fff;text-align:center;width:80px;border-left:1px solid #e0e8ec}
+.ins-table thead .fix-r{background:#f0f5f7;z-index:6}
+/* 金额列 */
+.ins-table td.amt{text-align:right;font-variant-numeric:tabular-nums;font-family:Menlo,Consolas,"Courier New",monospace;font-size:12px}
+/* Drawer */
+.drawer-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.4);z-index:2000}
+.drawer-mask.show{display:flex;justify-content:flex-end}
+.drawer-box{width:860px;max-width:96vw;height:100vh;background:#fff;box-shadow:-8px 0 32px rgba(0,0,0,0.12);overflow-y:auto;padding:28px 24px;animation:drawerIn .2s ease}
+@keyframes drawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.drawer-header h3{font-size:16px;font-weight:700;color:#1a2533}
+.drawer-close{width:32px;height:32px;border:0;background:transparent;font-size:18px;color:#5f7080;cursor:pointer;border-radius:6px}
+.drawer-close:hover{background:#f0f5f7}
+/* Drawer 内表格数据行强制白底 */
+.drawer-box table tbody td { background:#fff; }
+.drawer-box table tbody tr:nth-child(even) td { background:#fff; }
+/* 编辑弹框 */
+.modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:2100;align-items:center;justify-content:center}
+.modal-mask.show{display:flex}
+.modal-box{background:#fff;border-radius:12px;padding:24px 28px;width:640px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+.modal-box h3{font-size:16px;font-weight:700;margin:0 0 16px;color:#1a2533}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.edit-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#5f7080}
+.edit-grid input{height:34px;border:1px solid #e0e8ec;border-radius:6px;padding:0 10px;font:inherit;text-align:right}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+</style>
+</head>
+<body data-module="insurance">
+<main class="page-content" data-title="社保缴纳台账"
+  data-desc="外包人员月度社保公积金缴费全员汇总，按月导入、按月查看。"
+  data-actions='<button class="btn primary" onclick="document.getElementById(&apos;importFile&apos;).click()">导入</button><button class="btn">下载模板</button><button class="btn">导出本月</button>'>
+  <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none">
+
+  <!-- 月份切换 -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+    <div class="field" style="display:flex;align-items:center;gap:6px;color:#5f7080;font-size:13px;">
+      <span>缴纳月份</span>
+      <select id="monthSel" style="height:34px;border:1px solid #e0e8ec;border-radius:6px;padding:0 10px;font:inherit;font-size:13px;min-width:128px;">
+        <option selected>2026-06</option><option>2026-05</option><option>2026-04</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 大表 -->
+  <div class="ins-scroll">
+    <table class="ins-table">
+      <thead>
+        <!-- 第一行：大分类 -->
+        <tr>
+          <th rowspan="2" class="fix-l c0" style="color:#007a84;font-weight:700;">序号</th>
+          <th rowspan="2" class="fix-l c1" style="color:#007a84;font-weight:700;">姓名</th>
+          <th rowspan="2" class="fix-l c2" style="color:#007a84;font-weight:700;">所属项目</th>
+          <th rowspan="2" class="fix-l c3" style="color:#007a84;font-weight:700;">所属单位</th>
+          <th rowspan="2" class="fix-l c4" style="color:#007a84;font-weight:700;">服务单位</th>
+          <th rowspan="2" class="fix-l c5" style="color:#007a84;font-weight:700;">三级单位</th>
+          <th colspan="2" style="background:#f5fbfd;text-align:center;color:#00838c;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">基本养老保险</th>
+          <th colspan="4" style="background:#f0f9f5;text-align:center;color:#137d52;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">基本医疗保险</th>
+          <th colspan="2" style="background:#f5fbfd;text-align:center;color:#00838c;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">失业保险</th>
+          <th style="background:#fff8f0;text-align:center;color:#b7791f;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">工伤保险</th>
+          <th style="background:#fff8f0;text-align:center;color:#b7791f;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">生育保险</th>
+          <th colspan="2" style="background:#f5fbfd;text-align:center;color:#00838c;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">公积金</th>
+          <th colspan="2" style="background:#f0f9f5;text-align:center;color:#137d52;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">企业年金</th>
+          <th style="background:#faf5ff;text-align:center;color:#6b46c1;font-weight:700;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;">雇主责任险</th>
+          <th style="background:#faf5ff;text-align:center;color:#6b46c1;font-weight:700;border-bottom:1px solid #e0e8ec;">团体综合险</th>
+          <th rowspan="2" class="fix-r" style="font-weight:600;color:#3d5266;">操作</th>
+        </tr>
+        <!-- 第二行：子列 -->
+        <tr>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;">单位</th>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">个人</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;">单位</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;">大病单位</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;">个人</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">大病个人</th>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;">单位</th>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">个人</th>
+          <th style="background:#fff8f0;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">单位</th>
+          <th style="background:#fff8f0;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">单位</th>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;">单位</th>
+          <th style="background:#f5fbfd;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">个人</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;">单位</th>
+          <th style="background:#f0f9f5;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">个人</th>
+          <th style="background:#faf5ff;text-align:right;font-weight:500;color:#3d5266;border-right:1px solid #e0e8ec;">—</th>
+          <th style="background:#faf5ff;text-align:right;font-weight:500;color:#3d5266;">—</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fix-l c0" style="text-align:center;font-weight:500;color:#5f7080;">1</td>
+          <td class="fix-l c1" style="font-weight:600;color:#1a2533;">周明</td>
+          <td class="fix-l c2">驻场专业技术</td>
+          <td class="fix-l c3">成都项目部</td>
+          <td class="fix-l c4">长宁公司</td>
+          <td class="fix-l c5">采气作业区</td>
+          <td class="amt">800.00</td><td class="amt">400.00</td>
+          <td class="amt">450.00</td><td class="amt">120.00</td><td class="amt">100.00</td><td class="amt">50.00</td>
+          <td class="amt">45.00</td><td class="amt">22.50</td>
+          <td class="amt">30.00</td><td class="amt">45.00</td>
+          <td class="amt">600.00</td><td class="amt">600.00</td>
+          <td class="amt">200.00</td><td class="amt">100.00</td>
+          <td class="amt">50.00</td><td class="amt">30.00</td>
+          <td class="fix-r"><a class="btn link" onclick="openDrawer('周明')">查看</a> <a class="btn link" onclick="openEdit('周明')">编辑</a></td>
+        </tr>
+        <tr>
+          <td class="fix-l c0" style="text-align:center;font-weight:500;color:#5f7080;">2</td>
+          <td class="fix-l c1" style="font-weight:600;color:#1a2533;">王磊</td>
+          <td class="fix-l c2">驻场操作服务</td>
+          <td class="fix-l c3">泸州项目部</td>
+          <td class="fix-l c4">长宁公司</td>
+          <td class="fix-l c5">集输站</td>
+          <td class="amt">650.00</td><td class="amt">325.00</td>
+          <td class="amt">380.00</td><td class="amt">100.00</td><td class="amt">80.00</td><td class="amt">40.00</td>
+          <td class="amt">35.00</td><td class="amt">17.50</td>
+          <td class="amt">25.00</td><td class="amt">35.00</td>
+          <td class="amt">500.00</td><td class="amt">500.00</td>
+          <td class="amt">150.00</td><td class="amt">75.00</td>
+          <td class="amt">40.00</td><td class="amt">25.00</td>
+          <td class="fix-r"><a class="btn link" onclick="openDrawer('王磊')">查看</a> <a class="btn link" onclick="openEdit('王磊')">编辑</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Drawer：个人历史 -->
+  <div class="drawer-mask" id="drawerMask" onclick="closeDrawer()">
+    <div class="drawer-box" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <h3 id="drawerTitle">周明 · 社保缴纳历史明细</h3>
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+      </div>
+      <p style="font-size:12px;color:#8fa3b0;margin-bottom:12px;">该员工所有历史缴费明细，按月展示。</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="field" style="display:flex;align-items:center;gap:6px;color:#5f7080;font-size:12px;"><span>年份</span><select style="height:30px;border:1px solid #e0e8ec;border-radius:6px;padding:0 8px;font-size:12px;"><option>全部</option><option selected>2026</option><option>2025</option></select></div>
+      </div>
+      <div class="table-scroll" style="border:1px solid #e0e8ec;border-radius:6px;max-height:calc(100vh - 220px);overflow:auto;">
+        <table style="border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%;min-width:1100px;">
+          <thead><tr style="position:sticky;top:0;z-index:2;">
+            <th style="background:#e6f7f9;position:sticky;left:0;z-index:3;text-align:center;padding:8px;">序号</th>
+            <th style="background:#e6f7f9;position:sticky;left:48px;z-index:3;padding:8px;">月份</th>
+            <th style="background:#f5fbfd;padding:8px;">养老·单位</th><th style="background:#f5fbfd;padding:8px;">养老·个人</th>
+            <th style="background:#f0f9f5;padding:8px;">医疗·单位</th><th style="background:#f0f9f5;padding:8px;">大病单位</th><th style="background:#f0f9f5;padding:8px;">医疗·个人</th><th style="background:#f0f9f5;padding:8px;">大病个人</th>
+            <th style="background:#f5fbfd;padding:8px;">失业·单位</th><th style="background:#f5fbfd;padding:8px;">失业·个人</th>
+            <th style="background:#fff8f0;padding:8px;">工伤保险</th><th style="background:#fff8f0;padding:8px;">生育保险</th>
+            <th style="background:#f5fbfd;padding:8px;">公积金·单位</th><th style="background:#f5fbfd;padding:8px;">公积金·个人</th>
+            <th style="background:#f0f9f5;padding:8px;">年金·单位</th><th style="background:#f0f9f5;padding:8px;">年金·个人</th>
+            <th style="background:#faf5ff;padding:8px;">雇主责任险</th><th style="background:#faf5ff;padding:8px;">团体综合险</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="text-align:center;position:sticky;left:0;background:#fff;">1</td><td style="position:sticky;left:48px;background:#fff;font-weight:600;">2026-06</td><td class="amt">800.00</td><td class="amt">400.00</td><td class="amt">450.00</td><td class="amt">120.00</td><td class="amt">100.00</td><td class="amt">50.00</td><td class="amt">45.00</td><td class="amt">22.50</td><td class="amt">30.00</td><td class="amt">45.00</td><td class="amt">600.00</td><td class="amt">600.00</td><td class="amt">200.00</td><td class="amt">100.00</td><td class="amt">50.00</td><td class="amt">30.00</td></tr>
+            <tr><td style="text-align:center;position:sticky;left:0;background:#fff;">2</td><td style="position:sticky;left:48px;background:#fff;font-weight:600;">2026-05</td><td class="amt">800.00</td><td class="amt">400.00</td><td class="amt">450.00</td><td class="amt">120.00</td><td class="amt">100.00</td><td class="amt">50.00</td><td class="amt">45.00</td><td class="amt">22.50</td><td class="amt">30.00</td><td class="amt">45.00</td><td class="amt">600.00</td><td class="amt">600.00</td><td class="amt">200.00</td><td class="amt">100.00</td><td class="amt">50.00</td><td class="amt">30.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑弹框 -->
+  <div class="modal-mask" id="editModal">
+    <div class="modal-box">
+      <h3 id="editTitle">编辑社保数据 · 周明 · 2026-06</h3>
+      <div class="edit-grid">
+        <label>基本养老·单位<input value="800.00"></label><label>基本养老·个人<input value="400.00"></label>
+        <label>基本医疗·单位<input value="450.00"></label><label>基本医疗·大病单位<input value="120.00"></label>
+        <label>基本医疗·个人<input value="100.00"></label><label>基本医疗·大病个人<input value="50.00"></label>
+        <label>失业·单位<input value="45.00"></label><label>失业·个人<input value="22.50"></label>
+        <label>工伤·单位<input value="30.00"></label><label>生育·单位<input value="45.00"></label>
+        <label>公积金·单位<input value="600.00"></label><label>公积金·个人<input value="600.00"></label>
+        <label>企业年金·单位<input value="200.00"></label><label>企业年金·个人<input value="100.00"></label>
+        <label>雇主责任险<input value="50.00"></label><label>团体综合险<input value="30.00"></label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeEdit()">取消</button>
+        <button class="btn primary" onclick="closeEdit()">确认保存</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+function openDrawer(n){document.getElementById('drawerTitle').textContent=n+' · 社保缴纳历史明细';document.getElementById('drawerMask').classList.add('show');}
+function closeDrawer(){document.getElementById('drawerMask').classList.remove('show');}
+function openEdit(n){var m=document.getElementById('monthSel').value;document.getElementById('editTitle').textContent='编辑社保数据 · '+n+' · '+m;document.getElementById('editModal').classList.add('show');}
+function closeEdit(){document.getElementById('editModal').classList.remove('show');}
+document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEdit();});
+</script>
+</body>
+</html>

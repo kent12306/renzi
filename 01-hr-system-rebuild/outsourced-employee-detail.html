@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>外包人员档案</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <link rel="stylesheet" href="../shared/profile.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="员工档案" data-desc="外包人员 360 档案：基本信息与异动记录集中查看。"
+    data-actions='<a class="btn" href="./outsourced-employees.html">返回列表</a><a class="btn" href="./outsourced-employee-edit.html">编辑资料</a>'>
+
+    <div class="profile-header">
+      <div class="profile-avatar">周</div>
+      <div class="profile-meta">
+        <div class="profile-name">周一 <span class="profile-badge">在册在岗</span></div>
+        <div class="profile-sub">
+          <span>所属项目：<strong>驻场专业技术</strong></span>
+          <span>所属单位：<strong>成都项目部</strong></span>
+          <span>岗位：<strong>采气工</strong></span>
+          <span>人员类型：<strong>外包人员</strong></span>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn" type="button" onclick="openModal('deptTransferModal')">部门调动</button>
+        <button class="btn" type="button" onclick="openModal('retireModal')">退休</button>
+        <button class="btn danger" type="button" onclick="openModal('leaveModal')">办理离职</button>
+      </div>
+    </div>
+
+    <div class="profile-tabs">
+      <div class="profile-tab active" data-tab="info">基本信息</div>
+      <div class="profile-tab" data-tab="change">异动记录</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-info">
+      <section class="card form-page">
+        <h3>基础信息</h3>
+        <div class="readonly-grid outsourced-readonly-grid">
+          <div><span>所属项目</span><strong>驻场专业技术</strong></div>
+          <div><span>所属单位</span><strong>成都项目部</strong></div>
+          <div><span>姓名</span><strong>周一</strong></div>
+          <div><span>身份证号</span><strong>5101011990xxxx1234</strong></div>
+          <div><span>性别</span><strong>男</strong></div>
+          <div><span>婚姻状况</span><strong>已婚</strong></div>
+          <div><span>出生日期</span><strong>1990-01-01</strong></div>
+          <div><span>民族</span><strong>汉族</strong></div>
+          <div><span>籍贯</span><strong>四川成都</strong></div>
+          <div><span>参加工作时间</span><strong>2012-07-01</strong></div>
+          <div><span>宝石花入职时间</span><strong>2023-03-15</strong></div>
+          <div><span>政治面貌</span><strong>群众</strong></div>
+          <div><span>服务单位</span><strong>长宁公司</strong></div>
+          <div><span>服务三级单位</span><strong>开发管理部</strong></div>
+          <div><span>岗位类别</span><strong>专业技术人员</strong></div>
+          <div><span>岗位</span><strong>采气工</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>文化程度</h3>
+        <div class="readonly-grid contract-readonly-grid">
+          <div><span>原文化程度</span><strong>高中</strong></div>
+          <div><span>现文化程度</span><strong>成人大专</strong></div>
+          <div><span>何年何月何院校何专业毕业</span><strong>2012年6月四川能源职业技术学院机电一体化专业毕业</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>技能资格（现工种）</h3>
+        <div class="readonly-grid outsourced-readonly-grid">
+          <div><span>领域（专业）</span><strong>勘探开发</strong></div>
+          <div><span>现工种名称</span><strong>采气工</strong></div>
+          <div><span>工种方向</span><strong>采气工</strong></div>
+          <div><span>工种代码</span><strong>601060301</strong></div>
+          <div><span>现工种等级</span><strong>初级工</strong></div>
+          <div><span>现工种取证时间</span><strong>2023-01-05</strong></div>
+          <div><span>现证书编号</span><strong>ZG2025001</strong></div>
+        </div>
+      </section>
+
+      <section class="card table-card detail-section">
+        <h3 class="form-section-title">其它工种</h3>
+        <div style="padding:0 16px 16px;">
+        <table>
+          <thead><tr><th class="col-seq">序号</th><th>其它工种（等级）</th><th>其他工种时间</th><th>其它工种证书编号</th></tr></thead>
+          <tbody>
+            <tr><td class="col-seq">1</td><td>中级工</td><td>2024-01-10</td><td>DG20240110</td></tr>
+            <tr><td class="col-seq">2</td><td>初级工</td><td>2024-04-12</td><td>XF20240412</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>压力容器</h3>
+        <div class="readonly-grid contract-readonly-grid">
+          <div><span>有效期至</span><strong>2027-01-05</strong></div>
+          <div><span>取证编码</span><strong>RQ2024001</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>电工</h3>
+        <div class="readonly-grid contract-readonly-grid">
+          <div><span>有效期至</span><strong>2027-01-05</strong></div>
+          <div><span>取证编码</span><strong>DG2024001</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>消防设施操作</h3>
+        <div class="readonly-grid contract-readonly-grid">
+          <div><span>取证时间</span><strong>2024-01-05</strong></div>
+          <div><span>取证编码</span><strong>XF2024001</strong></div>
+        </div>
+      </section>
+
+      <!-- 外包人员：社保月度缴纳明细（按参保方案自动计算，只读） -->
+      <section class="card detail-section" style="padding:16px 20px;">
+        <h3 class="form-section-title" style="margin:0 0 14px;">社保缴纳明细</h3>
+
+        <!-- 年份 + 月份筛选 -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <div class="field" style="display:flex;align-items:center;gap:6px;color:#5f7080;font-size:13px;">
+            <span>年份</span>
+            <select id="insYearSel" onchange="onInsYearChange()" style="height:34px;border:1px solid #e0e8ec;border-radius:6px;padding:0 10px;background:#fff;font:inherit;font-size:13px;min-width:96px;cursor:pointer;">
+              <option value="all">全部年份</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+            </select>
+          </div>
+          <div id="insMonthWrap" class="field" style="display:flex;align-items:center;gap:6px;color:#5f7080;font-size:13px;">
+            <span>月份</span>
+            <select id="insMonthSel" onchange="filterInsurance()" style="height:34px;border:1px solid #e0e8ec;border-radius:6px;padding:0 10px;background:#fff;font:inherit;font-size:13px;min-width:88px;cursor:pointer;">
+              <option value="all">全部月份</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-scroll" style="border:1px solid #e0e8ec;border-radius:8px;overflow:auto;max-height:320px;">
+          <table id="insTable" style="border-collapse:separate;border-spacing:0;font-size:12px;white-space:nowrap;min-width:1200px;width:100%;">
+            <colgroup>
+              <!-- 固定列：序号 + 缴纳月份 -->
+              <col style="width:48px">
+              <col style="width:88px">
+              <!-- 养老 2列 -->
+              <col><col>
+              <!-- 医疗 4列 -->
+              <col><col><col><col>
+              <!-- 失业 2列 -->
+              <col><col>
+              <!-- 工伤 1列 -->
+              <col>
+              <!-- 生育 1列 -->
+              <col>
+              <!-- 公积金 2列 -->
+              <col><col>
+              <!-- 企业年金 2列 -->
+              <col><col>
+              <!-- 雇主责任险 1列 -->
+              <col>
+              <!-- 团体综合险 1列 -->
+              <col>
+            </colgroup>
+            <thead>
+              <!-- 第一行：大分类 -->
+              <tr>
+                <th rowspan="2" style="position:sticky;left:0;z-index:3;background:#e6f7f9;border-bottom:2px solid #00AAB7;text-align:center;vertical-align:middle;padding:8px 10px;font-size:12px;color:#007a84;font-weight:700;">序号</th>
+                <th rowspan="2" style="position:sticky;left:48px;z-index:3;background:#e6f7f9;border-bottom:2px solid #00AAB7;border-right:2px solid #00AAB7;text-align:center;vertical-align:middle;padding:8px 10px;font-size:12px;color:#007a84;font-weight:700;">缴纳月份</th>
+                <th colspan="2" style="background:#f5fbfd;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#00838c;font-weight:700;">基本养老保险</th>
+                <th colspan="4" style="background:#f0f9f5;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#137d52;font-weight:700;">基本医疗保险</th>
+                <th colspan="2" style="background:#f5fbfd;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#00838c;font-weight:700;">失业保险</th>
+                <th colspan="1" style="background:#fff8f0;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#b7791f;font-weight:700;">工伤保险</th>
+                <th colspan="1" style="background:#fff8f0;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#b7791f;font-weight:700;">生育保险</th>
+                <th colspan="2" style="background:#f5fbfd;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#00838c;font-weight:700;">公积金</th>
+                <th colspan="2" style="background:#f0f9f5;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#137d52;font-weight:700;">企业年金</th>
+                <th colspan="1" style="background:#faf5ff;border-bottom:1px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#6b46c1;font-weight:700;">雇主责任险</th>
+                <th colspan="1" style="background:#faf5ff;border-bottom:1px solid #e0e8ec;text-align:center;padding:6px 10px;color:#6b46c1;font-weight:700;">团体综合险</th>
+              </tr>
+              <!-- 第二行：子列 -->
+              <tr>
+                <!-- 养老 -->
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">个人</th>
+                <!-- 医疗 -->
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 8px;font-weight:500;color:#3d5266;">大病单位</th>
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">个人</th>
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 8px;font-weight:500;color:#3d5266;">大病个人</th>
+                <!-- 失业 -->
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">个人</th>
+                <!-- 工伤 -->
+                <th style="background:#fff8f0;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <!-- 生育 -->
+                <th style="background:#fff8f0;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <!-- 公积金 -->
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <th style="background:#f5fbfd;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">个人</th>
+                <!-- 企业年金 -->
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">单位</th>
+                <th style="background:#f0f9f5;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">个人</th>
+                <!-- 雇主责任险 -->
+                <th style="background:#faf5ff;border-bottom:2px solid #e0e8ec;border-right:1px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">—</th>
+                <!-- 团体综合险 -->
+                <th style="background:#faf5ff;border-bottom:2px solid #e0e8ec;text-align:right;padding:5px 10px;font-weight:500;color:#3d5266;">—</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-year="2026" data-month="2026-06">
+                <td style="position:sticky;left:0;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;font-weight:500;color:#5f7080;">1</td>
+                <td style="position:sticky;left:48px;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:2px solid #e0e8ec;font-weight:600;color:#1a2533;">2026-06</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">800.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">400.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">450.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">120.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">22.50</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">30.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">200.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">30.00</td>
+              </tr>
+              <tr data-year="2026" data-month="2026-05">
+                <td style="position:sticky;left:0;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;font-weight:500;color:#5f7080;">2</td>
+                <td style="position:sticky;left:48px;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:2px solid #e0e8ec;font-weight:600;color:#1a2533;">2026-05</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">800.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">400.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">450.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">120.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">22.50</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">30.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">200.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">30.00</td>
+              </tr>
+              <tr data-year="2026" data-month="2026-04">
+                <td style="position:sticky;left:0;z-index:2;background:#fff;text-align:center;padding:8px 10px;font-weight:500;color:#5f7080;">3</td>
+                <td style="position:sticky;left:48px;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-right:2px solid #e0e8ec;font-weight:600;color:#1a2533;">2026-04</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">800.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">400.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">450.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">120.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">22.50</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">30.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">45.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">600.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">200.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">100.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">50.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">30.00</td>
+              </tr>
+              <!-- 2025 数据 -->
+              <tr data-year="2025" data-month="2025-12">
+                <td style="position:sticky;left:0;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;font-weight:500;color:#5f7080;">1</td>
+                <td style="position:sticky;left:48px;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:2px solid #e0e8ec;font-weight:600;color:#1a2533;">2025-12</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">780.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">390.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">440.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">115.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">96.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">48.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">42.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">21.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">28.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">42.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">580.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">580.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">180.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">90.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">48.00</td>
+                <td style="text-align:right;padding:8px 10px;border-bottom:1px solid #eef3f6;font-variant-numeric:tabular-nums;">28.00</td>
+              </tr>
+              <!-- 2024 数据 -->
+              <tr data-year="2024" data-month="2024-12">
+                <td style="position:sticky;left:0;z-index:2;background:#fff;text-align:center;padding:8px 10px;font-weight:500;color:#5f7080;">1</td>
+                <td style="position:sticky;left:48px;z-index:2;background:#fff;text-align:center;padding:8px 10px;border-right:2px solid #e0e8ec;font-weight:600;color:#1a2533;">2024-12</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">760.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">380.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">420.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">110.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">92.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">46.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">40.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">20.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">26.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">40.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">560.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">560.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">160.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">80.00</td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e0e8ec;font-variant-numeric:tabular-nums;">46.00</td>
+                <td style="text-align:right;padding:8px 10px;font-variant-numeric:tabular-nums;">26.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="tab-change">
+      <section class="card table-card">
+        <table class="timeline-table">
+          <thead>
+            <tr><th>异动类型</th><th>生效日期</th><th>变动内容</th><th>变动原因</th><th>操作人</th><th>状态</th><th class="col-action">操作</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="chg-type chg-job">部门调动</span></td>
+              <td>2025-05-01</td>
+              <td>采气工（生产指挥中心）→ 采气工（开发管理部）</td>
+              <td>项目需要</td>
+              <td>admin</td>
+              <td><span class="chg-status">已生效</span></td>
+              <td class="col-action"><a class="btn link" href="javascript:void(0);" onclick="showChangeDetail('dept')">查看详情</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="notice" style="margin-top:12px;">异动记录由部门调动、离职、退休操作自动生成，作为人员管理的依据。</div>
+      </section>
+    </div>
+
+  <!-- 部门调动弹框 -->
+  <div class="modal-mask" id="deptTransferModal">
+    <div class="modal-box">
+      <h3>部门调动 · 周一</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>WB2025001</strong></span>
+        <span>当前服务三级单位：<strong>开发管理部</strong></span>
+        <span>当前岗位：<strong>采气工</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 新服务三级单位</span></label>
+          <select id="dtNewDept" onchange="fillDtPos()">
+            <option value="">请选择</option>
+            <option>办公室（党委办公室）</option>
+            <option>计划经营部</option>
+            <option>财务资产部</option>
+            <option>人力资源部（党委组织部）</option>
+            <option>质量安全环保部</option>
+            <option>地质工程部</option>
+            <option>地面建设工程部</option>
+            <option>党群工作部（纪委办公室）</option>
+            <option>生产指挥中心</option>
+          </select>
+        </div>
+        <div><label><span class="label-text"><span class="required">*</span> 新岗位</span></label>
+          <select id="dtNewPos"><option value="">请先选择新服务三级单位</option></select>
+        </div>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 生效日期</span></label><input type="date"></div>
+        <div><label>变动原因</label><textarea placeholder="请输入变动原因"></textarea></div>
+      </div>
+      <div class="mrow"><label>变动文件</label><input type="file"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('deptTransferModal')">取消</button>
+        <button class="btn primary" type="button" onclick="closeModal('deptTransferModal')">确认调动</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 退休弹框 -->
+  <div class="modal-mask" id="retireModal">
+    <div class="modal-box">
+      <h3>办理退休 · 周一</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>WB2025001</strong></span>
+        <span>服务三级单位：<strong>开发管理部</strong></span>
+        <span>当前岗位：<strong>采气工</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 退休日期</span></label><input type="date"></div>
+        <div><label>工作交接人</label>
+          <select><option value="">请选择同部门人员</option><option>吴二（开发管理部）</option><option>郑三（开发管理部）</option></select>
+        </div>
+      </div>
+      <div class="mrow"><label>退休原因</label><textarea placeholder="请输入退休原因"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('retireModal')">取消</button>
+        <button class="btn primary" type="button" onclick="closeModal('retireModal')">确认退休</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 办理离职弹框 -->
+  <div class="modal-mask" id="leaveModal">
+    <div class="modal-box">
+      <h3>办理离职 · 周一</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>WB2025001</strong></span>
+        <span>所属单位：<strong>成都项目部</strong></span>
+        <span>岗位：<strong>采气工</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 离职日期</span></label><input type="date"></div>
+        <div><label><span class="label-text"><span class="required">*</span> 离职类型</span></label>
+          <select><option value="">请选择</option><option>主动离职</option><option>辞退离职</option><option>退休离职</option></select>
+        </div>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 离职原因</span></label><input placeholder="请输入"></div>
+        <div><label>工作交接人</label><select><option value="">请选择同部门人员</option><option>李四（研发部）</option><option>王五（研发部）</option></select></div>
+      </div>
+      <div class="mrow"><label>停缴日期</label><input type="date"></div>
+      <div class="mrow"><label>附件</label><input type="file"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('leaveModal')">取消</button>
+        <button class="btn danger" type="button" onclick="closeModal('leaveModal')">确认离职</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 异动详情弹框 -->
+  <div class="modal-mask" id="changeDetailModal">
+    <div class="modal-box">
+      <h3 id="changeDetailTitle">异动详情</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>WB2025001</strong></span>
+        <span>姓名：<strong>周一</strong></span>
+        <span>服务三级单位：<strong>开发管理部</strong></span>
+      </div>
+      <div id="changeDetailContent"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('changeDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script>
+  // ── 部门调动：新服务三级单位→新岗位联动 ──
+  var deptPositions = {
+    '办公室（党委办公室）': ['机关事务','机要文书','党务秘书','档案管理','综合管理'],
+    '计划经营部': ['统计与销售管理','法律事务管理','规划、计划管理','合同管理'],
+    '财务资产部': ['项目核算','总账','材料核算、报销审核','成本核算','出纳'],
+    '人力资源部（党委组织部）': ['劳动组织、社保公积金管理','培训、员工管理','党组织建设'],
+    '质量安全环保部': ['职业健康、HSE体系管理','质量计量管理','工业安全管理'],
+    '地质工程部': ['综合及投资结算管理','矿权资源管理','科技管理','钻完井工程管理'],
+    '地面建设工程部': ['综合管理','钻前工程','合同、合规','地面工程','结算、审计'],
+    '党群工作部（纪委办公室）': ['新闻宣传、综合管理','纪检管理','新闻宣传'],
+    '生产指挥中心': ['综合管理','公共关系协调','集输工艺管理（场站）','信息技术管理']
+  };
+  function fillDtPos() {
+    var dept = document.getElementById('dtNewDept').value;
+    var sel = document.getElementById('dtNewPos');
+    sel.innerHTML = '<option value="">请选择新岗位</option>';
+    (deptPositions[dept] || []).forEach(function(p) {
+      var o = document.createElement('option'); o.textContent = p; sel.appendChild(o);
+    });
+  }
+  // 所有行的 data-month 格式为 "YYYY-MM"
+  var insData = {
+    '2026': ['2026-06','2026-05','2026-04'],
+    '2025': ['2025-12'],
+    '2024': ['2024-12']
+  };
+
+  function onInsYearChange() {
+    var year = document.getElementById('insYearSel').value;
+    var monthWrap = document.getElementById('insMonthWrap');
+    var monthSel = document.getElementById('insMonthSel');
+
+    if (year === 'all') {
+      // 全部年份：隐藏月份下拉，直接显示所有行
+      monthWrap.style.display = 'none';
+      var rows = document.querySelectorAll('#insTable tbody tr');
+      rows.forEach(function(tr) { tr.style.display = ''; });
+      return;
+    }
+
+    // 特定年份：显示月份下拉，重建月份选项
+    monthWrap.style.display = '';
+    monthSel.innerHTML = '<option value="all">全部月份</option>';
+    (insData[year] || []).forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m.slice(5) + ' 月';
+      monthSel.appendChild(opt);
+    });
+    filterInsurance();
+  }
+
+  function filterInsurance() {
+    var year = document.getElementById('insYearSel').value;
+    var month = document.getElementById('insMonthSel').value;
+    if (year === 'all') return; // 全部年份由 onInsYearChange 统一处理
+    var rows = document.querySelectorAll('#insTable tbody tr');
+    rows.forEach(function(tr) {
+      var rowMonth = tr.getAttribute('data-month') || '';
+      var rowYear = rowMonth.slice(0, 4);
+      var visible = (rowYear === year) && (month === 'all' || rowMonth === month);
+      tr.style.display = visible ? '' : 'none';
+    });
+  }
+
+  // 初始化：显示2026年全部
+  document.addEventListener('DOMContentLoaded', function() {
+    onInsYearChange();
+  });
+
+  // 异动详情查看
+  function showChangeDetail(type) {
+    var title = '', content = '';
+    if (type === 'dept') {
+      title = '部门调动详情';
+      content = '<div class="readonly-grid" style="grid-template-columns:auto 1fr;gap:10px 16px;">' +
+        '<span style="color:#8fa3b0;">异动类型</span><strong>部门调动</strong>' +
+        '<span style="color:#8fa3b0;">生效日期</span><strong>2025-05-01</strong>' +
+        '<span style="color:#8fa3b0;">原服务三级单位</span><strong>生产指挥中心</strong>' +
+        '<span style="color:#8fa3b0;">原岗位</span><strong>采气工</strong>' +
+        '<span style="color:#8fa3b0;">新服务三级单位</span><strong>开发管理部</strong>' +
+        '<span style="color:#8fa3b0;">新岗位</span><strong>采气工</strong>' +
+        '<span style="color:#8fa3b0;">变动原因</span><strong>项目需要</strong>' +
+        '<span style="color:#8fa3b0;">操作人</span><strong>admin</strong>' +
+        '<span style="color:#8fa3b0;">操作时间</span><strong>2025-04-20 11:30</strong>' +
+        '</div>';
+    }
+    document.getElementById('changeDetailTitle').textContent = title;
+    document.getElementById('changeDetailContent').innerHTML = content;
+    openModal('changeDetailModal');
+  }
+
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+  document.querySelectorAll('.modal-mask').forEach(function(m){
+    m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+  });
+  </script>
+</body>
+</html>

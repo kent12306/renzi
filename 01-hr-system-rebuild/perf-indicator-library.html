@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>考核指标库</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 主Tab */
+    .main-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:0;}
+    .main-tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .main-tab:hover{color:#00AAB7;}
+    .main-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    /* 年度方案选择条 */
+    .year-plan-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #eef3f6;margin-bottom:14px;}
+    .year-plan-bar .left{display:flex;align-items:center;gap:12px;}
+    .plan-status{display:flex;align-items:center;gap:8px;font-size:13px;color:#5f7080;}
+    .plan-status .status{font-size:12px;}
+
+    /* 左右分栏布局 */
+    .two-col{display:grid;grid-template-columns:280px 1fr;gap:16px;min-height:480px;}
+    .left-tree{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:14px;overflow-y:auto;max-height:calc(100vh - 320px);}
+    .right-content{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px 18px;overflow:hidden;}
+
+    /* 树形节点 */
+    .tree-group{margin-bottom:6px;}
+    .tree-l1{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:#1d2733;transition:background .15s;}
+    .tree-l1:hover{background:#f5f7fa;}
+    .tree-l1.active{background:#e6f7f9;color:#00AAB7;}
+    .tree-l1 .arrow{font-size:10px;color:#8fa3b0;transition:transform .15s;margin-right:6px;}
+    .tree-l1.expanded .arrow{transform:rotate(90deg);}
+    .tree-l1-ops{display:none;gap:4px;}
+    .tree-l1:hover .tree-l1-ops{display:flex;}
+    .tree-l1-ops a{font-size:12px;color:#8fa3b0;padding:2px 4px;}
+    .tree-l1-ops a:hover{color:#00AAB7;}
+    .tree-l1-ops a.danger:hover{color:#d14343;}
+    .tree-l2-list{display:none;padding-left:20px;margin-top:4px;}
+    .tree-group.expanded .tree-l2-list{display:block;}
+    .tree-l2{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:#475569;transition:background .15s;}
+    .tree-l2:hover{background:#f5f7fa;}
+    .tree-l2.active{background:#e6f7f9;color:#00AAB7;font-weight:500;}
+    .tree-l2-ops{display:none;gap:4px;}
+    .tree-l2:hover .tree-l2-ops{display:flex;}
+    .tree-l2-ops a{font-size:12px;color:#8fa3b0;padding:2px 4px;}
+    .tree-l2-ops a:hover{color:#00AAB7;}
+    .tree-l2-ops a.danger:hover{color:#d14343;}
+    .tree-add{display:flex;align-items:center;gap:4px;padding:8px 10px;font-size:13px;color:#00AAB7;cursor:pointer;border-radius:6px;margin-top:8px;}
+    .tree-add:hover{background:#e6f7f9;}
+
+    /* 右侧头部 */
+    .content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #eef3f6;}
+    .breadcrumb-path{font-size:14px;color:#1d2733;}
+    .breadcrumb-path span{color:#8fa3b0;}
+    .view-toggle{display:flex;gap:0;border:1px solid #dfe5ec;border-radius:6px;overflow:hidden;}
+    .view-btn{padding:6px 12px;font-size:13px;color:#5f7080;background:#fff;border:none;cursor:pointer;transition:all .15s;}
+    .view-btn:not(:last-child){border-right:1px solid #dfe5ec;}
+    .view-btn:hover{background:#f5f7fa;}
+    .view-btn.active{background:#00AAB7;color:#fff;}
+    .content-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+    .content-toolbar .left{display:flex;gap:10px;align-items:center;}
+
+    /* 全貌视图表格 */
+    .overview-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .overview-table th,.overview-table td{border:1px solid #dfe5ec;padding:9px 12px;text-align:left;vertical-align:middle;}
+    .overview-table th{background:#f0f5f7;color:#3d5266;font-weight:600;}
+    .overview-table .l1-cell{background:#f8fafc;font-weight:600;color:#1d2733;}
+    .overview-table .l2-cell{background:#fafbfc;color:#475569;}
+
+    /* 过程考核子Tab */
+    .sub-tabs{display:flex;gap:8px;margin-bottom:14px;}
+    .sub-tab{padding:8px 16px;font-size:13px;color:#5f7080;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:6px;cursor:pointer;transition:all .15s;}
+    .sub-tab:hover{background:#e6f7f9;color:#00AAB7;}
+    .sub-tab.active{background:#00AAB7;color:#fff;border-color:#00AAB7;}
+    .sub-panel{display:none;}
+    .sub-panel.active{display:block;}
+
+    /* 权重配置条 */
+    .weight-bar{display:flex;align-items:center;gap:16px;padding:12px 16px;background:#f8fafc;border:1px solid #eef3f6;border-radius:8px;margin-bottom:14px;font-size:13px;color:#5f7080;}
+    .weight-bar strong{color:#1d2733;}
+    .weight-bar .edit-link{color:#00AAB7;cursor:pointer;margin-left:8px;}
+    .weight-bar .edit-link:hover{text-decoration:underline;}
+
+    /* 部门选择Tab */
+    .dept-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+    .dept-tab{padding:6px 12px;font-size:12px;color:#5f7080;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:6px;cursor:pointer;transition:all .15s;}
+    .dept-tab:hover{background:#e6f7f9;color:#00AAB7;border-color:#b3e6ea;}
+    .dept-tab.active{background:#00AAB7;color:#fff;border-color:#00AAB7;}
+
+    /* 弹框样式 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 18px;}
+    .mrow{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;font-size:14px;color:#5f7080;}
+    .mrow input,.mrow select,.mrow textarea{border:1px solid #dfe5ec;border-radius:6px;padding:8px 10px;font:inherit;box-sizing:border-box;width:100%;}
+    .mrow input,.mrow select{height:36px;}
+    .mrow textarea{min-height:70px;resize:vertical;}
+    .mrow input:focus,.mrow select:focus,.mrow textarea:focus{border-color:#00AAB7;outline:none;box-shadow:0 0 0 2px rgba(0,170,183,0.15);}
+    .label-text{font-size:14px;color:#5f7080;}
+    .required{color:#d14343;margin-right:2px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+
+    /* 开关组件 */
+    .switch{position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle;}
+    .switch input{opacity:0;width:0;height:0;}
+    .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ccd5dc;border-radius:22px;transition:all .2s;}
+    .switch .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+    .switch input:checked+.slider{background:#00AAB7;}
+    .switch input:checked+.slider::before{transform:translateX(18px);}
+    .switch input:focus+.slider{box-shadow:0 0 0 2px rgba(0,170,183,.2);}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="考核指标库"
+  data-desc="管理所有考核指标方案，支持年度版本管理、分类维护和指标复制。">
+
+  <!-- 主 Tab：三个 -->
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="personal">个人业绩合同</div>
+    <div class="main-tab" data-tab="dept">部门业绩合同</div>
+    <div class="main-tab" data-tab="process">过程考核</div>
+  </div>
+
+  <!-- ==================== 个人业绩合同 Tab ==================== -->
+  <div class="tab-panel active" id="panel-personal">
+    <!-- 年度方案选择 -->
+    <div class="year-plan-bar">
+      <div class="left">
+        <label class="field">年度方案：<select style="width:200px;">
+          <option value="2026" selected>2026年度方案（当前）</option>
+          <option value="2025">2025年度方案</option>
+          <option value="2024">2024年度方案</option>
+        </select></label>
+        <a class="btn" onclick="showNewPlanModal('personal')">+ 新建年度方案</a>
+      </div>
+      <div class="plan-status">
+        <span>方案状态：</span><span class="status green">已发布</span>
+        <span style="margin-left:12px;">生效日期：2026-01-01</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- 左侧树 -->
+      <div class="left-tree">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #eef3f6;">
+          <span style="font-size:13px;font-weight:600;color:#5f7080;">指标类别</span>
+          <a class="btn link" onclick="showAddL1Modal()" style="font-size:12px;">+ 新增一级类别</a>
+        </div>
+        <div class="tree-group expanded" data-l1="kpi">
+          <div class="tree-l1 expanded" onclick="toggleL1(this)">
+            <span><span class="arrow">▶</span>一、关键业绩指标</span>
+            <span class="tree-l1-ops">
+              <a onclick="event.stopPropagation();showEditL1Modal('一、关键业绩指标')">编辑</a>
+              <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+            </span>
+          </div>
+          <div class="tree-l2-list">
+            <div class="tree-l2 active" onclick="selectL2(this)" data-l2="dept-kpi">
+              <span>部门指标，结合岗位制定</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();showEditL2Modal('部门指标，结合岗位制定')">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-add" onclick="showAddL2Modal('一、关键业绩指标')">+ 新增二级类别</div>
+          </div>
+        </div>
+        <div class="tree-group expanded" data-l1="process">
+          <div class="tree-l1 expanded" onclick="toggleL1(this)">
+            <span><span class="arrow">▶</span>二、过程考核指标</span>
+            <span class="tree-l1-ops">
+              <a onclick="event.stopPropagation();showEditL1Modal('二、过程考核指标')">编辑</a>
+              <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+            </span>
+          </div>
+          <div class="tree-l2-list">
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="target">
+              <span>(一) 工作目标评价</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();showEditL2Modal('(一) 工作目标评价')">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="behavior">
+              <span>(二) 工作行为评价</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();showEditL2Modal('(二) 工作行为评价')">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-add" onclick="showAddL2Modal('二、过程考核指标')">+ 新增二级类别</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧内容区 -->
+      <div class="right-content">
+        <div class="content-header">
+          <div class="breadcrumb-path"><span>一、关键业绩指标</span> / 部门指标，结合岗位制定</div>
+          <div class="view-toggle">
+            <button class="view-btn active" onclick="switchView('tree','personal')">树形视图</button>
+            <button class="view-btn" onclick="switchView('overview','personal')">全貌视图</button>
+          </div>
+        </div>
+        <!-- 树形视图 -->
+        <div id="treeView-personal">
+          <div class="content-toolbar">
+            <div class="left">
+              <div class="field"><span>状态</span><select style="width:100px;"><option value="">全部</option><option>启用</option><option>停用</option></select></div>
+              <div class="field"><span>指标名称</span><input placeholder="请输入" style="width:140px;"></div>
+              <button class="btn">查询</button><button class="btn">重置</button>
+            </div>
+            <div><a class="btn primary" onclick="showAddIndicatorModal()">新增指标</a></div>
+          </div>
+          <section class="card table-card">
+            <table>
+              <thead><tr>
+                <th class="col-seq">序号</th><th>指标名称</th><th>计量单位</th><th style="width:80px;">权重</th><th style="width:80px;">目标值</th><th class="col-status">状态</th><th class="col-action">操作</th>
+              </tr></thead>
+              <tbody>
+                <tr><td class="col-seq">1</td><td>培训管理规范性及计划完成率</td><td>%</td><td>10%</td><td>100</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link" onclick="showEditIndicatorModal()">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+                <tr><td class="col-seq">2</td><td>部门制度、体系建设规范性</td><td>%</td><td>5%</td><td>100</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link" onclick="showEditIndicatorModal()">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+                <tr><td class="col-seq">3</td><td>人工成本管控</td><td>万元</td><td>5%</td><td>—</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link" onclick="showEditIndicatorModal()">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+                <tr><td class="col-seq">4</td><td>现场人员岗位设置及管理有效性</td><td>%</td><td>5%</td><td>100</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link" onclick="showEditIndicatorModal()">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+        <!-- 全貌视图 -->
+        <div id="overviewView-personal" style="display:none;">
+          <div class="content-toolbar">
+            <div class="left"><span style="font-size:13px;color:#8fa3b0;">全貌视图为只读模式，如需编辑请切换至树形视图</span></div>
+            <div><a class="btn">导出Excel</a></div>
+          </div>
+          <div class="table-scroll">
+            <table class="overview-table">
+              <thead><tr><th style="width:140px;">一级类别</th><th style="width:160px;">二级类别</th><th>指标名称</th><th style="width:70px;">计量单位</th><th style="width:70px;">权重</th><th style="width:70px;">目标值</th></tr></thead>
+              <tbody>
+                <tr><td class="l1-cell" rowspan="4">一、关键业绩指标</td><td class="l2-cell" rowspan="4">部门指标，结合岗位制定</td><td>培训管理规范性及计划完成率</td><td>%</td><td>10%</td><td>100</td></tr>
+                <tr><td>部门制度、体系建设规范性</td><td>%</td><td>5%</td><td>100</td></tr>
+                <tr><td>人工成本管控</td><td>万元</td><td>5%</td><td>—</td></tr>
+                <tr><td>现场人员岗位设置及管理有效性</td><td>%</td><td>5%</td><td>100</td></tr>
+                <tr><td class="l1-cell" rowspan="11">二、过程考核指标</td><td class="l2-cell" rowspan="5">(一) 工作目标评价</td><td>机构职责及编制定员合规管理符合率</td><td>%</td><td>5%</td><td>100</td></tr>
+                <tr><td>降本提质增效管理目标</td><td>%</td><td>5%</td><td>—</td></tr>
+                <tr><td>社保、公积金工作准确率、及时率</td><td>%</td><td>3%</td><td>100</td></tr>
+                <tr><td>QHSE管理绩效考核得分</td><td>分</td><td>5%</td><td>100</td></tr>
+                <tr><td>业务外包管理规范性</td><td>%</td><td>10%</td><td>100</td></tr>
+                <tr><td class="l2-cell" rowspan="6">(二) 工作行为评价</td><td>遵守制度</td><td>—</td><td>10%</td><td>—</td></tr>
+                <tr><td>团队建设</td><td>—</td><td>10%</td><td>—</td></tr>
+                <tr><td>学习与创新</td><td>—</td><td>5%</td><td>—</td></tr>
+                <tr><td>工作能力</td><td>—</td><td>10%</td><td>—</td></tr>
+                <tr><td>职业道德</td><td>—</td><td>5%</td><td>—</td></tr>
+                <tr><td>工作态度</td><td>—</td><td>10%</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 部门业绩合同 Tab ==================== -->
+  <div class="tab-panel" id="panel-dept">
+    <div class="year-plan-bar">
+      <div class="left">
+        <label class="field">年度方案：<select style="width:200px;">
+          <option value="2026" selected>2026年度方案（当前）</option>
+          <option value="2025">2025年度方案</option>
+          <option value="2024">2024年度方案</option>
+        </select></label>
+        <a class="btn" onclick="showNewPlanModal('dept')">+ 新建年度方案</a>
+      </div>
+      <div class="plan-status">
+        <span>方案状态：</span><span class="status green">已发布</span>
+        <span style="margin-left:12px;">生效日期：2026-01-01</span>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="left-tree">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #eef3f6;">
+          <span style="font-size:13px;font-weight:600;color:#5f7080;">指标类别</span>
+          <a class="btn link" onclick="showAddL1Modal()" style="font-size:12px;">+ 新增一级类别</a>
+        </div>
+        <div class="tree-group expanded" data-l1="kpi">
+          <div class="tree-l1 expanded" onclick="toggleL1(this)">
+            <span><span class="arrow">▶</span>一、关键业绩指标</span>
+            <span class="tree-l1-ops"><a onclick="event.stopPropagation();">编辑</a><a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a></span>
+          </div>
+          <div class="tree-l2-list">
+            <div class="tree-l2 active" onclick="selectL2(this)" data-l2="benefit">
+              <span>(一) 效益类</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="operation">
+              <span>(二) 营运类</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="party">
+              <span>(三) 党建类</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="constraint">
+              <span>(四) 约束类和嘉奖类</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-add" onclick="showAddL2Modal('一、关键业绩指标')">+ 新增二级类别</div>
+          </div>
+        </div>
+        <div class="tree-group expanded" data-l1="process">
+          <div class="tree-l1 expanded" onclick="toggleL1(this)">
+            <span><span class="arrow">▶</span>二、过程考核</span>
+            <span class="tree-l1-ops"><a onclick="event.stopPropagation();">编辑</a><a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a></span>
+          </div>
+          <div class="tree-l2-list">
+            <div class="tree-l2" onclick="selectL2(this)" data-l2="process-eval">
+              <span>过程考核评价</span>
+              <span class="tree-l2-ops">
+                <a onclick="event.stopPropagation();">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();" href="./confirm-delete.html">删除</a>
+              </span>
+            </div>
+            <div class="tree-add" onclick="showAddL2Modal('二、过程考核')">+ 新增二级类别</div>
+          </div>
+        </div>
+      </div>
+      <div class="right-content">
+        <div class="content-header">
+          <div class="breadcrumb-path"><span>一、关键业绩指标</span> / (一) 效益类</div>
+          <div class="view-toggle">
+            <button class="view-btn active" onclick="switchView('tree','dept')">树形视图</button>
+            <button class="view-btn" onclick="switchView('overview','dept')">全貌视图</button>
+          </div>
+        </div>
+        <!-- 树形视图 -->
+        <div id="treeView-dept">
+          <div class="content-toolbar">
+            <div class="left">
+              <div class="field"><span>状态</span><select style="width:100px;"><option value="">全部</option><option>启用</option><option>停用</option></select></div>
+              <div class="field"><span>指标名称</span><input placeholder="请输入" style="width:140px;"></div>
+              <button class="btn">查询</button><button class="btn">重置</button>
+            </div>
+            <div><a class="btn primary" onclick="showAddIndicatorModal()">新增指标</a></div>
+          </div>
+          <section class="card table-card">
+            <table>
+              <thead><tr><th class="col-seq">序号</th><th>指标名称</th><th>计量单位</th><th style="width:80px;">权重</th><th style="width:100px;">预算目标值</th><th style="width:90px;">完成值</th><th>备注</th><th class="col-status">状态</th><th class="col-action">操作</th></tr></thead>
+              <tbody>
+                <tr><td class="col-seq">1</td><td>净利润</td><td>万元</td><td>5%</td><td>84,127</td><td>—</td><td>—</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+                <tr><td class="col-seq">2</td><td>油气商品量</td><td>亿立方米</td><td>5%</td><td>44.3</td><td>—</td><td>—</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+        <!-- 全貌视图 -->
+        <div id="overviewView-dept" style="display:none;">
+          <div class="content-toolbar">
+            <div class="left"><span style="font-size:13px;color:#8fa3b0;">全貌视图为只读模式，如需编辑请切换至树形视图</span></div>
+            <div><a class="btn">导出Excel</a></div>
+          </div>
+          <div class="table-scroll">
+            <table class="overview-table">
+              <thead><tr><th style="width:140px;">一级类别</th><th style="width:140px;">二级类别</th><th>指标名称</th><th style="width:70px;">计量单位</th><th style="width:60px;">权重</th><th style="width:90px;">预算目标值</th><th style="width:80px;">完成值</th></tr></thead>
+              <tbody>
+                <!-- 一、关键业绩指标 - 效益类 -->
+                <tr><td class="l1-cell" rowspan="16">一、关键业绩指标</td><td class="l2-cell" rowspan="2">(一) 效益类</td><td>净利润</td><td>万元</td><td>5%</td><td>84,127</td><td>—</td></tr>
+                <tr><td>油气商品量</td><td>亿立方米</td><td>5%</td><td>44.3</td><td>—</td></tr>
+                <!-- 营运类 -->
+                <tr><td class="l2-cell" rowspan="8">(二) 营运类</td><td>绩效考核覆盖率</td><td>%</td><td>5%</td><td>100</td><td>—</td></tr>
+                <tr><td>人工成本控制</td><td>万元</td><td>10%</td><td>按分公司相关文件执行</td><td>—</td></tr>
+                <tr><td>重点工作完成评价（多维度考核）</td><td>分</td><td>15%</td><td>—</td><td>—</td></tr>
+                <tr><td>培训计划完成率</td><td>%</td><td>10%</td><td>100</td><td>—</td></tr>
+                <tr><td>全员劳动生产率</td><td>万元/人</td><td>5%</td><td>4123</td><td>—</td></tr>
+                <tr><td>合规性管理</td><td>%</td><td>5%</td><td>100</td><td>—</td></tr>
+                <tr><td>QHSE管理绩效考核</td><td>分</td><td>10%</td><td>100（按部门QHSE管理绩效考核指标执行）</td><td>—</td></tr>
+                <tr><td>领导班子建设</td><td>分</td><td>5%</td><td>90</td><td>—</td></tr>
+                <!-- 党建类 -->
+                <tr><td class="l2-cell" rowspan="2">(三) 党建类</td><td>党建工作评价</td><td>%</td><td>15%</td><td>95</td><td>—</td></tr>
+                <tr><td>人才强企工程</td><td>%</td><td>10%</td><td>100</td><td>—</td></tr>
+                <!-- 约束类和嘉奖类 -->
+                <tr><td class="l2-cell" rowspan="4">(四) 约束类和嘉奖类</td><td>发生安全环保责任事故（包括承包商事故）、党风廉政建设问题的，分别按照《QHSE责任书》、《党风廉政建设责任书》规定进行考核</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr><td>油气田开发管理（其中：天然气商品率96.4%）</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr><td>约束类扣分项</td><td>—</td><td>—</td><td>分别扣业绩分0.1~5分</td><td>—</td></tr>
+                <tr><td>嘉奖类加分项</td><td>—</td><td>—</td><td>奖励综合业绩分0.1~1分，以上累计最多奖励5分</td><td>—</td></tr>
+                <!-- 二、过程考核 -->
+                <tr><td class="l1-cell" rowspan="1">二、过程考核</td><td class="l2-cell" rowspan="1">过程考核评价</td><td>过程考核分年度过程考核和季度过程考核；年度考核采用公司领导和部室两级无记名评价，公司领导权重为60%，部室权重为40%。季度见考核评价表）</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 过程考核 Tab（合并后） ==================== -->
+  <div class="tab-panel" id="panel-process">
+    <!-- 年度方案选择 -->
+    <div class="year-plan-bar">
+      <div class="left">
+        <label class="field">年度方案：<select style="width:200px;">
+          <option value="2026" selected>2026年度方案（当前）</option>
+          <option value="2025">2025年度方案</option>
+        </select></label>
+        <a class="btn" onclick="showNewPlanModal('process')">+ 新建年度方案</a>
+      </div>
+      <div class="plan-status">
+        <span>方案状态：</span><span class="status green">已发布</span>
+        <span style="margin-left:12px;">生效日期：2026-01-01</span>
+      </div>
+    </div>
+
+    <!-- 权重配置条 -->
+    <div class="weight-bar">
+      <span>过程考核权重配比：</span>
+      <span><strong>部门互评 30%</strong></span>
+      <span>/</span>
+      <span><strong>领导评价 70%</strong></span>
+      <a class="edit-link" onclick="showWeightConfigModal()">配置权重</a>
+    </div>
+
+    <!-- 子Tab：部门互评 / 领导评价 -->
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="mutual" onclick="switchSubTab(this,'mutual')">部门互评细则</div>
+      <div class="sub-tab" data-subtab="leader" onclick="switchSubTab(this,'leader')">领导评价维度</div>
+    </div>
+
+    <!-- 子Panel：部门互评细则 -->
+    <div class="sub-panel active" id="subpanel-mutual">
+      <!-- 部门选择Tab -->
+      <div class="dept-tabs">
+        <div class="dept-tab active">办公室（党委办公室）</div>
+        <div class="dept-tab">计划经营部</div>
+        <div class="dept-tab">财务资产部</div>
+        <div class="dept-tab">人力资源部</div>
+        <div class="dept-tab">质量安全环保部</div>
+        <div class="dept-tab">开发管理部</div>
+        <div class="dept-tab">地质工程部</div>
+        <div class="dept-tab">地面建设工程部</div>
+        <div class="dept-tab">党群工作部</div>
+        <div class="dept-tab">生产指挥中心</div>
+      </div>
+
+      <div class="content-toolbar">
+        <div class="left">
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#5f7080;">
+            <span>当前版本</span>
+            <select style="width:200px;">
+              <option>V3（2026-06-01 生效）</option>
+              <option>V2（2026-01-01 生效）</option>
+              <option>V1（2025-07-01 生效）</option>
+            </select>
+            <a class="btn link" onclick="showVersionCompare()">版本对比</a>
+          </div>
+        </div>
+        <div><a class="btn primary" onclick="showAddRuleModal()">新增细则</a></div>
+      </div>
+
+      <section class="card table-card">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th class="col-seq">序号</th>
+              <th>考核内容（大类）</th>
+              <th>考核内容（小项）</th>
+              <th style="width:60px;">权重</th>
+              <th style="min-width:200px;">考核标准及要求</th>
+              <th style="min-width:180px;">被考核部门</th>
+              <th>备注</th>
+              <th class="col-action">操作</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="col-seq">1</td><td>文件管理</td><td>公文处理及时性</td><td>10</td><td>收文24小时内完成签批流转，发文无差错</td><td>计划经营部、财务资产部、人力资源部</td><td>—</td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+              <tr><td class="col-seq">2</td><td>文件管理</td><td>档案归档规范性</td><td>10</td><td>档案分类准确，归档及时完整</td><td>全部部门</td><td>—</td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+              <tr><td class="col-seq">3</td><td>会务保障</td><td>会议组织质量</td><td>15</td><td>会议通知准确，资料准备齐全，会场布置到位</td><td>全部部门</td><td>—</td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+              <tr><td class="col-seq">4</td><td>综合协调</td><td>跨部门协调效率</td><td>15</td><td>协调事项48小时内反馈处理结果</td><td>计划经营部、开发管理部、地质工程部</td><td>—</td><td class="col-action"><a class="btn link">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- 子Panel：领导评价维度 -->
+    <div class="sub-panel" id="subpanel-leader">
+      <div class="notice" style="padding:12px 14px;border:1px solid #f4d898;background:#fff9e8;color:#75540d;border-radius:8px;margin-bottom:14px;">
+        领导评价共 6 个考核维度，所有部门统一使用。维度名称和权重可配置，权重之和必须等于 1。
+      </div>
+      <section class="card table-card">
+        <table>
+          <thead><tr>
+            <th class="col-seq">序号</th>
+            <th>考核维度</th>
+            <th style="width:100px;">权重</th>
+            <th>维度说明</th>
+            <th class="col-status">状态</th>
+            <th class="col-action">操作</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="col-seq">一</td><td>领导团队管理</td><td>0.20</td><td>团队建设、人员培养、凝聚力</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+            <tr><td class="col-seq">二</td><td>业务能力及综合素质</td><td>0.20</td><td>专业水平、学习能力、综合素养</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+            <tr><td class="col-seq">三</td><td>工作量及工作难度</td><td>0.20</td><td>承担工作量、任务复杂度</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+            <tr><td class="col-seq">四</td><td>工作业绩</td><td>0.20</td><td>目标完成情况、工作成效</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+            <tr><td class="col-seq">五</td><td>党风廉政</td><td>0.10</td><td>廉洁自律、作风建设</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+            <tr><td class="col-seq">六</td><td>支部及群团建设</td><td>0.10</td><td>党建工作、群团活动</td><td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td class="col-action"><a class="btn link">编辑</a></td></tr>s green">启用</span></td><td class="col-action"><a class="btn link">编辑</a></td></tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc;font-weight:600;">
+              <td colspan="2" style="text-align:right;">权重合计</td>
+              <td>1.00</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <!-- ==================== 弹框区域 ==================== -->
+
+  <!-- 新建年度方案弹框 -->
+  <div class="modal-mask" id="newPlanModal">
+    <div class="modal-box" style="width:480px;">
+      <h3>新建年度方案</h3>
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:6px;font-size:14px;color:#5f7080;"><span style="color:#d14343;margin-right:2px;">*</span>年度</div>
+        <select style="width:120px;height:36px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font-size:14px;">
+          <option>2027</option>
+          <option>2028</option>
+        </select>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:6px;font-size:14px;color:#5f7080;"><span style="color:#d14343;margin-right:2px;">*</span>初始数据</div>
+        <div style="padding:14px;background:#f8fafc;border:1px solid #eef3f6;border-radius:6px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#1d2733;cursor:pointer;margin-bottom:10px;">
+            <input type="radio" name="initData" value="empty" style="width:16px;height:16px;margin:0;"> 从空白开始
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#1d2733;cursor:pointer;margin-bottom:8px;">
+            <input type="radio" name="initData" value="copy" checked style="width:16px;height:16px;margin:0;"> 复制已有方案
+          </label>
+          <div style="margin-left:24px;">
+            <select style="width:180px;height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font-size:14px;">
+              <option>2026年度方案</option>
+              <option>2025年度方案</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:6px;font-size:14px;color:#5f7080;"><span style="color:#d14343;margin-right:2px;">*</span>生效日期</div>
+        <input type="date" value="2027-01-01" style="width:160px;height:36px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font-size:14px;">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('newPlanModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('newPlanModal')">创建方案</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 权重配置弹框 -->
+  <div class="modal-mask" id="weightConfigModal">
+    <div class="modal-box" style="width:420px;">
+      <h3>过程考核权重配置</h3>
+      <div class="notice" style="padding:10px 12px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:6px;margin-bottom:14px;font-size:13px;">
+        部门互评与领导评价权重之和必须等于 100%
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 部门互评权重</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" value="30" style="width:80px;"> <span>%</span>
+          </div>
+        </div>
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 领导评价权重</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" value="70" style="width:80px;"> <span>%</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('weightConfigModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('weightConfigModal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增一级类别弹框 -->
+  <div class="modal-mask" id="addL1Modal">
+    <div class="modal-box" style="width:480px;">
+      <h3>新增一级类别</h3>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 类别名称</span>
+        <input placeholder="如：一、关键业绩指标">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 排序序号</span>
+        <input type="number" placeholder="数字越小排序越靠前" style="width:150px;">
+      </div>
+      <div class="mrow">
+        <span>类别说明</span>
+        <textarea rows="2" placeholder="可选，对该类别的补充说明"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addL1Modal')">取消</button>
+        <button class="btn primary" onclick="closeModal('addL1Modal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑一级类别弹框 -->
+  <div class="modal-mask" id="editL1Modal">
+    <div class="modal-box" style="width:480px;">
+      <h3>编辑一级类别</h3>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 类别名称</span>
+        <input id="editL1Name" value="一、关键业绩指标">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 排序序号</span>
+        <input type="number" value="1" style="width:150px;">
+      </div>
+      <div class="mrow">
+        <span>类别说明</span>
+        <textarea rows="2" placeholder="可选"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editL1Modal')">取消</button>
+        <button class="btn primary" onclick="closeModal('editL1Modal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增二级类别弹框 -->
+  <div class="modal-mask" id="addL2Modal">
+    <div class="modal-box" style="width:480px;">
+      <h3>新增二级类别</h3>
+      <div class="mrow">
+        <span class="label-text">所属一级类别</span>
+        <input id="addL2Parent" readonly style="background:#f5f7fa;color:#64748b;">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 类别名称</span>
+        <input placeholder="如：(一) 工作目标评价">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 排序序号</span>
+        <input type="number" placeholder="数字越小排序越靠前" style="width:150px;">
+      </div>
+      <div class="mrow">
+        <span>类别说明</span>
+        <textarea rows="2" placeholder="可选"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addL2Modal')">取消</button>
+        <button class="btn primary" onclick="closeModal('addL2Modal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑二级类别弹框 -->
+  <div class="modal-mask" id="editL2Modal">
+    <div class="modal-box" style="width:480px;">
+      <h3>编辑二级类别</h3>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 类别名称</span>
+        <input id="editL2Name" value="">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 排序序号</span>
+        <input type="number" value="1" style="width:150px;">
+      </div>
+      <div class="mrow">
+        <span>类别说明</span>
+        <textarea rows="2" placeholder="可选"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editL2Modal')">取消</button>
+        <button class="btn primary" onclick="closeModal('editL2Modal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增指标弹框 -->
+  <div class="modal-mask" id="addIndicatorModal">
+    <div class="modal-box" style="width:560px;">
+      <h3>新增指标</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="mrow">
+          <span class="label-text">一级类别</span>
+          <input readonly value="一、关键业绩指标" style="background:#f5f7fa;color:#64748b;">
+        </div>
+        <div class="mrow">
+          <span class="label-text">二级类别</span>
+          <input readonly value="部门指标，结合岗位制定" style="background:#f5f7fa;color:#64748b;">
+        </div>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 指标名称</span>
+        <input placeholder="请输入指标名称">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 计量单位</span>
+          <input placeholder="如：%、分、万元">
+        </div>
+        <div class="mrow">
+          <span>默认权重</span>
+          <input type="text" placeholder="如：10%">
+        </div>
+        <div class="mrow">
+          <span>目标值</span>
+          <input type="text" placeholder="如：100">
+        </div>
+      </div>
+      <div class="mrow">
+        <span>指标说明</span>
+        <textarea rows="2" placeholder="请输入指标说明"></textarea>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 状态</span>
+        <select style="width:120px;"><option>启用</option><option>停用</option></select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addIndicatorModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('addIndicatorModal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑指标弹框 -->
+  <div class="modal-mask" id="editIndicatorModal">
+    <div class="modal-box" style="width:560px;">
+      <h3>编辑指标</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="mrow">
+          <span class="label-text">一级类别</span>
+          <input readonly value="一、关键业绩指标" style="background:#f5f7fa;color:#64748b;">
+        </div>
+        <div class="mrow">
+          <span class="label-text">二级类别</span>
+          <input readonly value="部门指标，结合岗位制定" style="background:#f5f7fa;color:#64748b;">
+        </div>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 指标名称</span>
+        <input value="培训管理规范性及计划完成率">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 计量单位</span>
+          <input value="%">
+        </div>
+        <div class="mrow">
+          <span>默认权重</span>
+          <input value="10%">
+        </div>
+        <div class="mrow">
+          <span>目标值</span>
+          <input value="100">
+        </div>
+      </div>
+      <div class="mrow">
+        <span>指标说明</span>
+        <textarea rows="2">培训计划执行率与规范性综合评价</textarea>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 状态</span>
+        <select style="width:120px;"><option selected>启用</option><option>停用</option></select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editIndicatorModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('editIndicatorModal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 版本对比弹框 -->
+  <div class="modal-mask" id="versionCompareModal">
+    <div class="modal-box" style="width:900px;max-width:96vw;">
+      <h3>版本对比</h3>
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div class="field"><span>对比版本</span>
+          <select style="width:200px;"><option>V2（2026-01-01 生效）</option><option>V1（2025-07-01 生效）</option></select>
+        </div>
+        <span style="line-height:34px;color:#5f7080;">与</span>
+        <div class="field"><span>当前版本</span>
+          <select style="width:200px;" disabled><option>V3（2026-06-01 生效）</option></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#5f7080;margin-bottom:8px;">V2 版本</div>
+          <section class="card" style="padding:12px;max-height:300px;overflow-y:auto;font-size:13px;">
+            <div style="padding:8px 0;border-bottom:1px solid #eef3f6;"><strong>文件管理 - 公文处理及时性</strong><br>权重：10 | 被考核：计划经营部、财务资产部</div>
+            <div style="padding:8px 0;border-bottom:1px solid #eef3f6;background:#fff0f0;"><strong style="color:#d14343;">【已删除】会务保障 - 资料准备</strong><br>权重：5 | 被考核：全部部门</div>
+          </section>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#5f7080;margin-bottom:8px;">V3 版本（当前）</div>
+          <section class="card" style="padding:12px;max-height:300px;overflow-y:auto;font-size:13px;">
+            <div style="padding:8px 0;border-bottom:1px solid #eef3f6;background:#e8f7ef;"><strong style="color:#137d52;">【已修改】文件管理 - 公文处理及时性</strong><br>权重：10 | 被考核：计划经营部、财务资产部、<span style="color:#00AAB7;">人力资源部</span></div>
+            <div style="padding:8px 0;border-bottom:1px solid #eef3f6;background:#e6f7f9;"><strong style="color:#00AAB7;">【新增】会务保障 - 会议组织质量</strong><br>权重：15 | 被考核：全部部门</div>
+          </section>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('versionCompareModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增细则弹框 -->
+  <div class="modal-mask" id="addRuleModal">
+    <div class="modal-box" style="width:600px;">
+      <h3>新增考核细则</h3>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 考核内容（大类）</span>
+        <select><option value="">请选择</option><option>文件管理</option><option>会务保障</option><option>综合协调</option><option>后勤保障</option><option>自定义...</option></select>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 考核内容（小项）</span>
+        <input placeholder="请输入考核小项名称">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 权重</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" placeholder="0~100" style="width:100px;">
+          <span style="color:#8fa3b0;font-size:12px;">所有小项权重之和应为 100</span>
+        </div>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 考核标准及要求</span>
+        <textarea rows="3" placeholder="请输入详细的评分标准"></textarea>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 被考核部门</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #eef3f6;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 办公室</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" checked> 计划经营部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" checked> 财务资产部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" checked> 人力资源部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 质量安全环保部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 开发管理部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 地质工程部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 地面建设工程部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 党群工作部</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox"> 生产指挥中心</label>
+        </div>
+      </div>
+      <div class="mrow">
+        <span>备注</span>
+        <input placeholder="可选">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addRuleModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('addRuleModal')">保存</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// 主 Tab 切换
+document.querySelectorAll('.main-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.main-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// 部门Tab切换
+document.querySelectorAll('.dept-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    var parent = tab.closest('.dept-tabs');
+    parent.querySelectorAll('.dept-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+  });
+});
+
+// 子Tab切换（过程考核）
+function switchSubTab(el, subtab){
+  document.querySelectorAll('.sub-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.sub-panel').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('subpanel-' + subtab).classList.add('active');
+}
+
+// 树形节点展开/折叠
+function toggleL1(el){
+  var group = el.closest('.tree-group');
+  group.classList.toggle('expanded');
+  el.classList.toggle('expanded');
+}
+
+// 选中二级类别
+function selectL2(el){
+  document.querySelectorAll('.tree-l2').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// 视图切换
+function switchView(view, panel){
+  var btns = document.querySelectorAll('#panel-' + panel + ' .view-btn');
+  btns.forEach(function(b){ b.classList.remove('active'); });
+  if(view === 'tree'){
+    btns[0].classList.add('active');
+    document.getElementById('treeView-' + panel).style.display = 'block';
+    document.getElementById('overviewView-' + panel).style.display = 'none';
+  } else {
+    btns[1].classList.add('active');
+    document.getElementById('treeView-' + panel).style.display = 'none';
+    document.getElementById('overviewView-' + panel).style.display = 'block';
+  }
+}
+
+// 弹框控制
+function showNewPlanModal(type){ document.getElementById('newPlanModal').classList.add('show'); }
+function showWeightConfigModal(){ document.getElementById('weightConfigModal').classList.add('show'); }
+function showAddL1Modal(){ document.getElementById('addL1Modal').classList.add('show'); }
+function showEditL1Modal(name){
+  document.getElementById('editL1Name').value = name;
+  document.getElementById('editL1Modal').classList.add('show');
+}
+function showAddL2Modal(parent){
+  document.getElementById('addL2Parent').value = parent;
+  document.getElementById('addL2Modal').classList.add('show');
+}
+function showEditL2Modal(name){
+  document.getElementById('editL2Name').value = name;
+  document.getElementById('editL2Modal').classList.add('show');
+}
+function showAddIndicatorModal(){ document.getElementById('addIndicatorModal').classList.add('show'); }
+function showEditIndicatorModal(){ document.getElementById('editIndicatorModal').classList.add('show'); }
+function showCopyModal(type){
+  var title = type === 'personal' ? '从部门业绩合同复制指标' : '从个人业绩合同复制指标';
+  document.getElementById('copyModalTitle').textContent = title;
+  document.getElementById('copyModal').classList.add('show');
+}
+function showVersionCompare(){ document.getElementById('versionCompareModal').classList.add('show'); }
+function showAddRuleModal(){ document.getElementById('addRuleModal').classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+// 点击遮罩关闭弹框
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target === m) m.classList.remove('show'); });
+});
+
+// 复制弹框全选
+var copyCheckAll = document.getElementById('copyCheckAll');
+if(copyCheckAll){
+  copyCheckAll.addEventListener('change', function(){
+    var checked = this.checked;
+    this.closest('table').querySelectorAll('tbody input[type=checkbox]').forEach(function(cb){ cb.checked = checked; });
+  });
+}
+</script>
+</body>
+</html>

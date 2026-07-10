@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>编辑蜀南管理人员</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 自定义输入框联动 */
+    .custom-inline { display:flex; gap:8px; align-items:center; }
+    .custom-inline select { flex:1; }
+    .custom-inline input { flex:1; }
+  </style>
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="编辑蜀南管理人员" data-desc="修改蜀南管理人员基础信息，已带入历史数据。"
+    data-actions='<a class="btn" href="./shunan-mgmt-employees.html">返回列表</a>'>
+    <section class="card form-page">
+
+      <h3 class="form-section-title">基本信息</h3>
+      <div class="form-grid employee-grid">
+        <label><span class="label-text"><span class="required">*</span> 组织单位</span>
+          <select id="orgUnit">
+            <option value="">请选择组织单位</option>
+          </select>
+        </label>
+        <label>姓名 <input placeholder="请输入"></label>
+        <label><span class="label-text"><span class="required">*</span> 岗位</span>
+          <select id="position">
+            <option value="">请先选择组织单位</option>
+          </select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 性别</span>
+          <select><option value="">请选择</option><option>男</option><option>女</option></select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 婚姻状况</span>
+          <select id="maritalStatus"><option value="">请选择</option><option>未婚</option><option>已婚</option><option>离异</option><option>丧偶</option></select>
+        </label>
+        <label>民族 <input placeholder="请输入"></label>
+        <label>籍贯 <input placeholder="请输入"></label>
+        <label>出生日期 <input type="date"></label>
+        <label>年龄 <input placeholder="自动计算" disabled></label>
+        <label>参加工作时间 <input type="date"></label>
+        <label>工作年限 <input placeholder="自动计算" disabled></label>
+        <label>岗位序列 <input placeholder="请输入"></label>
+        <label>岗位类别
+          <div class="custom-inline">
+            <select id="postCategory" onchange="toggleCustom(this,'postCategoryCustom')">
+              <option value="">请选择</option>
+              <option>一般管理人员</option>
+              <option>专业技术人员</option>
+              <option>基层领导人员</option>
+              <option>中层领导人员</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="postCategoryCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+        <label>职务称谓
+          <div class="custom-inline">
+            <select id="jobTitle" onchange="toggleCustom(this,'jobTitleCustom')">
+              <option value="">请选择</option>
+              <option>一般管理人员</option>
+              <option>一级主管</option>
+              <option>部门副职</option>
+              <option>中级管理人员</option>
+              <option>专业技术人员</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="jobTitleCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+        <label>岗位层级 <input placeholder="请输入"></label>
+        <label>级别 <input placeholder="请输入"></label>
+        <label>政治面貌<select><option value="">请选择</option><option>群众</option><option>共青团员</option><option>中共党员</option></select></label>
+        <label>任现职级时间/聘任时间 <input type="date"></label>
+        <label>所属支部 <input placeholder="请输入"></label>
+        <label>入党时间 <input type="date"></label>
+      </div>
+
+      <h3 class="form-section-title">学历信息</h3>
+      <div class="form-grid employee-grid">
+        <label>学习形式 <input placeholder="请输入"></label>
+        <label>文化程度
+          <select>
+            <option>请选择</option>
+            <option>大学专科</option>
+            <option>大学本科</option>
+            <option>研究生</option>
+            <option>硕士研究生</option>
+            <option>博士研究生</option>
+          </select>
+        </label>
+        <label>现学位 <input placeholder="请输入"></label>
+        <label>毕业时间 <input type="date"></label>
+        <label>毕业学校 <input placeholder="请输入"></label>
+        <label>所学专业 <input placeholder="请输入"></label>
+        <label>所学专业类别 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">原学历信息</h3>
+      <div class="form-grid employee-grid">
+        <label>原学位 <input placeholder="请输入"></label>
+        <label>原学历 <input placeholder="请输入"></label>
+        <label>原毕业时间 <input type="date"></label>
+        <label>原所学专业 <input placeholder="请输入"></label>
+        <label>原毕业院校 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">职称信息</h3>
+      <div class="form-grid employee-grid">
+        <label>资格专业 <input placeholder="请输入"></label>
+        <label>职称
+          <div class="custom-inline">
+            <select id="titleRank" onchange="toggleCustom(this,'titleRankCustom')">
+              <option value="">请选择</option>
+              <option>助理会计师</option>
+              <option>助理工程师</option>
+              <option>工程师</option>
+              <option>政工师</option>
+              <option>经济师</option>
+              <option>会计师</option>
+              <option>主管</option>
+              <option>主办</option>
+              <option>高级工程师</option>
+              <option>高级会计师</option>
+              <option>高级政工师</option>
+              <option>高级经济师</option>
+              <option>中学一级教师</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="titleRankCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+        <label>资格取得时间 <input type="date"></label>
+        <label>取得途径 <input placeholder="请输入"></label>
+        <label>发证机构 <input placeholder="请输入"></label>
+        <label>签发时间 <input type="date"></label>
+        <label>聘现岗时间 <input type="date"></label>
+        <label>任现职级时间 <input type="date"></label>
+        <label>现从事专业 <input placeholder="请输入"></label>
+        <label>从事时间 <input type="date"></label>
+      </div>
+
+      <h3 class="form-section-title">入职信息</h3>
+      <div class="form-grid employee-grid">
+        <label>到本企业时间 <input type="date"></label>
+        <label>来本单位时间 <input type="date"></label>
+        <label>首次加入中石油日期 <input type="date"></label>
+        <label>员工编号 <input placeholder="请输入"></label>
+        <label>身份证号 <input placeholder="请输入"></label>
+        <label>任干形式 <input placeholder="请输入"></label>
+        <label>任干时间 <input type="date"></label>
+        <label>员工状态
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;"><select id="empStatus" onchange="toggleCustom(this,'empStatusCustom')" style="flex:1;"><option value="">请选择</option><option>在册在岗</option><option>在册不在岗</option><option>在岗不在册</option><option value="__custom__">自定义</option></select><input id="empStatusCustom" placeholder="请输入" style="display:none;flex:1;"></div>
+        </label>
+        <label>聘任时间 <input type="date"></label>
+        <label>聘任岗位
+          <select id="appointPosition">
+            <option value="">请先选择组织单位</option>
+          </select>
+        </label>
+      </div>
+
+      <h3 class="form-section-title">其他</h3>
+      <div class="form-grid employee-grid">
+        <label class="wide">备注 <textarea placeholder="请输入备注"></textarea></label>
+      </div>
+
+      <div class="page-actions">
+        <a class="btn" href="./shunan-mgmt-employees.html">取消</a>
+        <a class="btn primary" href="./shunan-mgmt-employees.html">保存</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script>
+    // 组织单位 → 岗位 联动数据（与 org-manage.html 的部门-岗位一致）
+    var deptPositions = {
+      '研发部':    ['开发工程师','架构师','测试工程师'],
+      '前端研发部':['前端工程师','前端主管'],
+      '后端研发部':['后端工程师','数据库工程师'],
+      '设计部':    ['UI设计师','交互设计师'],
+      '设计1部':   ['视觉设计师'],
+      'xx部门1':   ['外包专员'],
+      'xxx部门2':  []
+    };
+
+    // 填充组织单位下拉
+    var orgUnitSel = document.getElementById('orgUnit');
+    Object.keys(deptPositions).forEach(function(dept) {
+      var opt = document.createElement('option');
+      opt.value = dept; opt.textContent = dept;
+      orgUnitSel.appendChild(opt);
+    });
+
+    var positionSel = document.getElementById('position');
+    var appointPosSel = document.getElementById('appointPosition');
+
+    function fillPositions(sel, dept, placeholder) {
+      sel.innerHTML = '';
+      var ph = document.createElement('option');
+      ph.value = ''; ph.textContent = placeholder;
+      sel.appendChild(ph);
+      (deptPositions[dept] || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
+    }
+
+    orgUnitSel.addEventListener('change', function() {
+      var dept = this.value;
+      if (dept) {
+        fillPositions(positionSel, dept, '请选择岗位');
+        fillPositions(appointPosSel, dept, '请选择聘任岗位');
+      } else {
+        positionSel.innerHTML = '<option value="">请先选择组织单位</option>';
+        appointPosSel.innerHTML = '<option value="">请先选择组织单位</option>';
+      }
+    });
+
+    // 自定义选项联动
+    function toggleCustom(sel, inputId) {
+      var input = document.getElementById(inputId);
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    // ── 编辑模式：带入历史数据 ──────────────────────────
+    (function prefill() {
+      function setByLabel(labelText, value) {
+        var labels = document.querySelectorAll('.form-page label');
+        for (var i = 0; i < labels.length; i++) {
+          var txt = labels[i].childNodes[0] ? labels[i].childNodes[0].textContent.trim() : '';
+          if (txt === labelText) {
+            var field = labels[i].querySelector('input, select, textarea');
+            if (field) field.value = value;
+            return;
+          }
+        }
+      }
+
+      orgUnitSel.value = '研发部';
+      orgUnitSel.dispatchEvent(new Event('change'));
+      positionSel.value = '架构师';
+      appointPosSel.value = '架构师';
+
+      setByLabel('姓名', '赵明');
+      setByLabel('性别', '男');
+      document.getElementById('maritalStatus').value = '已婚';
+      setByLabel('民族', '汉族');
+      setByLabel('籍贯', '四川泸州');
+      setByLabel('出生日期', '1988-06-15');
+      setByLabel('年龄', '38');
+      setByLabel('参加工作时间', '2010-07-01');
+      setByLabel('工作年限', '16');
+      setByLabel('岗位序列', '管理序列');
+      document.getElementById('postCategory').value = '基层领导人员';
+      document.getElementById('jobTitle').value = '部门副职';
+      setByLabel('岗位层级', '管理序列');
+      setByLabel('级别', 'M5');
+      setByLabel('政治面貌', '中共党员');
+      setByLabel('任现职级时间/聘任时间', '2022-01-01');
+      setByLabel('所属支部', '蜀南党支部');
+      setByLabel('入党时间', '2012-06-30');
+
+      setByLabel('学习形式', '全日制');
+      setByLabel('文化程度', '大学本科');
+      setByLabel('现学位', '学士');
+      setByLabel('毕业时间', '2010-06-30');
+      setByLabel('毕业学校', '西南石油大学');
+      setByLabel('所学专业', '石油工程');
+      setByLabel('所学专业类别', '工学');
+
+      setByLabel('原学历', '大学专科');
+      setByLabel('原毕业时间', '2008-06-30');
+      setByLabel('原所学专业', '机械制造');
+      setByLabel('原毕业院校', '四川工程职业技术学院');
+
+      setByLabel('资格专业', '石油工程');
+      document.getElementById('titleRank').value = '工程师';
+      setByLabel('资格取得时间', '2015-09-01');
+      setByLabel('取得途径', '评审');
+      setByLabel('发证机构', '四川省人社厅');
+      setByLabel('签发时间', '2015-10-01');
+      setByLabel('聘现岗时间', '2022-01-01');
+      setByLabel('任现职级时间', '2022-01-01');
+      setByLabel('现从事专业', '项目管理');
+      setByLabel('从事时间', '2010-07-01');
+
+      setByLabel('到本企业时间', '2020-06-01');
+      setByLabel('来本单位时间', '2020-06-01');
+      setByLabel('首次加入中石油日期', '2010-07-01');
+      setByLabel('员工编号', 'SN2025001');
+      setByLabel('身份证号', '5105021988xxxx1234');
+      setByLabel('任干形式', '聘任');
+      setByLabel('任干时间', '2022-01-01');
+      document.getElementById('empStatus').value = '在册在岗';
+      setByLabel('聘任时间', '2022-01-01');
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>考核权重设置</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .config-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:20px 24px;margin-bottom:16px;}
+    .config-card h3{font-size:15px;font-weight:600;color:#1d2733;margin:0 0 16px;display:flex;align-items:center;gap:9px;}
+    .config-card h3::before{content:'';width:3px;height:15px;border-radius:2px;background:#00AAB7;}
+    .weight-row{display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid #eef3f6;}
+    .weight-row:last-child{border-bottom:none;}
+    .weight-label{flex:1;font-size:14px;color:#1d2733;}
+    .weight-label small{display:block;font-size:12px;color:#8fa3b0;margin-top:2px;}
+    .weight-input{width:100px;}
+    .weight-unit{font-size:14px;color:#5f7080;}
+    .weight-total{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:14px 0;border-top:1px solid #dfe5ec;margin-top:8px;}
+    .weight-total span{font-size:14px;color:#5f7080;}
+    .weight-total strong{font-size:16px;color:#00AAB7;}
+    .weight-total.error strong{color:#d14343;}
+    .config-notice{background:#fff9e8;border:1px solid #f4d898;border-radius:8px;padding:12px 14px;font-size:13px;color:#75540d;margin-bottom:16px;}
+    .leader-weight-table{width:100%;border-collapse:collapse;margin-top:12px;}
+    .leader-weight-table th,.leader-weight-table td{padding:10px 12px;border:1px solid #eef3f6;font-size:14px;}
+    .leader-weight-table th{background:#f0f5f7;color:#3d5266;font-weight:600;text-align:left;}
+    .leader-weight-table td input{width:80px;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="考核权重设置"
+  data-desc="配置过程考核各维度权重，权重之和必须等于 100%。"
+  data-actions='<button class="btn primary" onclick="saveConfig()">保存设置</button>'>
+
+  <div class="config-notice">
+    过程考核权重用于计算季度考核得分，调整后将影响下一季度的考核计算。当前配置立即生效。
+  </div>
+
+  <!-- 过程考核权重 -->
+  <div class="config-card">
+    <h3>过程考核权重配置</h3>
+    <p style="font-size:13px;color:#8fa3b0;margin:-8px 0 16px;">季度考核得分 = 部门间互评得分 × 互评权重 + 领导评价得分 × 领导权重</p>
+    <div class="weight-row">
+      <div class="weight-label">
+        部门间互评
+        <small>各部门根据考核细则对被考核部门打分，百分制扣分</small>
+      </div>
+      <input type="number" class="weight-input" id="mutualWeight" value="30" min="0" max="100" onchange="updateTotal()">
+      <span class="weight-unit">%</span>
+    </div>
+    <div class="weight-row">
+      <div class="weight-label">
+        领导评价
+        <small>领导对部门进行 6 维度评价，5 档等级制</small>
+      </div>
+      <input type="number" class="weight-input" id="leaderWeight" value="70" min="0" max="100" onchange="updateTotal()">
+      <span class="weight-unit">%</span>
+    </div>
+    <div class="weight-total" id="weightTotal">
+      <span>权重合计</span>
+      <strong>100%</strong>
+    </div>
+  </div>
+
+  <!-- 领导评价内部权重 -->
+  <div class="config-card">
+    <h3>领导评价角色权重</h3>
+    <p style="font-size:13px;color:#8fa3b0;margin:-8px 0 16px;">同一部门可有多个领导打分，系统按角色权重加权汇总领导评价得分</p>
+    <table class="leader-weight-table">
+      <thead>
+        <tr>
+          <th>领导角色</th>
+          <th>权重占比</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>分管领导</td>
+          <td><input type="number" value="25" min="0" max="100" onchange="updateLeaderTotal()"> %</td>
+          <td style="color:#8fa3b0;font-size:13px;">直接分管该部门的公司领导</td>
+        </tr>
+        <tr>
+          <td>主要领导</td>
+          <td><input type="number" value="40" min="0" max="100" onchange="updateLeaderTotal()"> %</td>
+          <td style="color:#8fa3b0;font-size:13px;">公司主要负责人</td>
+        </tr>
+        <tr>
+          <td>其他领导</td>
+          <td><input type="number" value="5" min="0" max="100" onchange="updateLeaderTotal()"> %</td>
+          <td style="color:#8fa3b0;font-size:13px;">其他参与评价的领导</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="background:#f8fafc;">
+          <td style="font-weight:600;text-align:right;">合计</td>
+          <td id="leaderTotalCell"><strong style="color:#00AAB7;">70%</strong></td>
+          <td style="color:#8fa3b0;font-size:12px;">多人同角色时取平均分</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- 评估等级说明 -->
+  <div class="config-card">
+    <h3>评估等级标准（只读）</h3>
+    <p style="font-size:13px;color:#8fa3b0;margin:-8px 0 16px;">所有打分场景通用的 5 档评估等级，用于领导评价和业绩合同评分</p>
+    <table class="leader-weight-table">
+      <thead>
+        <tr>
+          <th style="width:80px;">等级</th>
+          <th>描述</th>
+          <th style="width:120px;">分值范围</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>第一级</td><td>未达预期</td><td>7-8 分</td></tr>
+        <tr><td>第二级</td><td>基本达到预期</td><td>9 分</td></tr>
+        <tr><td>第三级</td><td>达到预期</td><td>10 分</td></tr>
+        <tr><td>第四级</td><td>超出预期</td><td>11 分</td></tr>
+        <tr><td>第五级</td><td>超出预期，业绩十分突出</td><td>12 分</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 修改历史 -->
+  <div class="config-card">
+    <h3>配置修改历史</h3>
+    <table class="leader-weight-table">
+      <thead>
+        <tr>
+          <th class="col-seq" style="width:60px;">序号</th>
+          <th>修改时间</th>
+          <th>修改人</th>
+          <th>修改内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td>
+          <td>2026-06-01 09:30</td>
+          <td>张敏（HR主管）</td>
+          <td>调整过程考核权重：部门互评 40%→30%，领导评价 60%→70%</td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>2026-01-15 14:00</td>
+          <td>李强（系统管理员）</td>
+          <td>初始化配置：部门互评 40%，领导评价 60%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+function updateTotal(){
+  var m = parseInt(document.getElementById('mutualWeight').value) || 0;
+  var l = parseInt(document.getElementById('leaderWeight').value) || 0;
+  var total = m + l;
+  var el = document.getElementById('weightTotal');
+  el.innerHTML = '<span>权重合计</span><strong>' + total + '%</strong>';
+  el.classList.toggle('error', total !== 100);
+}
+
+function updateLeaderTotal(){
+  var inputs = document.querySelectorAll('.leader-weight-table tbody input');
+  var total = 0;
+  inputs.forEach(function(inp){ total += parseInt(inp.value) || 0; });
+  var cell = document.getElementById('leaderTotalCell');
+  var color = total === 70 ? '#00AAB7' : '#d14343';
+  cell.innerHTML = '<strong style="color:' + color + ';">' + total + '%</strong>';
+}
+
+function saveConfig(){
+  var m = parseInt(document.getElementById('mutualWeight').value) || 0;
+  var l = parseInt(document.getElementById('leaderWeight').value) || 0;
+  if(m + l !== 100){
+    alert('过程考核权重合计必须等于 100%，当前为 ' + (m+l) + '%');
+    return;
+  }
+  alert('配置已保存（原型演示）');
+}
+</script>
+</body>
+</html>

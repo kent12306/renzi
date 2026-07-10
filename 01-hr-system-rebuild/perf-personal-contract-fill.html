@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>个人业绩合同填写</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .contract-header{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:24px;margin-bottom:16px;}
+    .contract-header h2{font-size:18px;font-weight:700;color:#1e2b3a;margin:0 0 20px;text-align:center;padding-bottom:16px;border-bottom:1px solid #eef3f6;}
+    .header-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 32px;}
+    .header-field{display:flex;align-items:center;gap:8px;}
+    .header-field label{width:100px;font-size:13px;color:#5f7080;flex-shrink:0;}
+    .header-field .value{font-size:14px;color:#1e2b3a;font-weight:500;}
+    .header-field input{flex:1;padding:8px 12px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;}
+
+    .section-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;margin-bottom:16px;overflow:hidden;}
+    .section-header{background:#f8fafb;padding:16px 20px;border-bottom:1px solid #dfe5ec;display:flex;justify-content:space-between;align-items:center;}
+    .section-header h3{font-size:15px;font-weight:600;color:#1e2b3a;margin:0;display:flex;align-items:center;gap:8px;}
+    .section-header .badge{display:inline-block;padding:2px 10px;background:#00AAB7;color:#fff;border-radius:4px;font-size:12px;font-weight:500;}
+    .section-header .sub-badge{background:#3b82f6;}
+
+    .indicator-table{width:100%;border-collapse:collapse;}
+    .indicator-table th,.indicator-table td{padding:12px 16px;text-align:left;border-bottom:1px solid #eef3f6;font-size:13px;}
+    .indicator-table th{background:#f8fafb;color:#5f7080;font-weight:500;}
+    .indicator-table td{color:#1e2b3a;vertical-align:top;}
+    .indicator-table .col-seq{width:50px;text-align:center;}
+    .indicator-table .col-weight{width:80px;text-align:center;}
+    .indicator-table .col-unit{width:80px;text-align:center;}
+    .indicator-table .col-target{width:100px;}
+    .indicator-table .col-action{width:80px;text-align:center;}
+    .indicator-table input[type="text"],.indicator-table input[type="number"]{width:100%;padding:6px 10px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;box-sizing:border-box;}
+    .indicator-table input[type="number"]{text-align:center;}
+    .indicator-table select{width:100%;padding:6px 10px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;}
+    .indicator-table textarea{width:100%;padding:6px 10px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;resize:vertical;min-height:60px;box-sizing:border-box;}
+
+    .add-row{background:#f8fafb;cursor:pointer;transition:background .15s;}
+    .add-row:hover{background:#e6f7f9;}
+    .add-row td{text-align:center;color:#00AAB7;font-weight:500;}
+
+    .weight-summary{background:#e6f7f9;padding:12px 20px;display:flex;justify-content:flex-end;gap:24px;font-size:13px;}
+    .weight-summary .item{display:flex;align-items:center;gap:6px;}
+    .weight-summary .item strong{color:#00AAB7;font-weight:600;}
+    .weight-summary .item.error strong{color:#e53e3e;}
+
+    .action-bar{display:flex;justify-content:flex-end;gap:12px;padding:16px 0;}
+    .btn.lg{padding:10px 32px;font-size:14px;}
+
+    .category-row{background:#f0f4f8;}
+    .category-row td{font-weight:600;color:#1e2b3a;padding:10px 16px;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="个人业绩合同填写"
+  data-desc="受约人填写年度业绩指标，提交后由发约人评分。"
+  data-actions='<a class="btn" href="./perf-personal-contract-list.html">返回列表</a>'>
+
+  <!-- 合同头信息 -->
+  <div class="contract-header">
+    <h2>2026年度个人业绩合同</h2>
+    <div class="header-grid">
+      <div class="header-field">
+        <label>发约人姓名</label>
+        <span class="value">刘主任</span>
+      </div>
+      <div class="header-field">
+        <label>发约人职务</label>
+        <span class="value">人力资源部主任</span>
+      </div>
+      <div class="header-field">
+        <label>受约人姓名</label>
+        <span class="value">张明</span>
+      </div>
+      <div class="header-field">
+        <label>受约人岗位</label>
+        <span class="value">劳动组织、社保公积金管理</span>
+      </div>
+      <div class="header-field">
+        <label>合同有效期</label>
+        <span class="value">2026-01-01 ~ 2026-12-31</span>
+      </div>
+      <div class="header-field">
+        <label>发布时间</label>
+        <input type="date" value="2026-03-01">
+      </div>
+    </div>
+  </div>
+
+  <!-- 第一大类：关键业绩指标（KPI） -->
+  <div class="section-card">
+    <div class="section-header">
+      <h3>
+        <span class="badge">一</span>
+        关键业绩指标（KPI）
+      </h3>
+      <button class="btn sm" onclick="alert('从指标库选择')">从指标库选择</button>
+    </div>
+    <table class="indicator-table">
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>指标名称</th>
+          <th class="col-unit">计量单位</th>
+          <th class="col-weight">权重</th>
+          <th class="col-target">目标值</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody id="kpiBody">
+        <tr>
+          <td class="col-seq">1</td>
+          <td><input type="text" value="社保公积金业务办理及时率"></td>
+          <td class="col-unit"><input type="text" value="%"></td>
+          <td class="col-weight"><input type="number" value="0.15" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="≥98%"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td><input type="text" value="劳动合同签订合规率"></td>
+          <td class="col-unit"><input type="text" value="%"></td>
+          <td class="col-weight"><input type="number" value="0.15" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="100%"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td><input type="text" value="人事档案管理规范性"></td>
+          <td class="col-unit"><input type="text" value="项"></td>
+          <td class="col-weight"><input type="number" value="0.10" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="全部达标"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr class="add-row" onclick="alert('新增一行')">
+          <td colspan="6">+ 新增指标</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="weight-summary">
+      <div class="item"><span>KPI 权重合计：</span><strong>0.40</strong></div>
+    </div>
+  </div>
+
+  <!-- 第二大类：过程考核指标 -->
+  <div class="section-card">
+    <div class="section-header">
+      <h3>
+        <span class="badge">二</span>
+        过程考核指标
+      </h3>
+      <button class="btn sm" onclick="alert('从指标库选择')">从指标库选择</button>
+    </div>
+    <table class="indicator-table">
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>指标名称</th>
+          <th class="col-unit">计量单位</th>
+          <th class="col-weight">权重</th>
+          <th class="col-target">目标值</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 子类（一）：工作目标评价 -->
+        <tr class="category-row">
+          <td colspan="6"><span class="badge sub-badge" style="margin-right:8px;">（一）</span>工作目标评价</td>
+        </tr>
+        <tr>
+          <td class="col-seq">1</td>
+          <td><input type="text" value="部门年度重点工作任务完成率"></td>
+          <td class="col-unit"><input type="text" value="%"></td>
+          <td class="col-weight"><input type="number" value="0.15" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="≥95%"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td><input type="text" value="临时交办任务按时完成率"></td>
+          <td class="col-unit"><input type="text" value="%"></td>
+          <td class="col-weight"><input type="number" value="0.10" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="100%"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr class="add-row" onclick="alert('新增工作目标评价指标')">
+          <td colspan="6">+ 新增指标</td>
+        </tr>
+
+        <!-- 子类（二）：工作行为评价 -->
+        <tr class="category-row">
+          <td colspan="6"><span class="badge sub-badge" style="margin-right:8px;">（二）</span>工作行为评价</td>
+        </tr>
+        <tr>
+          <td class="col-seq">1</td>
+          <td><input type="text" value="工作态度与责任心"></td>
+          <td class="col-unit"><input type="text" value="等级"></td>
+          <td class="col-weight"><input type="number" value="0.10" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="达到预期"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td><input type="text" value="团队协作与沟通能力"></td>
+          <td class="col-unit"><input type="text" value="等级"></td>
+          <td class="col-weight"><input type="number" value="0.15" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="达到预期"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td><input type="text" value="专业能力与学习提升"></td>
+          <td class="col-unit"><input type="text" value="等级"></td>
+          <td class="col-weight"><input type="number" value="0.10" step="0.01" min="0" max="1"></td>
+          <td class="col-target"><input type="text" value="达到预期"></td>
+          <td class="col-action"><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+        </tr>
+        <tr class="add-row" onclick="alert('新增工作行为评价指标')">
+          <td colspan="6">+ 新增指标</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="weight-summary">
+      <div class="item"><span>工作目标评价权重：</span><strong>0.25</strong></div>
+      <div class="item"><span>工作行为评价权重：</span><strong>0.35</strong></div>
+      <div class="item"><span>过程考核合计：</span><strong>0.60</strong></div>
+    </div>
+  </div>
+
+  <!-- 权重总计 -->
+  <div class="section-card" style="padding:16px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:14px;color:#5f7080;">
+        权重校验：KPI（0.40）+ 工作目标评价（0.25）+ 工作行为评价（0.35）
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#38a169;">
+        总权重：1.00 ✓
+      </div>
+    </div>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="action-bar">
+    <button class="btn lg" onclick="alert('草稿已保存')">保存草稿</button>
+    <button class="btn lg primary" onclick="alert('合同已提交，等待发约人评分')">提交合同</button>
+  </div>
+
+  <p class="hint" style="margin-top:8px;">
+    说明：受约人填写指标后提交，由发约人（直属领导）进行评分。所有指标权重之和必须等于 1.00。<br>
+    评估等级标准：第一级（未达预期，7-8分）/ 第二级（基本达到预期，9分）/ 第三级（达到预期，10分）/ 第四级（超出预期，11分）/ 第五级（超出预期且业绩突出，12分）
+  </p>
+</main>
+
+<script src="../shared/nav.js"></script>
+</body>
+</html>

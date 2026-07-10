@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部门间互评打分</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .info-header{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;}
+    .info-header .left h2{font-size:18px;font-weight:700;color:#1e2b3a;margin:0 0 12px;}
+    .info-header .meta{display:flex;gap:24px;font-size:13px;color:#5f7080;}
+    .info-header .meta .item{display:flex;align-items:center;gap:6px;}
+    .info-header .meta .item strong{color:#1e2b3a;}
+    .info-header .right{text-align:right;}
+    .info-header .score-label{font-size:13px;color:#8fa3b0;margin-bottom:4px;}
+    .info-header .score-value{font-size:32px;font-weight:700;color:#00AAB7;}
+    .info-header .score-value small{font-size:14px;font-weight:400;color:#8fa3b0;margin-left:4px;}
+
+    .score-section{background:#fff;border:1px solid #dfe5ec;border-radius:8px;margin-bottom:16px;overflow:hidden;}
+    .score-section-header{background:#f8fafb;padding:16px 20px;border-bottom:1px solid #dfe5ec;display:flex;justify-content:space-between;align-items:center;}
+    .score-section-header h3{font-size:15px;font-weight:600;color:#1e2b3a;margin:0;}
+    .score-section-header .badge{display:inline-block;padding:2px 10px;background:#00AAB7;color:#fff;border-radius:4px;font-size:12px;font-weight:500;}
+
+    .criteria-table{width:100%;border-collapse:collapse;}
+    .criteria-table th,.criteria-table td{padding:12px 16px;text-align:left;border-bottom:1px solid #eef3f6;font-size:13px;}
+    .criteria-table th{background:#f8fafb;color:#5f7080;font-weight:500;}
+    .criteria-table td{color:#1e2b3a;}
+    .criteria-table .col-seq{width:50px;text-align:center;}
+    .criteria-table .col-weight{width:80px;text-align:center;}
+    .criteria-table .col-deduct{width:120px;}
+    .criteria-table .col-reason{width:200px;}
+    .criteria-table input[type="number"]{width:80px;padding:6px 10px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;text-align:center;}
+    .criteria-table input[type="text"]{width:100%;padding:6px 10px;border:1px solid #dfe5ec;border-radius:4px;font-size:13px;}
+    .criteria-table .standard{font-size:12px;color:#8fa3b0;margin-top:4px;}
+
+    .summary-card{background:linear-gradient(135deg,#f8fafb 0%,#fff 100%);border:1px solid #dfe5ec;border-radius:8px;padding:24px;margin-bottom:16px;}
+    .summary-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef3f6;}
+    .summary-row:last-child{border-bottom:none;}
+    .summary-row .label{font-size:14px;color:#5f7080;}
+    .summary-row .value{font-size:16px;font-weight:600;color:#1e2b3a;}
+    .summary-row.total{background:#e6f7f9;margin:12px -24px -24px;padding:16px 24px;border-radius:0 0 8px 8px;}
+    .summary-row.total .label{font-size:15px;font-weight:600;color:#00AAB7;}
+    .summary-row.total .value{font-size:24px;color:#00AAB7;}
+
+    .action-bar{display:flex;justify-content:flex-end;gap:12px;padding:16px 0;}
+    .btn.lg{padding:10px 32px;font-size:14px;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="部门间互评打分"
+  data-desc="根据考核细则对被考核部门进行评分，采用百分制扣分方式。"
+  data-actions='<a class="btn" href="./perf-dept-mutual-list.html">返回列表</a>'>
+
+  <!-- 被评价部门信息 -->
+  <div class="info-header">
+    <div class="left">
+      <h2>财务资产部</h2>
+      <div class="meta">
+        <div class="item"><span>部门负责人：</span><strong>陈部长</strong></div>
+        <div class="item"><span>考核季度：</span><strong>2026年4-6月</strong></div>
+        <div class="item"><span>评价部门：</span><strong>人力资源部（党委组织部）</strong></div>
+        <div class="item"><span>评价人：</span><strong>刘主任</strong></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="score-label">本次评分</div>
+      <div class="score-value" id="totalScore">97.5<small>分</small></div>
+    </div>
+  </div>
+
+  <!-- 考核细则打分 -->
+  <div class="score-section">
+    <div class="score-section-header">
+      <h3>考核细则打分（共 5 项）</h3>
+      <span class="badge">基准分：100</span>
+    </div>
+    <table class="criteria-table">
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>考核内容</th>
+          <th class="col-weight">权重</th>
+          <th class="col-deduct">扣分</th>
+          <th class="col-reason">扣分原因</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td>
+          <td>
+            <div>财务报表准确性</div>
+            <div class="standard">考核标准：月度报表差错率≤0.5%，每超0.1%扣2分，最高扣10分</div>
+          </td>
+          <td class="col-weight">0.25</td>
+          <td class="col-deduct"><input type="number" value="0" min="0" max="10" step="0.5"></td>
+          <td class="col-reason"><input type="text" placeholder="如有扣分请填写原因"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>
+            <div>资金拨付及时性</div>
+            <div class="standard">考核标准：资金拨付按时完成率≥98%，每降1%扣2分，最高扣10分</div>
+          </td>
+          <td class="col-weight">0.20</td>
+          <td class="col-deduct"><input type="number" value="1.5" min="0" max="10" step="0.5"></td>
+          <td class="col-reason"><input type="text" value="4月份有1笔资金拨付延迟2天"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td>
+            <div>预算执行偏差率</div>
+            <div class="standard">考核标准：预算执行偏差≤5%，每超1%扣1分，最高扣10分</div>
+          </td>
+          <td class="col-weight">0.20</td>
+          <td class="col-deduct"><input type="number" value="0" min="0" max="10" step="0.5"></td>
+          <td class="col-reason"><input type="text" placeholder="如有扣分请填写原因"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td>
+          <td>
+            <div>费用报销规范性</div>
+            <div class="standard">考核标准：报销审核差错率≤1%，每超0.5%扣2分，最高扣8分</div>
+          </td>
+          <td class="col-weight">0.20</td>
+          <td class="col-deduct"><input type="number" value="1" min="0" max="8" step="0.5"></td>
+          <td class="col-reason"><input type="text" value="发现2笔费用单据不规范"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td>
+          <td>
+            <div>财务咨询响应</div>
+            <div class="standard">考核标准：财务咨询24小时内响应率≥95%，每降5%扣2分，最高扣6分</div>
+          </td>
+          <td class="col-weight">0.15</td>
+          <td class="col-deduct"><input type="number" value="0" min="0" max="6" step="0.5"></td>
+          <td class="col-reason"><input type="text" placeholder="如有扣分请填写原因"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 评分汇总 -->
+  <div class="summary-card">
+    <div class="summary-row">
+      <span class="label">基准分</span>
+      <span class="value">100 分</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">扣分合计</span>
+      <span class="value" style="color:#e53e3e;">-2.5 分</span>
+    </div>
+    <div class="summary-row total">
+      <span class="label">本次评分</span>
+      <span class="value">97.5 分</span>
+    </div>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="action-bar">
+    <button class="btn lg" onclick="alert('草稿已保存')">保存草稿</button>
+    <button class="btn lg primary" onclick="alert('评分已提交，将返回列表页')">提交评分</button>
+  </div>
+
+  <p class="hint" style="margin-top:8px;">说明：部门间互评采用百分制扣分方式，基准分为100分，根据考核细则中的扣分标准进行扣分。每条细则的扣分不得超过该细则规定的最高扣分值。</p>
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// 实时计算总分
+document.querySelectorAll('.criteria-table input[type="number"]').forEach(function(input){
+  input.addEventListener('input', function(){
+    var total = 100;
+    document.querySelectorAll('.criteria-table input[type="number"]').forEach(function(inp){
+      total -= parseFloat(inp.value) || 0;
+    });
+    document.getElementById('totalScore').innerHTML = total.toFixed(1) + '<small>分</small>';
+    document.querySelector('.summary-row:nth-child(2) .value').textContent = '-' + (100 - total).toFixed(1) + ' 分';
+    document.querySelector('.summary-row.total .value').textContent = total.toFixed(1) + ' 分';
+  });
+});
+</script>
+</body>
+</html>

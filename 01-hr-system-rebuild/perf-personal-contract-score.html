@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>业绩合同打分</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 员工信息卡 - 青绿主题（参照 modal-emp） */
+    .emp-info-card { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:14px 18px; margin-bottom:16px; }
+    .emp-info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px 24px; }
+    .emp-info-grid dl { display:flex; align-items:center; gap:4px; margin:0; font-size:13px; }
+    .emp-info-grid dt { color:#5f7080; }
+    .emp-info-grid dd { color:#1d2733; font-weight:500; margin:0; }
+
+    /* 流程进度条 */
+    .flow-stepper { display:flex; align-items:center; background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+    .flow-step { display:flex; align-items:center; gap:10px; flex:1; position:relative; }
+    .flow-step:not(:last-child)::after { content:''; position:absolute; right:0; top:50%; transform:translateY(-50%); width:0; height:0; border:8px solid transparent; border-left-color:#dfe5ec; }
+    .flow-step.active:not(:last-child)::after { border-left-color:#00AAB7; }
+    .flow-step.done:not(:last-child)::after { border-left-color:#16a36a; }
+    .flow-num { width:28px; height:28px; border-radius:50%; background:#f1f5f9; color:#64748b; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .flow-step.active .flow-num { background:#00AAB7; color:#fff; }
+    .flow-step.done .flow-num { background:#16a36a; color:#fff; }
+    .flow-info { display:flex; flex-direction:column; gap:2px; }
+    .flow-title { font-size:14px; font-weight:500; color:#64748b; }
+    .flow-step.active .flow-title { color:#00AAB7; font-weight:600; }
+    .flow-step.done .flow-title { color:#16a36a; }
+    .flow-desc { font-size:12px; color:#9ca3af; }
+    .flow-step.active .flow-desc { color:#5f7080; }
+
+    /* 评分说明 - 参照 notice 样式 */
+    .score-legend { padding:12px 14px; border:1px solid #f4d898; background:#fff9e8; color:#75540d; border-radius:8px; margin-bottom:16px; }
+    .score-legend-title { font-size:14px; font-weight:600; margin-bottom:6px; }
+    .score-legend-list { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; }
+
+    /* 打分表格 - 参照 table 规范 */
+    .score-card { background:#fff; border:1px solid #dfe5ec; border-radius:8px; overflow:hidden; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .score-table { width:100%; border-collapse:collapse; font-size:13px; table-layout:auto; min-width:1000px; }
+    .score-table th, .score-table td { padding:9px 12px; text-align:left; border-bottom:1px solid #eef3f6; vertical-align:middle; }
+    .score-table th { background:#f0f5f7; font-weight:600; color:#3d5266; font-size:13px; }
+    .score-table .col-seq { text-align:center; width:52px; }
+    .score-table .col-num { text-align:right; font-variant-numeric:tabular-nums; }
+    
+    /* 分类行 */
+    .score-table .cat-row { background:#e6f7f9; }
+    .score-table .cat-row td { font-weight:600; color:#00838c; }
+    
+    /* 子分类单元格 */
+    .score-table .subcat-cell { background:#f8fafc; font-weight:500; color:#3d5266; }
+    
+    /* 表单控件 */
+    .score-select { height:32px; min-width:90px; border:1px solid #dfe5ec; border-radius:6px; padding:0 8px; font-size:13px; background:#fff; }
+    .score-select:focus { border-color:#00AAB7; outline:none; box-shadow:0 0 0 2px rgba(0,170,183,0.15); }
+    .score-input { width:60px; height:32px; border:1px solid #dfe5ec; border-radius:6px; padding:0 8px; font-size:13px; text-align:center; }
+    .score-input:focus { border-color:#00AAB7; outline:none; box-shadow:0 0 0 2px rgba(0,170,183,0.15); }
+    
+    /* 得分值 */
+    .score-value { color:#00AAB7; font-weight:600; }
+
+    /* 汇总区 - 参照 profile 信息条 */
+    .score-summary { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:16px 20px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:16px 32px; }
+    .summary-item { font-size:14px; display:flex; align-items:baseline; gap:6px; }
+    .summary-item .label { color:#5f7080; }
+    .summary-item .value { color:#00AAB7; font-weight:600; }
+    .summary-item .value.total { color:#00838c; font-size:18px; font-weight:700; }
+
+    /* 底部操作栏 */
+    .action-bar { background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; display:flex; justify-content:flex-end; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="业绩合同打分" data-desc="为员工的个人业绩合同进行评分。" data-breadcrumb="绩效管理 / 个人业绩合同 / 业绩合同打分">
+
+  <!-- 员工信息卡 -->
+  <div class="emp-info-card">
+    <div class="emp-info-grid">
+      <dl><dt>员工姓名：</dt><dd>李四</dd></dl>
+      <dl><dt>员工编号：</dt><dd>XT2025002</dd></dl>
+      <dl><dt>所属部门：</dt><dd>人力资源部</dd></dl>
+      <dl><dt>岗位：</dt><dd>劳动组织管理</dd></dl>
+      <dl><dt>合同年度：</dt><dd>2026</dd></dl>
+      <dl><dt>提交时间：</dt><dd>2026-03-15</dd></dl>
+    </div>
+  </div>
+
+  <!-- 流程进度条 -->
+  <div class="flow-stepper">
+    <div class="flow-step done">
+      <div class="flow-num">✓</div>
+      <div class="flow-info">
+        <div class="flow-title">指标配置</div>
+        <div class="flow-desc">填写指标并发布</div>
+      </div>
+    </div>
+    <div class="flow-step active">
+      <div class="flow-num">2</div>
+      <div class="flow-info">
+        <div class="flow-title">领导评价</div>
+        <div class="flow-desc">当前步骤</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-info">
+        <div class="flow-title">结果确认</div>
+        <div class="flow-desc">员工确认结果</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-info">
+        <div class="flow-title">HR归档</div>
+        <div class="flow-desc">归档完成</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 评分说明 -->
+  <div class="score-legend">
+    <div class="score-legend-title">评估等级说明</div>
+    <div class="score-legend-list">
+      <span><strong>第一级（7-8分）</strong>：未达预期</span>
+      <span><strong>第二级（9分）</strong>：基本达到预期</span>
+      <span><strong>第三级（10分）</strong>：达到预期</span>
+      <span><strong>第四级（11分）</strong>：超出预期</span>
+      <span><strong>第五级（12分）</strong>：超出预期，业绩十分突出</span>
+    </div>
+  </div>
+
+  <!-- 打分表格 -->
+  <div class="score-card">
+    <div class="table-scroll">
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th class="col-seq">序号</th>
+            <th style="width:100px;">一级分类</th>
+            <th style="width:130px;">二级分类</th>
+            <th>指标名称</th>
+            <th style="width:80px;">计量单位</th>
+            <th style="width:60px;">权重</th>
+            <th style="width:140px;">目标值</th>
+            <th style="width:100px;">评估等级</th>
+            <th style="width:80px;">评估分数</th>
+            <th style="width:80px;" class="col-num">评估得分</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 关键业绩指标 -->
+          <tr class="cat-row"><td colspan="10">关键业绩指标（权重合计：25%）</td></tr>
+          <tr>
+            <td class="col-seq">1</td>
+            <td rowspan="4" class="subcat-cell">关键业绩指标</td>
+            <td rowspan="4" class="subcat-cell">部门指标、结合岗位制定</td>
+            <td>培训管理规范性及计划完成率</td>
+            <td>%</td>
+            <td>10%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">1.00</td>
+          </tr>
+          <tr>
+            <td class="col-seq">2</td>
+            <td>部门制度、体系建设规范性</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">3</td>
+            <td>人工成本管控</td>
+            <td>万元</td>
+            <td>5%</td>
+            <td>按分公司相关文件执行</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">4</td>
+            <td>现场人员岗位设置及管理有效性</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+
+          <!-- 过程考核指标 - 工作目标评价 -->
+          <tr class="cat-row"><td colspan="10">过程考核指标（权重合计：75%）</td></tr>
+          <tr>
+            <td class="col-seq">5</td>
+            <td rowspan="5" class="subcat-cell">过程考核指标</td>
+            <td rowspan="5" class="subcat-cell">(一)工作目标评价</td>
+            <td>机构职责及编制定员合规管理符合率</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">6</td>
+            <td>降本提质增效管理目标</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">7</td>
+            <td>社保、公积金工作准确率、及时率</td>
+            <td>%</td>
+            <td>3%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.30</td>
+          </tr>
+          <tr>
+            <td class="col-seq">8</td>
+            <td>QHSE管理绩效考核得分</td>
+            <td>分</td>
+            <td>5%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">9</td>
+            <td>业务外包管理规范性</td>
+            <td></td>
+            <td>10%</td>
+            <td>100</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">1.00</td>
+          </tr>
+
+          <!-- 过程考核指标 - 工作行为评价 -->
+          <tr>
+            <td class="col-seq">10</td>
+            <td rowspan="6" class="subcat-cell">过程考核指标</td>
+            <td rowspan="6" class="subcat-cell">(二)工作行为评价</td>
+            <td>遵守制度</td>
+            <td></td>
+            <td>5%</td>
+            <td>能够较好地遵守公司管理制度</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">11</td>
+            <td>团队建设</td>
+            <td></td>
+            <td>10%</td>
+            <td>团队氛围融洽、凝聚力强</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">1.00</td>
+          </tr>
+          <tr>
+            <td class="col-seq">12</td>
+            <td>学习与创新</td>
+            <td></td>
+            <td>5%</td>
+            <td>积极主动自主学习</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">13</td>
+            <td>工作能力</td>
+            <td></td>
+            <td>10%</td>
+            <td>工作前瞻性、统筹性考评</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">1.00</td>
+          </tr>
+          <tr>
+            <td class="col-seq">14</td>
+            <td>职业道德</td>
+            <td></td>
+            <td>5%</td>
+            <td>认同中石油价值观</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">0.50</td>
+          </tr>
+          <tr>
+            <td class="col-seq">15</td>
+            <td>工作态度</td>
+            <td></td>
+            <td>10%</td>
+            <td>认真负责、积极主动</td>
+            <td><select class="score-select" onchange="calcScore()"><option value="">请选择</option><option value="7">第一级</option><option value="9">第二级</option><option value="10" selected>第三级</option><option value="11">第四级</option><option value="12">第五级</option></select></td>
+            <td><input type="number" class="score-input" value="10" min="7" max="12" onchange="calcScore()"></td>
+            <td class="col-num score-value">1.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 汇总区 -->
+  <div class="score-summary">
+    <div class="summary-item"><span class="label">关键业绩指标得分：</span><span class="value" id="kpiScore">2.50</span></div>
+    <div class="summary-item"><span class="label">工作目标评价得分：</span><span class="value" id="goalScore">2.80</span></div>
+    <div class="summary-item"><span class="label">工作行为评价得分：</span><span class="value" id="behaviorScore">4.50</span></div>
+    <div class="summary-item"><span class="label">综合绩效分：</span><span class="value total" id="totalScore">9.80</span></div>
+  </div>
+
+  <!-- 底部操作栏 -->
+  <div class="action-bar">
+    <a href="perf-personal-contract.html" class="btn">取消</a>
+    <button class="btn primary" onclick="submitScore()">提交评分</button>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// 权重配置（与表格行对应）
+const weights = [10, 5, 5, 5, 5, 5, 3, 5, 10, 5, 10, 5, 10, 5, 10]; // 百分比
+const categories = ['kpi', 'kpi', 'kpi', 'kpi', 'goal', 'goal', 'goal', 'goal', 'goal', 'behavior', 'behavior', 'behavior', 'behavior', 'behavior', 'behavior'];
+
+// 评估等级选择联动评估分数
+document.querySelectorAll('.score-select').forEach((select, idx) => {
+  select.addEventListener('change', function() {
+    const row = this.closest('tr');
+    const scoreInput = row.querySelector('.score-input');
+    if (this.value) {
+      scoreInput.value = this.value;
+    }
+    calcAllScores();
+  });
+});
+
+// 评估分数输入联动评估等级
+document.querySelectorAll('.score-input').forEach((input, idx) => {
+  input.addEventListener('change', function() {
+    const row = this.closest('tr');
+    const levelSelect = row.querySelector('.score-select');
+    const score = parseInt(this.value);
+    
+    // 根据分数自动选择等级
+    if (score >= 7 && score <= 8) {
+      levelSelect.value = '7';
+    } else if (score === 9) {
+      levelSelect.value = '9';
+    } else if (score === 10) {
+      levelSelect.value = '10';
+    } else if (score === 11) {
+      levelSelect.value = '11';
+    } else if (score === 12) {
+      levelSelect.value = '12';
+    }
+    calcAllScores();
+  });
+});
+
+// 计算所有得分
+function calcAllScores() {
+  const rows = document.querySelectorAll('.score-table tbody tr:not(.cat-row)');
+  let kpiTotal = 0, goalTotal = 0, behaviorTotal = 0;
+  let rowIdx = 0;
+  
+  rows.forEach(row => {
+    const scoreInput = row.querySelector('.score-input');
+    const scoreCell = row.querySelector('.score-value');
+    if (scoreInput && scoreCell) {
+      const score = parseFloat(scoreInput.value) || 0;
+      const weight = weights[rowIdx] / 100;
+      const calcScore = (score * weight).toFixed(2);
+      scoreCell.textContent = calcScore;
+      
+      // 按分类累加
+      if (categories[rowIdx] === 'kpi') {
+        kpiTotal += parseFloat(calcScore);
+      } else if (categories[rowIdx] === 'goal') {
+        goalTotal += parseFloat(calcScore);
+      } else if (categories[rowIdx] === 'behavior') {
+        behaviorTotal += parseFloat(calcScore);
+      }
+      rowIdx++;
+    }
+  });
+  
+  // 更新汇总
+  document.getElementById('kpiScore').textContent = kpiTotal.toFixed(2);
+  document.getElementById('goalScore').textContent = goalTotal.toFixed(2);
+  document.getElementById('behaviorScore').textContent = behaviorTotal.toFixed(2);
+  document.getElementById('totalScore').textContent = (kpiTotal + goalTotal + behaviorTotal).toFixed(2);
+}
+
+// 页面加载时计算一次
+calcAllScores();
+
+// 提交评分
+function submitScore() {
+  if (confirm('确认提交对「李四（XT2025002）」的评分？提交后将通知员工确认结果。')) {
+    alert('评分已提交，已通知员工「李四」确认结果');
+    window.location.href = 'perf-personal-contract.html';
+  }
+}
+</script>
+</body>
+</html>

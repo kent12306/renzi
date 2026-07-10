@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>请假类型配置</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .notice-tip{padding:12px 14px;border:1px solid #f4d898;background:#fff9e8;color:#75540d;border-radius:8px;margin-bottom:16px;font-size:13px;line-height:1.6;}
+
+    .switch{position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle;}
+    .switch input{opacity:0;width:0;height:0;}
+    .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ccd5dc;border-radius:22px;transition:all .2s;}
+    .switch .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+    .switch input:checked+.slider{background:#00AAB7;}
+    .switch input:checked+.slider::before{transform:translateX(18px);}
+    .switch input:focus+.slider{box-shadow:0 0 0 2px rgba(0,170,183,.2);}
+
+    .switch-label{display:flex;align-items:center;gap:8px;}
+    .switch-label .txt{font-size:12px;color:#8fa3b0;}
+    .switch-label .txt.on{color:#137d52;}
+    .switch-label .txt.off{color:#d14343;}
+
+    .inferred-tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#b7791f;background:#fff7e6;padding:1px 6px;border-radius:4px;margin-left:6px;}
+  </style>
+</head>
+<body data-module="attendance">
+<main class="page-content" data-title="请假类型配置"
+  data-desc="维护15种假期类型的计假方式，并配置「是否计入在岗天数」，供绩效兑现表计算部门人员兑现在岗月份使用。">
+
+  <div class="notice-tip">
+    判定口径：该假期期间只要扣了钱（不管扣的是基本工资，还是绩效奖金/津贴），就<strong>不计入在岗天数</strong>。计薪天数 = 当年全部工作日天数 − 不计入在岗天数的请假天数；部门人员兑现在岗月份 = 计薪天数 ÷ 21.75（保留2位小数）。带 <span class="inferred-tag">⚠ 推断</span> 标记的类型为原始依据文件未明确写明扣薪与否，按合理推断设置默认值，如与实际不符请直接调整开关。
+  </div>
+
+  <section class="card table-card">
+    <table>
+      <thead><tr>
+        <th class="col-seq">序号</th>
+        <th>假期类型</th>
+        <th>计假方式</th>
+        <th style="min-width:220px;">薪酬待遇依据</th>
+        <th class="col-status">是否计入在岗天数</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td>
+          <td>年假</td>
+          <td>工作日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>婚假</td>
+          <td>自然日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td>产假</td>
+          <td>自然日</td>
+          <td>分公司相关规定<span class="inferred-tag">⚠ 推断</span></td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td>
+          <td>产假（小产假）</td>
+          <td>自然日</td>
+          <td>分公司相关规定<span class="inferred-tag">⚠ 推断</span></td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td>
+          <td>护理假</td>
+          <td>自然日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td>
+          <td>育儿假</td>
+          <td>工作日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">7</td>
+          <td>探亲假</td>
+          <td>自然日</td>
+          <td>停发绩效奖金和其余津贴</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">8</td>
+          <td>事假</td>
+          <td>工作日</td>
+          <td>停发岗位（技）工资、绩效奖金和各项津贴</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">9</td>
+          <td>病假<br><small style="color:#8fa3b0;">（含短期病假/长期病假/特殊疾病停工治疗医疗期内3个子类型，统一配置）</small></td>
+          <td>自然日</td>
+          <td>停发绩效奖金和其余津贴</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">10</td>
+          <td>护理照料假</td>
+          <td>自然日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">11</td>
+          <td>丧假</td>
+          <td>自然日</td>
+          <td>工资福利待遇不变</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">12</td>
+          <td>疗养假</td>
+          <td>按规定</td>
+          <td>薪酬待遇栏未填写<span class="inferred-tag">⚠ 推断</span></td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">13</td>
+          <td>工伤假</td>
+          <td>自然日</td>
+          <td>按工伤保险相关制度执行<span class="inferred-tag">⚠ 推断</span></td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">14</td>
+          <td>哺乳假</td>
+          <td>自然日</td>
+          <td>和绩效关联，扣钱</td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt off">不计入</span></span></td>
+        </tr>
+        <tr>
+          <td class="col-seq">15</td>
+          <td>补休假</td>
+          <td>按小时</td>
+          <td>由加班审批通过后自动换算<span class="inferred-tag">⚠ 推断</span></td>
+          <td class="col-status"><span class="switch-label"><label class="switch"><input type="checkbox" checked onchange="toggleTxt(this)"><span class="slider"></span></label><span class="txt on">计入</span></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="hint" style="margin-top:12px;color:#8fa3b0;font-size:13px;">
+    配置修改后立即生效，影响后续「部门人员兑现在岗月份」的计算；不影响已归档年度的绩效兑现数据。
+  </p>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+function toggleTxt(input){
+  var txt = input.closest('.switch-label').querySelector('.txt');
+  if (input.checked) {
+    txt.textContent = '计入';
+    txt.className = 'txt on';
+  } else {
+    txt.textContent = '不计入';
+    txt.className = 'txt off';
+  }
+}
+</script>
+</body>
+</html>

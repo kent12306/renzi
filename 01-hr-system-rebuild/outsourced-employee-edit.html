@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>编辑外包人员</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="编辑外包人员" data-desc="修改外包人员基础信息，已带入历史数据。">
+    <section class="card form-page">
+
+      <h3 class="form-section-title">基础信息</h3>
+      <div class="form-grid outsourced-grid">
+        <label>所属项目<select><option value="">请选择</option><option>驻场专业技术</option><option>长宁公司存量驻场专业技术项目</option><option>驻场操作服务</option></select></label>
+        <label>所属单位<select><option value="">请选择</option><option>成都项目部</option><option>泸州项目部</option></select></label>
+        <label>姓名 <input placeholder="请输入"></label>
+        <label>身份证号 <input placeholder="请输入"></label>
+        <label>性别
+          <select id="gender"><option value="">请选择</option><option>男</option><option>女</option></select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 婚姻状况</span>
+          <select id="maritalStatus"><option value="">请选择</option><option>未婚</option><option>已婚</option><option>离异</option><option>丧偶</option></select>
+        </label>
+        <label>出生日期 <input type="date"></label>
+        <label>民族 <input placeholder="请输入"></label>
+        <label>籍贯 <input placeholder="请输入"></label>
+        <label>参加工作时间 <input type="date"></label>
+        <label>宝石花入职时间 <input type="date"></label>
+        <label>政治面貌<select><option value="">请选择</option><option>群众</option><option>共青团员</option><option>中共党员</option></select></label>
+        <label>服务单位 <input placeholder="请输入"></label>
+        <label>服务三级单位<select id="serviceUnit"><option value="">请选择</option></select></label>
+        <label>岗位类别
+          <select id="postCategory">
+            <option value="">请选择</option>
+            <option>专业技术人员</option>
+            <option>一般管理人员</option>
+            <option>操作服务人员</option>
+          </select>
+        </label>
+        <label>岗位<select id="position"><option value="">请选择岗位</option></select></label>
+      </div>
+
+      <h3 class="form-section-title">文化程度</h3>
+      <div class="form-grid outsourced-grid">
+        <label>原文化程度
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="oldEdu" onchange="toggleCustom(this,'oldEduCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>小学</option><option>初中</option><option>中专</option>
+              <option>高中</option><option>技校</option><option>成人大专</option>
+              <option>成人本科</option><option>大学本科</option><option>硕士研究生</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="oldEduCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label>现文化程度
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="newEdu" onchange="toggleCustom(this,'newEduCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>小学</option><option>初中</option><option>中专</option>
+              <option>高中</option><option>技校</option><option>成人大专</option>
+              <option>成人本科</option><option>大学本科</option><option>硕士研究生</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="newEduCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label class="wide">何年何月何院校何专业毕业 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">技能资格（现工种）</h3>
+      <div class="form-grid outsourced-grid">
+        <label>领域（专业）
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="field" onchange="toggleCustom(this,'fieldCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>勘探开发</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="fieldCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label>现工种名称 <input placeholder="请输入"></label>
+        <label>工种方向
+          <select id="workDirection">
+            <option value="">请选择</option>
+            <option value="601060301">采气工</option>
+            <option value="631010301">电工</option>
+            <option value="628020600">天然气压缩机操作工</option>
+            <option value="616021201">油气管道保护工</option>
+            <option value="631010300">电工（高压）</option>
+          </select>
+        </label>
+        <label>工种代码 <input id="workCode" placeholder="选择工种方向后自动带出" readonly></label>
+        <label>现工种等级
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="curGrade" onchange="toggleCustom(this,'curGradeCustom')" style="flex:1;"><option value="">请选择</option><option>未取证</option><option>初级工</option><option>中级工</option><option>高级工</option><option>技师</option><option>高级技师</option><option>特级技师</option><option value="__custom__">自定义</option></select>
+            <input id="curGradeCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label>现工种取证时间 <input type="date"></label>
+        <label>现证书编号 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">其它工种</h3>
+      <div style="margin:0 16px 24px;">
+        <table class="other-worktype-table" id="otherWorkTable" style="border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;" class="col-seq">序号</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其它工种（等级）</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其他工种时间</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其它工种证书编号</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;width:72px;" class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="otherWorkBody"></tbody>
+        </table>
+        <button class="btn" type="button" id="addWorkBtn" style="margin-top:10px;">+ 添加其它工种</button>
+      </div>
+
+      <h3 class="form-section-title">压力容器</h3>
+      <div class="form-grid outsourced-grid">
+        <label>有效期至 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">电工</h3>
+      <div class="form-grid outsourced-grid">
+        <label>有效期至 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">消防设施操作</h3>
+      <div class="form-grid outsourced-grid">
+        <label>取证时间 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <div class="page-actions">
+        <a class="btn" href="./outsourced-employees.html">取消</a>
+        <a class="btn primary" href="./outsourced-employees.html">保存</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script>
+    // 服务三级单位 ← 系统组织单位（与 org-manage.html 一致）
+    var orgUnits = ['西南油气田','长宁','研发部','前端研发部','后端研发部','设计部','设计1部','外包','xx部门1','xxx部门2'];
+    var suSel = document.getElementById('serviceUnit');
+    orgUnits.forEach(function(u) {
+      var opt = document.createElement('option');
+      opt.value = u; opt.textContent = u;
+      suSel.appendChild(opt);
+    });
+
+    // 岗位 ← 系统组织单位下维护的全部岗位（与 org-manage.html 一致）
+    var allPositions = ['开发工程师','架构师','测试工程师','前端工程师','前端主管','后端工程师','数据库工程师','UI设计师','交互设计师','视觉设计师','外包专员'];
+    var posSel = document.getElementById('position');
+    allPositions.forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      posSel.appendChild(opt);
+    });
+
+    // 工种方向 → 工种代码 联动
+    document.getElementById('workDirection').addEventListener('change', function() {
+      document.getElementById('workCode').value = this.value || '';
+    });
+
+    // 自定义选项联动
+    function toggleCustom(sel, inputId) {
+      var input = document.getElementById(inputId);
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    // 其它工种：动态增删
+    var gradeOptions = '<option value="">请选择</option><option>未取证</option><option>初级工</option><option>中级工</option><option>高级工</option><option>技师</option><option>高级技师</option><option>特级技师</option><option value="__custom__">自定义</option>';
+
+    function renderOtherWork() {
+      var rows = document.getElementById('otherWorkBody').querySelectorAll('tr');
+      rows.forEach(function(r, i) { r.cells[0].textContent = i + 1; });
+    }
+
+    function toggleRowGrade(sel) {
+      var input = sel.parentNode.querySelector('.grade-custom');
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    function addOtherWork() {
+      var tbody = document.getElementById('otherWorkBody');
+      var tr = document.createElement('tr');
+      var td = 'style="padding:6px 10px;border-bottom:1px solid #eef3f6;"';
+      var inputStyle = 'style="border:1px solid #e0e8ec;border-radius:6px;padding:4px 8px;font-size:13px;width:100%;box-sizing:border-box;"';
+      tr.innerHTML =
+        '<td ' + td + ' style="border:1px solid #e8e8e8;padding:6px 10px;text-align:center;"></td>' +
+        '<td ' + td + '>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<select onchange="toggleRowGrade(this)" ' + inputStyle + '>' + gradeOptions + '</select>' +
+            '<input type="text" class="grade-custom" placeholder="请输入" style="border:1px solid #e0e8ec;border-radius:6px;padding:4px 8px;font-size:13px;flex:1;box-sizing:border-box;display:none;">' +
+          '</div>' +
+        '</td>' +
+        '<td ' + td + '><input type="date" ' + inputStyle + '></td>' +
+        '<td ' + td + '><input type="text" placeholder="请输入" ' + inputStyle + '></td>' +
+        '<td ' + td + ' style="border:1px solid #e8e8e8;padding:6px 10px;text-align:center;"><button class="btn link danger" type="button" onclick="removeOtherWork(this)">删除</button></td>';
+      tbody.appendChild(tr);
+      renderOtherWork();
+    }
+
+    function removeOtherWork(btn) {
+      btn.closest('tr').remove();
+      renderOtherWork();
+    }
+
+    document.getElementById('addWorkBtn').addEventListener('click', addOtherWork);
+    addOtherWork();
+
+    // ── 编辑模式：带入历史数据 ──────────────────────────
+    (function prefill() {
+      function setByLabel(labelText, value) {
+        var labels = document.querySelectorAll('.form-page label');
+        for (var i = 0; i < labels.length; i++) {
+          var txt = labels[i].childNodes[0] ? labels[i].childNodes[0].textContent.trim() : '';
+          if (txt === labelText) {
+            var field = labels[i].querySelector('input, select, textarea');
+            if (field) field.value = value;
+            return;
+          }
+        }
+      }
+
+      setByLabel('所属项目', '驻场专业技术');
+      setByLabel('所属单位', '成都项目部');
+      setByLabel('姓名', '周一');
+      setByLabel('身份证号', '5101011990xxxx1234');
+      document.getElementById('gender').value = '男';
+      document.getElementById('maritalStatus').value = '已婚';
+      setByLabel('出生日期', '1990-01-01');
+      setByLabel('民族', '汉族');
+      setByLabel('籍贯', '四川成都');
+      setByLabel('参加工作时间', '2012-07-01');
+      setByLabel('宝石花入职时间', '2023-03-15');
+      setByLabel('政治面貌', '群众');
+      setByLabel('服务单位', '长宁公司');
+      document.getElementById('serviceUnit').value = '研发部';
+      document.getElementById('postCategory').value = '专业技术人员';
+      document.getElementById('position').value = '采气工';
+
+      document.getElementById('oldEdu').value = '高中';
+      document.getElementById('newEdu').value = '成人大专';
+      setByLabel('何年何月何院校何专业毕业', '2012年6月四川能源职业技术学院机电一体化专业毕业');
+
+      document.getElementById('field').value = '勘探开发';
+      setByLabel('现工种名称', '采气工');
+      document.getElementById('workDirection').value = '601060301';
+      document.getElementById('workDirection').dispatchEvent(new Event('change'));
+      document.getElementById('curGrade').value = '初级工';
+      setByLabel('现工种取证时间', '2023-01-05');
+      setByLabel('现证书编号', 'ZG2025001');
+
+      var sections = document.querySelectorAll('.form-section-title');
+      sections.forEach(function(h) {
+        var grid = h.nextElementSibling;
+        if (h.textContent === '压力容器') {
+          grid.querySelectorAll('input')[0].value = '2027-01-05';
+          grid.querySelectorAll('input')[1].value = 'RQ2024001';
+        }
+        if (h.textContent === '电工') {
+          grid.querySelectorAll('input')[0].value = '2027-01-05';
+          grid.querySelectorAll('input')[1].value = 'DG2024001';
+        }
+        if (h.textContent === '消防设施操作') {
+          grid.querySelectorAll('input')[0].value = '2024-01-05';
+          grid.querySelectorAll('input')[1].value = 'XF2024001';
+        }
+      });
+
+      // 其它工种预填两行
+      var body = document.getElementById('otherWorkBody');
+      body.innerHTML = '';
+      addOtherWork();
+      addOtherWork();
+      var rows = body.querySelectorAll('tr');
+      var data = [['中级工','2024-01-10','DG20240110'],['初级工','2024-04-12','XF20240412']];
+      rows.forEach(function(tr, i) {
+        if (!data[i]) return;
+        tr.querySelector('select').value = data[i][0];
+        tr.querySelector('input[type="date"]').value = data[i][1];
+        var texts = tr.querySelectorAll('input[type="text"]');
+        texts[texts.length - 1].value = data[i][2];
+      });
+    })();
+  </script>
+</body>
+</html>

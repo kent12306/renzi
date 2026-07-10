@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>填报提醒设置</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 提醒规则卡片 */
+    .reminder-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:18px 20px;margin-bottom:16px;}
+    .reminder-card h4{font-size:15px;font-weight:600;color:#1d2733;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+    .reminder-card h4::before{content:'';width:3px;height:14px;background:#00AAB7;border-radius:2px;}
+    .reminder-rule-list{display:flex;flex-direction:column;gap:8px;}
+    .reminder-rule-item{display:flex;align-items:center;gap:10px;font-size:13px;color:#3d5266;padding:8px 12px;background:#f8fafc;border-radius:6px;}
+    .reminder-rule-item .dot{width:6px;height:6px;border-radius:50%;background:#00AAB7;flex-shrink:0;}
+
+    /* 开关组件 */
+    .switch{position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle;flex-shrink:0;}
+    .switch input{opacity:0;width:0;height:0;}
+    .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ccd5dc;border-radius:22px;transition:all .2s;}
+    .switch .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:all .2s;}
+    .switch input:checked+.slider{background:#00AAB7;}
+    .switch input:checked+.slider::before{transform:translateX(18px);}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="填报提醒设置"
+  data-desc="配置个人业绩合同、部门业绩合同、领导评价、部门间互评在临近填报截止时间时的站内提醒规则。">
+
+  <div class="notice" style="padding:12px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:8px;margin-bottom:16px;font-size:13px;">
+    提醒规则依赖"填报周期设置"中配置的各考核项截止时间计算触发节点，请先在填报周期设置中完成起止时间配置。
+  </div>
+
+  <!-- 逾期提醒规则 -->
+  <div class="reminder-card">
+    <h4>逾期提醒规则</h4>
+    <div style="font-size:13px;color:#5f7080;margin-bottom:14px;">
+      提醒对象以"指标项"为判断依据：只要该考核项仍存在未填写完成的指标项，就对全部被选中的人员持续提醒，不区分谁已经填过、谁还没填过；直到整体提交/发布或到达截止时间才停止。5类考核项均适用以下规则，每个时段可单独启用或停用。
+    </div>
+    <div class="reminder-rule-list">
+      <div class="reminder-rule-item">
+        <span class="dot"></span>
+        <span style="flex:1;">截止前 <strong style="color:#1d2733;">48小时</strong>，向全部未完成填报的相关人员发送第一次站内提醒</span>
+        <label class="switch" style="margin-left:auto;"><input type="checkbox" id="reminder48hToggle" checked onchange="alert((this.checked?'已启用':'已停用')+'截止前48小时提醒（原型演示）')"><span class="slider"></span></label>
+      </div>
+      <div class="reminder-rule-item">
+        <span class="dot"></span>
+        <span style="flex:1;">截止前 <strong style="color:#1d2733;">24小时</strong>，再次发送站内提醒</span>
+        <label class="switch" style="margin-left:auto;"><input type="checkbox" id="reminder24hToggle" checked onchange="alert((this.checked?'已启用':'已停用')+'截止前24小时提醒（原型演示）')"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+</body>
+</html>

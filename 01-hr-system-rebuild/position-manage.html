@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>岗位管理</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="岗位管理" data-desc="维护岗位信息库，供人员基础信息、岗位变动和统计分析复用。" data-actions='<a class="btn primary" href="./position-form.html">新增</a><button class="btn">导入</button><button class="btn">导出</button>'>
+    <section class="filter-bar">
+      <label class="field">岗位名称：<input placeholder="请输入"></label>
+      <label class="field">部门：<select><option>全部</option><option>技术部</option></select></label>
+      <button class="btn primary">查询</button>
+    </section>
+    <section class="card table-card">
+      <table>
+        <thead><tr><th class="col-seq">序号</th><th>岗位名称</th><th>部门</th><th>岗位说明</th><th class="col-action">操作</th></tr></thead>
+        <tbody>
+          <tr><td class="col-seq">1</td><td>前端开发工程师</td><td>技术部/前端开发组</td><td>负责公司产品的前端开发工作</td><td class="col-action"><a class="btn link" href="./position-edit.html">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+          <tr><td class="col-seq">2</td><td>后端开发工程师</td><td>技术部/后端开发组</td><td>负责公司产品的后端开发工作</td><td class="col-action"><a class="btn link" href="./position-edit.html">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+</body>
+</html>

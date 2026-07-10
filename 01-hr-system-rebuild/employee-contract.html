@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>合同信息</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="新增/编辑员工" data-desc="第 2 步：登记员工合同状态与关联薪资方案。" data-actions='<a class="btn" href="./regular-employees.html">返回列表</a>'>
+    <div class="stepper"><a class="step" href="./employee-form.html">1 基础信息</a><div class="step active">2 合同信息</div><a class="step" href="./employee-social-security.html">3 社保信息</a></div>
+    <section class="card form-page">
+      <div class="form-grid contract-grid">
+        <label class="wide-row"><span class="label-line">是否已签署合同 <b class="required">*</b></span>
+          <span class="radio-group contract-radios">
+            <label><input type="radio" name="contractSigned" value="yes" checked> 是</label>
+            <label><input type="radio" name="contractSigned" value="no"> 否</label>
+          </span>
+        </label>
+
+        <label data-contract-field>合同类型
+          <select>
+            <option>固定期限</option>
+            <option>无固定期限</option>
+          </select>
+        </label>
+        <label data-contract-field>合同开始时间
+          <input type="date" aria-label="合同开始时间">
+        </label>
+        <label data-contract-field>合同结束时间
+          <input type="date" aria-label="合同结束时间">
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 关联薪资方案</span>
+          <select>
+            <option>请选择</option>
+            <option>一般管理人员薪资方案</option>
+            <option>专业技术人员薪资方案</option>
+            <option>基层领导人员薪资方案</option>
+          </select>
+        </label>
+      </div>
+      <div class="page-actions">
+        <a class="btn" href="./employee-form.html">上一步</a>
+        <a class="btn primary" href="./employee-social-security.html">下一步</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script>
+    const signedRadios = document.querySelectorAll('input[name="contractSigned"]');
+    const contractFields = document.querySelectorAll('[data-contract-field]');
+
+    function syncContractFields() {
+      const signed = document.querySelector('input[name="contractSigned"]:checked')?.value === 'yes';
+      contractFields.forEach((field) => {
+        field.hidden = !signed;
+        field.style.display = signed ? '' : 'none';
+        field.querySelectorAll('input, select').forEach((control) => {
+          control.disabled = !signed;
+        });
+      });
+    }
+
+    signedRadios.forEach((radio) => radio.addEventListener('change', syncContractFields));
+    syncContractFields();
+  </script>
+</body>
+</html>

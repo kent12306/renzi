@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>加班申请</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .balance-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .bal-card { background:#fff; border:1px solid #eef3f6; border-radius:8px; padding:12px 18px; min-width:130px; }
+    .bal-card .val { font-size:20px; font-weight:700; color:#1d2733; }
+    .bal-card .lbl { font-size:12px; color:#aab5be; margin-top:2px; }
+    .tip-text { font-size:12px; color:#aab5be; margin-top:3px; }
+    .modal-mask { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:2000; align-items:center; justify-content:center; }
+    .modal-mask.show { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:24px 28px; width:560px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .modal-box h3 { font-size:15px; font-weight:600; color:#1d2733; margin-bottom:16px; }
+    .mrow { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; font-size:14px; color:#5f7080; }
+    .mrow input, .mrow select, .mrow textarea { border:1px solid #dfe5ec; border-radius:6px; padding:8px 10px; font:inherit; box-sizing:border-box; width:100%; }
+    .mrow input[type=date], .mrow input[type=datetime-local], .mrow select { height:34px; padding:0 10px; }
+    .mrow input:disabled { height:34px; background:#f5f7fa; color:#64748b; }
+    .mrow textarea { height:72px; resize:vertical; }
+    .mrow-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .modal-emp { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:11px 14px; margin-bottom:16px; font-size:13px; color:#5f7080; display:flex; gap:20px; flex-wrap:wrap; }
+    .modal-emp strong { color:#1a2533; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+    .conv-hint { background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:8px 12px; font-size:12px; color:#c2410c; margin-top:6px; }
+    /* 竖向审批流程节点 */
+    .approval-flow-vertical { display:flex; flex-direction:column; gap:0; margin-top:8px; }
+    .flow-node { display:flex; align-items:flex-start; gap:12px; position:relative; padding-bottom:16px; }
+    .flow-node:last-child { padding-bottom:0; }
+    .flow-node::before { content:''; position:absolute; left:11px; top:24px; bottom:0; width:2px; background:#dfe5ec; }
+    .flow-node:last-child::before { display:none; }
+    .flow-node-icon { width:24px; height:24px; border-radius:50%; background:#f5f7fa; border:2px solid #dfe5ec; display:flex; align-items:center; justify-content:center; font-size:12px; color:#8fa3b0; flex-shrink:0; z-index:1; }
+    .flow-node.active .flow-node-icon { background:#e6f7f9; border-color:#00AAB7; color:#00AAB7; }
+    .flow-node.done .flow-node-icon { background:#e8f7ef; border-color:#16a36a; color:#16a36a; }
+    .flow-node.cc .flow-node-icon { background:#fff9e8; border-color:#f4d898; color:#b7791f; }
+    .flow-node-content { flex:1; }
+    .flow-node-title { font-size:14px; font-weight:500; color:#1d2733; margin-bottom:4px; }
+    .flow-node-select { margin-top:4px; }
+    .flow-node-select select { height:32px; font-size:13px; padding:0 8px; min-width:160px; }
+    .flow-node-hint { font-size:12px; color:#8fa3b0; margin-top:2px; }
+    /* 确认弹框 */
+    .confirm-box { background:#fff; border-radius:12px; padding:24px 28px; width:420px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); text-align:center; }
+    .confirm-box h3 { font-size:16px; font-weight:600; color:#1d2733; margin-bottom:12px; }
+    .confirm-box p { font-size:14px; color:#5f7080; margin-bottom:20px; line-height:1.6; }
+    .confirm-box .modal-footer { justify-content:center; }
+    /* 申请撤销弹框 */
+    .revoke-box { background:#fff; border-radius:12px; padding:24px 28px; width:480px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .revoke-box h3 { font-size:16px; font-weight:600; color:#1d2733; margin-bottom:12px; }
+    .revoke-box .tip { background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:10px 12px; font-size:13px; color:#c2410c; margin-bottom:16px; }
+    .revoke-box .mrow { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; font-size:14px; color:#5f7080; }
+    .revoke-box textarea { border:1px solid #dfe5ec; border-radius:6px; padding:10px; font:inherit; width:100%; min-height:80px; resize:vertical; box-sizing:border-box; }
+    .revoke-box .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+    /* 折叠区样式 */
+    .original-approval-collapse { margin:16px 0; border:1px solid #e0e8ec; border-radius:8px; }
+    .original-approval-collapse[open] { background:#f8fafc; }
+    .collapse-header { display:flex; align-items:center; gap:8px; padding:12px 14px; cursor:pointer; font-size:14px; font-weight:500; color:#00AAB7; list-style:none; }
+    .collapse-header::-webkit-details-marker { display:none; }
+    .collapse-icon { font-size:10px; transition:transform .15s; }
+    .original-approval-collapse[open] .collapse-icon { transform:rotate(90deg); }
+    .collapse-content { padding:14px; border-top:1px solid #e0e8ec; background:#fff; border-radius:0 0 7px 7px; }
+    .collapse-content .orig-row { display:grid; grid-template-columns:100px 1fr; gap:6px 12px; font-size:13px; margin-bottom:8px; }
+    .collapse-content .orig-row:last-child { margin-bottom:0; }
+    .collapse-content .orig-label { color:#8fa3b0; }
+    .collapse-content .orig-value { color:#1d2733; }
+    .collapse-content .orig-flow { margin-top:12px; border-top:1px dashed #e0e8ec; padding-top:12px; }
+    .collapse-content .orig-flow-title { font-size:13px; color:#5f7080; margin-bottom:8px; font-weight:500; }
+  </style>
+</head>
+<body data-module="attendance">
+<main class="page-content" data-title="加班申请"
+  data-desc="提交加班申请，审批通过后系统自动换算为补休时长。"
+  data-actions='<a class="btn primary" id="newOtBtn" href="#">发起申请</a>'>
+
+  <!-- 条幅形式的余额展示 -->
+  <div style="background:#f0fbfc;border:1px solid #b3e6ea;border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;gap:32px;flex-wrap:wrap;align-items:center;font-size:14px;color:#5f7080;">
+    <span>本年度累计加班时长：<strong style="color:#1d2733;font-size:16px;">16</strong> 小时</span>
+    <span>补休余额：<strong style="color:#00AAB7;font-size:16px;">8</strong> 小时</span>
+    <span style="color:#b7791f;font-size:12px;margin-left:auto;">⏰ 加班时长与补休余额按自然年计算，2026-12-31 24:00 后未使用部分将清零，不结转至下一年度</span>
+  </div>
+
+  <!-- 筛选栏 -->
+  <section class="filter-bar">
+    <div class="field"><span>审批状态</span>
+      <select>
+        <option>全部状态</option>
+        <option>审批中</option><option>已批准</option><option>已驳回</option><option>已撤销</option><option>撤销审批中</option><option>批准后撤销</option>
+      </select>
+    </div>
+    <div class="field"><span>申请人</span>
+      <input placeholder="请输入" style="width:120px;">
+    </div>
+    <div class="field"><span>单位/部门</span>
+      <select>
+        <option>全部部门</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+        <option>财务资产部</option>
+        <option>人力资源部（党委组织部）</option>
+        <option>质量安全环保部</option>
+        <option>开发管理部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+      </select>
+    </div>
+    <div class="field"><span>申请时间</span>
+      <input type="date" style="width:130px;"> <span style="color:#8fa3b0;">至</span> <input type="date" style="width:130px;">
+    </div>
+    <button class="btn primary">查询</button>
+    <button class="btn">重置</button>
+  </section>
+
+  <!-- 申请记录 -->
+  <section class="card table-card">
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>申请人</th>
+          <th>单位/部门</th>
+          <th>开始时间</th>
+          <th>结束时间</th>
+          <th>时长</th>
+          <th>申请时间</th>
+          <th>审批状态</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td><td>张三</td><td>人力资源部（党委组织部）</td>
+          <td>2026-06-10 18:00</td><td>2026-06-11 02:00</td><td>8小时</td>
+          <td>2026-06-10 19:30</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(0);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="requestRevoke(0);return false;">撤销</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td><td>陈明</td><td>生产指挥中心</td>
+          <td>2026-06-18 18:00</td><td>2026-06-18 23:00</td><td>5小时</td>
+          <td>2026-06-18 18:30</td>
+          <td><span class="status amber">撤销审批中</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(1);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="cancelRevokeRequest(1);return false;">撤销</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td><td>李四</td><td>财务资产部</td>
+          <td>2026-06-17 18:30</td><td>2026-06-18 02:30</td><td>8小时</td>
+          <td>2026-06-17 21:00</td>
+          <td><span class="status amber">审批中</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(2);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="cancelPending(2);return false;">撤销</a>
+            <a class="btn link" href="#" onclick="reapplyPending(2);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td><td>王五</td><td>开发管理部</td>
+          <td>2026-06-15 19:00</td><td>2026-06-15 23:00</td><td>4小时</td>
+          <td>2026-06-15 20:00</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(3);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="requestRevoke(3);return false;">撤销</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td><td>赵六</td><td>地质工程部</td>
+          <td>2026-06-12 18:00</td><td>2026-06-12 22:00</td><td>4小时</td>
+          <td>2026-06-12 18:30</td>
+          <td><span class="status red">已驳回</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(4);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(4);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td><td>孙七</td><td>质量安全环保部</td>
+          <td>2026-06-08 17:30</td><td>2026-06-08 21:30</td><td>4小时</td>
+          <td>2026-06-08 18:00</td>
+          <td><span class="status">已撤销</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(5);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(5);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">7</td><td>周八</td><td>办公室（党委办公室）</td>
+          <td>2026-06-05 18:00</td><td>2026-06-06 00:00</td><td>6小时</td>
+          <td>2026-06-05 18:30</td>
+          <td><span class="status red">批准后撤销</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(6);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(6);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">8</td><td>吴九</td><td>计划经营部</td>
+          <td>2026-06-03 19:00</td><td>2026-06-03 23:00</td><td>4小时</td>
+          <td>2026-06-03 19:30</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(7);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="requestRevoke(7);return false;">撤销</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">9</td><td>郑十</td><td>党群工作部（纪委办公室）</td>
+          <td>2026-05-28 18:00</td><td>2026-05-28 22:30</td><td>4小时30分钟</td>
+          <td>2026-05-28 18:30</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewDetail(8);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="requestRevoke(8);return false;">撤销</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- 发起加班申请弹框 -->
+  <div class="modal-mask" id="otModal">
+    <div class="modal-box">
+      <h3>发起加班申请</h3>
+      <div class="modal-emp">
+        <span>姓名：<strong>张三</strong></span>
+        <span>单位/部门：<strong>人力资源部（党委组织部）</strong></span>
+        <span>岗位：<strong>培训、员工管理</strong></span>
+        <span>参加工作时间：<strong>2012-07-01</strong></span>
+      </div>
+      <div class="mrow-2col">
+        <div class="mrow" style="margin:0;"><span><span class="required">*</span> 开始时间</span><input type="datetime-local" id="otStart" onchange="calcOtHours()"></div>
+        <div class="mrow" style="margin:0;"><span><span class="required">*</span> 结束时间</span><input type="datetime-local" id="otEnd" onchange="calcOtHours()"></div>
+      </div>
+      <div class="mrow">
+        <span>时长</span>
+        <input id="otHours" disabled placeholder="自动计算">
+      </div>
+      <div class="conv-hint">审批通过后自动换算为等额补休时长（1小时加班 = 1小时补休）。</div>
+      <div class="mrow" style="margin-top:12px;">
+        <span><span class="required">*</span> 加班事由</span>
+        <textarea id="otReason" placeholder="请说明加班原因及工作内容"></textarea>
+      </div>
+      <div class="mrow">
+        <span>审批流程</span>
+        <div class="approval-flow-vertical">
+          <div class="flow-node active">
+            <div class="flow-node-icon">1</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">班组审批</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择审批人</option>
+                  <option>李明（班组长）</option>
+                  <option>王刚（副班长）</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-icon">2</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">单位（部门）审批</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择审批人</option>
+                  <option>刘主任（部门负责人）</option>
+                  <option>陈副主任（部门副职）</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="flow-node cc">
+            <div class="flow-node-icon">抄</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">人力资源部抄送</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择抄送人</option>
+                  <option>赵敏（HR专员）</option>
+                  <option>周婷（HR主管）</option>
+                </select>
+              </div>
+              <div class="flow-node-hint">审批结果将同步抄送至人力资源部</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('otModal')">取消</button>
+        <button class="btn primary" onclick="submitOt()">提交申请</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看详情弹框 -->
+  <div class="modal-mask" id="detailModal">
+    <div class="modal-box">
+      <h3>加班申请详情</h3>
+      <div class="modal-emp">
+        <span>姓名：<strong id="detailName">张三</strong></span>
+        <span>单位/部门：<strong id="detailDept">人力资源部（党委组织部）</strong></span>
+        <span>岗位：<strong id="detailPost">培训、员工管理</strong></span>
+        <span>参加工作时间：<strong id="detailWorkDate">2012-07-01</strong></span>
+      </div>
+      <div class="mrow-2col">
+        <div class="mrow" style="margin:0;"><span>开始时间</span><input id="detailStart" disabled></div>
+        <div class="mrow" style="margin:0;"><span>结束时间</span><input id="detailEnd" disabled></div>
+      </div>
+      <div class="mrow">
+        <span>时长</span>
+        <input id="detailHours" disabled>
+      </div>
+      <div class="mrow">
+        <span>加班事由</span>
+        <textarea id="detailReason" disabled style="min-height:60px;background:#f5f7fa;"></textarea>
+      </div>
+      <div class="mrow">
+        <span id="detailFlowTitle">审批流程</span>
+        <div id="detailApprovalFlow" class="approval-flow-vertical"></div>
+      </div>
+      <!-- 原审批折叠区（仅撤销审批中状态显示） -->
+      <details class="original-approval-collapse" id="detailCollapseSection" style="display:none;">
+        <summary class="collapse-header">
+          <span class="collapse-icon">▶</span>
+          <span>查看原加班审批详情</span>
+        </summary>
+        <div class="collapse-content" id="detailCollapseContent"></div>
+      </details>
+      <div class="modal-footer"><button class="btn" onclick="closeModal('detailModal')">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- 撤销确认弹框（审批中状态） -->
+  <div class="modal-mask" id="cancelPendingModal">
+    <div class="confirm-box">
+      <h3>撤销申请</h3>
+      <p>确定撤销该加班申请？撤销后可重新提交。</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('cancelPendingModal')">取消</button>
+        <button class="btn primary" onclick="doCancelPending()">确认撤销</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重新申请确认弹框（审批中状态） -->
+  <div class="modal-mask" id="reapplyConfirmModal">
+    <div class="confirm-box">
+      <h3>重新申请</h3>
+      <p>重新提交后，当前审批将自动撤销，确定继续？</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('reapplyConfirmModal')">取消</button>
+        <button class="btn primary" onclick="doReapplyConfirm()">确定继续</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 撤销弹框（已批准状态，需填撤销理由） -->
+  <div class="modal-mask" id="revokeModal">
+    <div class="revoke-box">
+      <h3>撤销申请</h3>
+      <div class="tip">该审批已通过，撤销需要审批人同意。</div>
+      <div class="modal-emp" id="revokeInfo"></div>
+      <!-- 原审批折叠区 -->
+      <details class="original-approval-collapse" id="revokeCollapseSection">
+        <summary class="collapse-header">
+          <span class="collapse-icon">▶</span>
+          <span>查看原加班审批详情</span>
+        </summary>
+        <div class="collapse-content" id="revokeCollapseContent"></div>
+      </details>
+      <div class="mrow">
+        <span><span class="required">*</span> 撤销理由</span>
+        <textarea id="revokeReason" placeholder="请说明撤销原因"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('revokeModal')">取消</button>
+        <button class="btn primary" onclick="doRequestRevoke()">提交撤销申请</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 撤销撤销申请确认弹框 -->
+  <div class="modal-mask" id="cancelRevokeModal">
+    <div class="confirm-box">
+      <h3>撤销撤销申请</h3>
+      <p>确定撤销该撤销申请？撤销后将恢复为「已批准」状态。</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('cancelRevokeModal')">取消</button>
+        <button class="btn primary" onclick="doCancelRevokeRequest()">确认撤销</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+// 模拟数据
+var records = [
+  { name:'张三', dept:'人力资源部（党委组织部）', post:'培训、员工管理', workDate:'2012-07-01', start:'2026-06-10 18:00', end:'2026-06-11 02:00', hours:'8小时', reason:'月报汇总加班', status:'已批准', approvals:[
+    {step:'班组审批', approver:'李明（班组长）', result:'同意', time:'2026-06-10 20:00'},
+    {step:'单位（部门）审批', approver:'刘主任（部门负责人）', result:'同意', time:'2026-06-11 09:00'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-06-11 10:00'}
+  ]},
+  { name:'陈明', dept:'生产指挥中心', post:'综合管理', workDate:'2005-07-01', start:'2026-06-18 18:00', end:'2026-06-18 23:00', hours:'5小时', reason:'调度系统紧急维护', status:'撤销审批中', revokeReason:'临时有事无法加班', revokeTime:'2026-06-19 09:00', originalApprovalId:100, approvals:[
+    {step:'班组审批', approver:'尤勇（班组长）', result:'同意', time:'2026-06-18 19:00'},
+    {step:'单位（部门）审批', approver:'许主任（部门负责人）', result:'同意', time:'2026-06-18 20:00'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-06-19 09:00'}
+  ], revokeApprovals:[
+    {step:'班组审批', approver:'尤勇（班组长）', result:'审批中', time:''},
+    {step:'单位（部门）审批', approver:'许主任（部门负责人）', result:'待审批', time:''},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'待抄送', time:''}
+  ]},
+  { name:'李四', dept:'财务资产部', post:'总账', workDate:'2008-07-01', start:'2026-06-17 18:30', end:'2026-06-18 02:30', hours:'8小时', reason:'月末结账紧急处理', status:'审批中', approvals:[
+    {step:'班组审批', approver:'王刚（班组长）', result:'同意', time:'2026-06-17 22:00'},
+    {step:'单位（部门）审批', approver:'陈部长（部门负责人）', result:'审批中', time:''},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'待抄送', time:''}
+  ]},
+  { name:'王五', dept:'开发管理部', post:'采气场站管理', workDate:'1995-09-01', start:'2026-06-15 19:00', end:'2026-06-15 23:00', hours:'4小时', reason:'现场应急处置', status:'已批准', approvals:[
+    {step:'班组审批', approver:'孙强（班组长）', result:'同意', time:'2026-06-15 20:30'},
+    {step:'单位（部门）审批', approver:'张主任（部门负责人）', result:'同意', time:'2026-06-16 09:00'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-06-16 10:00'}
+  ]},
+  { name:'赵六', dept:'地质工程部', post:'科技管理', workDate:'2015-07-01', start:'2026-06-12 18:00', end:'2026-06-12 22:00', hours:'4小时', reason:'方案评审准备', status:'已驳回', approvals:[
+    {step:'班组审批', approver:'钱伟（班组长）', result:'同意', time:'2026-06-12 19:00'},
+    {step:'单位（部门）审批', approver:'李总工（部门负责人）', result:'驳回', time:'2026-06-13 09:00', rejectReason:'该时段非紧急工作'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-06-13 09:30'}
+  ]},
+  { name:'孙七', dept:'质量安全环保部', post:'工业安全管理', workDate:'2018-03-01', start:'2026-06-08 17:30', end:'2026-06-08 21:30', hours:'4小时', reason:'安全检查资料整理', status:'已撤销', approvals:[
+    {step:'班组审批', approver:'吴磊（班组长）', result:'—', time:''},
+    {step:'单位（部门）审批', approver:'郑部长（部门负责人）', result:'—', time:''},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'—', time:''}
+  ]},
+  { name:'周八', dept:'办公室（党委办公室）', post:'综合管理', workDate:'2010-07-01', start:'2026-06-05 18:00', end:'2026-06-06 00:00', hours:'6小时', reason:'文件印发紧急处理', status:'批准后撤销', approvals:[
+    {step:'班组审批', approver:'冯涛（班组长）', result:'同意', time:'2026-06-05 19:00'},
+    {step:'单位（部门）审批', approver:'杨主任（部门负责人）', result:'同意', time:'2026-06-05 20:00'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-06-06 09:00'},
+    {step:'撤销说明', approver:'周八（本人）', result:'本人申请撤销', time:'2026-06-07 10:00'}
+  ]},
+  { name:'吴九', dept:'计划经营部', post:'合同管理', workDate:'2016-07-01', start:'2026-06-03 19:00', end:'2026-06-03 23:00', hours:'4小时', reason:'合同审批紧急处理', status:'已批准', approvals:[
+    {step:'班组审批', approver:'韩超（班组长）', result:'同意', time:'2026-06-03 20:00'},
+    {step:'单位（部门）审批', approver:'马部长（部门负责人）', result:'同意', time:'2026-06-04 09:00'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-06-04 10:00'}
+  ]},
+  { name:'郑十', dept:'党群工作部（纪委办公室）', post:'纪检管理', workDate:'2014-07-01', start:'2026-05-28 18:00', end:'2026-05-28 22:30', hours:'4小时30分钟', reason:'专项检查资料准备', status:'已批准', approvals:[
+    {step:'班组审批', approver:'秦刚（班组长）', result:'同意', time:'2026-05-28 19:00'},
+    {step:'单位（部门）审批', approver:'何书记（部门负责人）', result:'同意', time:'2026-05-28 20:00'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-05-29 09:00'}
+  ]}
+];
+
+document.getElementById('newOtBtn').addEventListener('click', function(e){ e.preventDefault(); openModal('otModal'); });
+
+function calcOtHours(){
+  var start = document.getElementById('otStart').value;
+  var end = document.getElementById('otEnd').value;
+  var hoursInput = document.getElementById('otHours');
+  
+  if(start && end){
+    var startDate = new Date(start);
+    var endDate = new Date(end);
+    if(endDate > startDate){
+      var diffMs = endDate - startDate;
+      var diffHours = diffMs / (1000 * 60 * 60);
+      if(diffHours >= 1){
+        var h = Math.floor(diffHours);
+        var m = Math.round((diffHours - h) * 60);
+        if(m > 0){
+          hoursInput.value = h + '小时' + m + '分钟';
+        } else {
+          hoursInput.value = h + '小时';
+        }
+      } else {
+        var m = Math.round(diffHours * 60);
+        hoursInput.value = m + '分钟';
+      }
+    } else {
+      hoursInput.value = '';
+    }
+  } else {
+    hoursInput.value = '';
+  }
+}
+
+function submitOt(){
+  var start = document.getElementById('otStart').value;
+  var end = document.getElementById('otEnd').value;
+  var reason = document.getElementById('otReason').value;
+  
+  if(!start){ alert('请选择开始时间'); return; }
+  if(!end){ alert('请选择结束时间'); return; }
+  if(!reason.trim()){ alert('请填写加班事由'); return; }
+  
+  alert('申请已提交，等待审批');
+  closeModal('otModal');
+}
+
+function viewDetail(idx){
+  var r = records[idx];
+  document.getElementById('detailName').textContent = r.name;
+  document.getElementById('detailDept').textContent = r.dept;
+  document.getElementById('detailPost').textContent = r.post;
+  document.getElementById('detailWorkDate').textContent = r.workDate;
+  document.getElementById('detailStart').value = r.start;
+  document.getElementById('detailEnd').value = r.end;
+  document.getElementById('detailHours').value = r.hours;
+  document.getElementById('detailReason').value = r.reason;
+  
+  // 如果是撤销审批中状态，显示撤销相关信息
+  var approvalData = r.approvals;
+  var flowTitle = '审批流程';
+  var collapseSection = document.getElementById('detailCollapseSection');
+  
+  if(r.status === '撤销审批中') {
+    flowTitle = '撤销审批流程';
+    approvalData = r.revokeApprovals || r.approvals;
+    
+    // 显示原审批折叠区
+    collapseSection.style.display = 'block';
+    collapseSection.removeAttribute('open'); // 默认折叠
+    
+    // 填充原审批信息
+    var collapseHtml = '';
+    collapseHtml += '<div class="orig-row"><span class="orig-label">加班时间</span><span class="orig-value">' + r.start + ' 至 ' + r.end + '</span></div>';
+    collapseHtml += '<div class="orig-row"><span class="orig-label">时长</span><span class="orig-value">' + r.hours + '</span></div>';
+    collapseHtml += '<div class="orig-row"><span class="orig-label">加班事由</span><span class="orig-value">' + r.reason + '</span></div>';
+    
+    // 原审批流程
+    collapseHtml += '<div class="orig-flow">';
+    collapseHtml += '<div class="orig-flow-title">原审批流程</div>';
+    var icons = ['1', '2', '抄'];
+    r.approvals.forEach(function(a, i){
+      var iconNum = i < 3 ? icons[i] : (i + 1);
+      if(a.step === '人力资源部抄送') iconNum = '抄';
+      collapseHtml += '<div style="display:flex;gap:10px;margin-bottom:8px;font-size:13px;">';
+      collapseHtml += '<span style="width:20px;height:20px;border-radius:50%;background:#e8f7ef;border:1px solid #16a36a;color:#16a36a;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + iconNum + '</span>';
+      collapseHtml += '<div><div style="color:#1d2733;font-weight:500;">' + a.step + '</div>';
+      collapseHtml += '<div style="color:#5f7080;">' + a.approver + '</div>';
+      collapseHtml += '<div style="color:#15803d;">✓ ' + a.result + (a.time ? ' · ' + a.time : '') + '</div>';
+      collapseHtml += '</div></div>';
+    });
+    collapseHtml += '</div>';
+    
+    document.getElementById('detailCollapseContent').innerHTML = collapseHtml;
+  } else {
+    // 非撤销审批中状态，隐藏折叠区
+    collapseSection.style.display = 'none';
+  }
+  
+  document.getElementById('detailFlowTitle').textContent = flowTitle;
+  
+  // 审批流程（竖向节点样式）
+  var flowHtml = '';
+  var icons = ['1', '2', '抄'];
+  approvalData.forEach(function(a, i){
+    var nodeClass = 'flow-node';
+    var iconNum = i < 3 ? icons[i] : (i + 1);
+    if(a.step === '人力资源部抄送'){
+      nodeClass += ' cc';
+      iconNum = '抄';
+    }
+    if(a.result === '同意' || a.result === '已抄送'){
+      nodeClass += ' done';
+    } else if(a.result === '审批中'){
+      nodeClass += ' active';
+    } else if(a.result === '驳回' || a.result === '本人申请撤销'){
+      nodeClass += ' active';
+    }
+    
+    var resultText = '';
+    if(a.result === '同意' || a.result === '已抄送'){
+      resultText = '<span style="color:#15803d;">✓ ' + a.result + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else if(a.result === '驳回'){
+      resultText = '<span style="color:#d14343;">✗ ' + a.result + (a.rejectReason ? '（' + a.rejectReason + '）' : '') + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else if(a.result === '审批中'){
+      resultText = '<span style="color:#b7791f;">⏳ ' + a.result + '</span>';
+    } else if(a.result === '本人申请撤销'){
+      resultText = '<span style="color:#d14343;">' + a.result + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else {
+      resultText = '<span style="color:#8fa3b0;">' + a.result + '</span>';
+    }
+    
+    flowHtml += '<div class="' + nodeClass + '">';
+    flowHtml += '<div class="flow-node-icon">' + iconNum + '</div>';
+    flowHtml += '<div class="flow-node-content">';
+    flowHtml += '<div class="flow-node-title">' + a.step + '</div>';
+    flowHtml += '<div class="flow-node-hint" style="color:#1d2733;font-weight:500;">' + a.approver + '</div>';
+    flowHtml += '<div class="flow-node-hint">' + resultText + '</div>';
+    flowHtml += '</div></div>';
+  });
+  
+  // 撤销审批中状态额外显示撤销理由
+  if(r.status === '撤销审批中' && r.revokeReason) {
+    flowHtml = '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;font-size:13px;color:#c2410c;margin-bottom:12px;"><strong>撤销理由：</strong>' + r.revokeReason + '</div>' + flowHtml;
+  }
+  
+  document.getElementById('detailApprovalFlow').innerHTML = flowHtml;
+  
+  openModal('detailModal');
+}
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+});
+
+// 当前操作的记录索引
+var currentActionIdx = -1;
+
+// 审批中状态 - 撤销
+function cancelPending(idx) {
+  currentActionIdx = idx;
+  openModal('cancelPendingModal');
+}
+
+function doCancelPending() {
+  alert('申请已撤销');
+  closeModal('cancelPendingModal');
+}
+
+// 审批中状态 - 重新申请（需确认当前审批将自动撤销）
+function reapplyPending(idx) {
+  currentActionIdx = idx;
+  openModal('reapplyConfirmModal');
+}
+
+function doReapplyConfirm() {
+  closeModal('reapplyConfirmModal');
+  prefillAndOpenApply(currentActionIdx);
+}
+
+// 已批准状态 - 申请撤销（需填撤销理由，走审批）
+function requestRevoke(idx) {
+  currentActionIdx = idx;
+  var r = records[idx];
+  var infoHtml = '<span>加班时间：<strong>' + r.start + ' 至 ' + r.end + '</strong></span>';
+  infoHtml += '<span>时长：<strong>' + r.hours + '</strong></span>';
+  document.getElementById('revokeInfo').innerHTML = infoHtml;
+  document.getElementById('revokeReason').value = '';
+  
+  // 填充折叠区内容
+  var collapseHtml = '';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">申请人</span><span class="orig-value">' + r.name + '</span></div>';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">单位/部门</span><span class="orig-value">' + r.dept + '</span></div>';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">岗位</span><span class="orig-value">' + r.post + '</span></div>';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">加班时间</span><span class="orig-value">' + r.start + ' 至 ' + r.end + '</span></div>';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">时长</span><span class="orig-value">' + r.hours + '</span></div>';
+  collapseHtml += '<div class="orig-row"><span class="orig-label">加班事由</span><span class="orig-value">' + r.reason + '</span></div>';
+  
+  // 原审批流程
+  collapseHtml += '<div class="orig-flow">';
+  collapseHtml += '<div class="orig-flow-title">原审批流程</div>';
+  var icons = ['1', '2', '抄'];
+  r.approvals.forEach(function(a, i){
+    var iconNum = i < 3 ? icons[i] : (i + 1);
+    if(a.step === '人力资源部抄送') iconNum = '抄';
+    var resultColor = '#15803d';
+    var resultSymbol = '✓';
+    if(a.result === '驳回') { resultColor = '#d14343'; resultSymbol = '✗'; }
+    else if(a.result === '审批中') { resultColor = '#b7791f'; resultSymbol = '⏳'; }
+    
+    collapseHtml += '<div style="display:flex;gap:10px;margin-bottom:8px;font-size:13px;">';
+    collapseHtml += '<span style="width:20px;height:20px;border-radius:50%;background:#e8f7ef;border:1px solid #16a36a;color:#16a36a;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + iconNum + '</span>';
+    collapseHtml += '<div><div style="color:#1d2733;font-weight:500;">' + a.step + '</div>';
+    collapseHtml += '<div style="color:#5f7080;">' + a.approver + '</div>';
+    collapseHtml += '<div style="color:' + resultColor + ';">' + resultSymbol + ' ' + a.result + (a.time ? ' · ' + a.time : '') + '</div>';
+    collapseHtml += '</div></div>';
+  });
+  collapseHtml += '</div>';
+  
+  document.getElementById('revokeCollapseContent').innerHTML = collapseHtml;
+  // 默认折叠
+  document.getElementById('revokeCollapseSection').removeAttribute('open');
+  
+  openModal('revokeModal');
+}
+
+function doRequestRevoke() {
+  var reason = document.getElementById('revokeReason').value.trim();
+  if(!reason) {
+    alert('请填写撤销理由');
+    document.getElementById('revokeReason').focus();
+    return;
+  }
+  alert('撤销申请已提交，等待审批人审批');
+  closeModal('revokeModal');
+}
+
+// 已驳回/已撤销/批准后撤销 - 重新申请（直接打开预填表单）
+function reapplyDirect(idx) {
+  prefillAndOpenApply(idx);
+}
+
+// 预填表单并打开申请弹框
+function prefillAndOpenApply(idx) {
+  var r = records[idx];
+  // 转换时间格式为 datetime-local 格式
+  var startVal = r.start.replace(' ', 'T');
+  var endVal = r.end.replace(' ', 'T');
+  document.getElementById('otStart').value = startVal;
+  document.getElementById('otEnd').value = endVal;
+  document.getElementById('otReason').value = r.reason;
+  calcOtHours();
+  openModal('otModal');
+}
+
+// 撤销审批中状态 - 撤销撤销申请
+function cancelRevokeRequest(idx) {
+  currentActionIdx = idx;
+  openModal('cancelRevokeModal');
+}
+
+function doCancelRevokeRequest() {
+  alert('已撤销撤销申请，状态恢复为「已批准」');
+  closeModal('cancelRevokeModal');
+}
+</script>
+</body>
+</html>

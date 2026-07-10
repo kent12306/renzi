@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>组织单位管理</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* ── 两栏布局 ── */
+    .org-layout { display:grid; grid-template-columns:268px 1fr; gap:16px; align-items:start; }
+
+    /* ── 左侧树 ── */
+    .org-tree { padding:14px 12px; min-height:520px; }
+    .org-tree ul { list-style:none; padding-left:16px; margin:2px 0 0; }
+    .org-tree > .tree-root { padding-left:0; }
+    .org-tree li { margin:1px 0; }
+    .tree-node {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 10px; border-radius:6px; cursor:pointer;
+      font-size:14px; color:#1d2733; user-select:none; white-space:nowrap;
+    }
+    .tree-node:hover { color:#00AAB7; background:#e6f7f9; }
+    .tree-node.active { color:#00AAB7; font-weight:600; background:#e6f7f9; }
+    .unit-badge {
+      font-size:10px; padding:1px 6px; border-radius:8px;
+      background:#fff3cd; color:#856404; border:1px solid #ffc107; flex-shrink:0;
+    }
+
+    /* ── 右侧部门信息卡 ── */
+    .dept-info-card {
+      background:#f8fafc; border:1px solid #eef3f6; border-radius:8px;
+      padding:16px 20px; display:flex; justify-content:space-between;
+      align-items:flex-start; margin-bottom:16px;
+    }
+    .dept-name { font-size:17px; font-weight:600; color:#1d2733; margin-bottom:8px; }
+    .dept-meta { display:flex; gap:24px; flex-wrap:wrap; }
+    .dept-meta span { font-size:13px; color:#5f7080; }
+    .dept-meta strong { color:#1d2733; }
+    .dept-actions { display:flex; gap:8px; flex-shrink:0; }
+
+    /* ── 岗位卡 ── */
+    .position-card { background:#fff; border:1px solid #eef3f6; border-radius:8px; padding:16px 20px; }
+    .sec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .sec-header h4 { font-size:15px; font-weight:600; color:#1d2733; }
+    .position-card table { width:100%; border-collapse:collapse; font-size:14px; }
+    .position-card th, .position-card td { border-bottom:1px solid #eef3f6; padding:9px 12px; text-align:left; vertical-align:middle; }
+    .position-card thead th { background:#f5f7fa; font-weight:600; color:#3d5266; font-size:13px; }
+    th.col-seq, td.col-seq { text-align:center; width:52px; }
+    th.col-action, td.col-action { text-align:center; white-space:nowrap; width:120px; }
+    .unit-placeholder { text-align:center; padding:48px 20px; color:#aab5be; font-size:14px; }
+    .unit-placeholder .icon { font-size:32px; margin-bottom:10px; }
+  </style>
+  <style>
+    /* ── 弹框 ── */
+    .modal-mask {
+      display:none; position:fixed; inset:0;
+      background:rgba(15,23,42,0.45); z-index:2000;
+      align-items:center; justify-content:center;
+    }
+    .modal-mask.show { display:flex; }
+    .modal-box {
+      background:#fff; border-radius:12px; padding:24px 28px;
+      width:520px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,0.18);
+    }
+    .modal-box h3 { font-size:16px; font-weight:600; color:#1d2733; margin-bottom:18px; }
+    .mrow { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; font-size:14px; color:#5f7080; }
+    .mrow input, .mrow select, .mrow textarea {
+      height:34px; border:1px solid #dfe5ec; border-radius:6px;
+      padding:0 10px; font:inherit; width:100%; box-sizing:border-box;
+    }
+    .mrow input:focus, .mrow select:focus { outline:none; border-color:#00AAB7; box-shadow:0 0 0 2px rgba(0,170,183,.15); }
+    .mrow textarea { height:72px; resize:vertical; padding:8px 10px; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+    .pos-tag {
+      display:inline-flex; align-items:center; gap:4px;
+      background:#e6f7f9; color:#00838c; border:1px solid #b3e6ea;
+      border-radius:12px; padding:2px 10px; font-size:12px;
+    }
+    .merge-list {
+      border:1px solid #edf1f5; border-radius:6px; padding:8px 12px;
+      font-size:13px; color:#5f7080; background:#fafafa;
+      max-height:88px; overflow-y:auto; list-style:none;
+    }
+    .merge-list li { padding:2px 0; }
+    .merge-list li::before { content:"· "; color:#aab5be; }
+  </style>
+</head>
+<body data-module="org">
+<main class="page-content" data-title="组织单位管理"
+  data-desc="点击左侧部门树查看部门详情与岗位，支持新增、编辑、删除部门及岗位。"
+  data-actions='<a class="btn primary" id="addDeptBtn" href="#">新增部门</a><a class="btn" id="mergeDeptBtn" href="#">合并部门</a>'>
+
+  <section class="org-layout">
+
+    <!-- 左侧树 -->
+    <aside class="card org-tree">
+      <input class="field" placeholder="搜索部门" id="treeSearch" style="width:100%;height:34px;padding:0 10px;border:1px solid #dfe5ec;border-radius:6px;font:inherit;margin-bottom:12px;box-sizing:border-box;">
+      <ul class="tree-root" id="treeRoot"></ul>
+    </aside>
+
+    <!-- 右侧 -->
+    <div>
+      <!-- 部门信息卡 -->
+      <div class="dept-info-card">
+        <div style="flex:1;">
+          <div class="dept-name" id="deptName">请点击左侧部门</div>
+          <div class="dept-meta" id="deptMeta">
+            <span style="color:#aab5be;">选择部门节点查看详情</span>
+          </div>
+        </div>
+        <div class="dept-actions" id="deptActions" style="display:none;">
+          <button class="btn" id="editDeptBtn">编辑</button>
+          <button class="btn danger" id="deleteDeptBtn">删除</button>
+        </div>
+      </div>
+
+      <!-- 岗位列表（部门选中后显示） -->
+      <div class="position-card" id="positionSection" style="display:none;">
+        <div class="sec-header">
+          <h4 id="posCardTitle">岗位列表</h4>
+          <button class="btn primary" id="addPosBtn">+ 新增岗位</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-seq">序号</th>
+              <th>岗位名称</th>
+              <th>说明</th>
+              <th class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="positionBody"></tbody>
+        </table>
+      </div>
+
+      <!-- 所在单位节点提示 -->
+      <div class="unit-placeholder" id="unitPlaceholder" style="display:none;">
+        <div class="icon">🏢</div>
+        <div>当前为所在单位节点，请展开后选择下级部门查看岗位</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ① 编辑部门弹框 -->
+  <div class="modal-mask" id="editDeptModal">
+    <div class="modal-box">
+      <h3>编辑部门信息</h3>
+      <div class="mrow"><span>所在单位</span><select id="editUnitSel"></select></div>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 部门名称</span></span><input id="editDeptNameInput" placeholder="请输入"></div>
+      <div class="mrow"><span>描述</span><textarea id="editDeptDescInput" placeholder="请输入"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editDeptModal')">取消</button>
+        <button class="btn primary" onclick="saveEditDept()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 新增部门弹框 -->
+  <div class="modal-mask" id="addDeptModal">
+    <div class="modal-box">
+      <h3>新增部门</h3>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 所在单位</span></span><select id="addUnitSel"></select></div>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 部门名称</span></span><input id="addDeptNameInput" placeholder="请输入"></div>
+      <div class="mrow"><span>描述</span><textarea id="addDeptDescInput" placeholder="请输入"></textarea></div>
+      <div class="mrow">
+        <span>初始岗位（输入后按 Enter 添加）</span>
+        <input id="addDeptPosInput" placeholder="输入岗位名称，按 Enter 添加">
+        <div id="addDeptPosTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addDeptModal')">取消</button>
+        <button class="btn primary" onclick="saveAddDept()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 合并部门弹框 -->
+  <div class="modal-mask" id="mergeDeptModal">
+    <div class="modal-box">
+      <h3>合并部门</h3>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 源部门（将被合并）</span></span><select id="mergeSrcSel" onchange="renderMergePreview()"></select></div>
+      <div class="mrow"><span>源部门现有岗位</span><ul class="merge-list" id="mergeSrcList"></ul></div>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 目标部门（合并到）</span></span><select id="mergeDstSel" onchange="renderMergePreview()"></select></div>
+      <div class="mrow"><span>目标部门现有岗位</span><ul class="merge-list" id="mergeDstList"></ul></div>
+      <div class="mrow"><span>岗位冲突处理</span>
+        <select>
+          <option>保留两者（同名岗位并存）</option>
+          <option>以目标部门为准（覆盖同名岗位）</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('mergeDeptModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('mergeDeptModal')">确认合并</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 新增岗位弹框 -->
+  <div class="modal-mask" id="addPosModal">
+    <div class="modal-box">
+      <h3>新增岗位</h3>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 岗位名称</span></span><input id="addPosName" placeholder="请输入岗位名称"></div>
+      <div class="mrow"><span>说明</span><textarea id="addPosDesc" placeholder="请输入岗位说明"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addPosModal')">取消</button>
+        <button class="btn primary" onclick="saveAddPos()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ 编辑岗位弹框 -->
+  <div class="modal-mask" id="editPosModal">
+    <div class="modal-box">
+      <h3>编辑岗位</h3>
+      <div class="mrow"><span><span class="label-text"><span class="required">*</span> 岗位名称</span></span><input id="editPosName" placeholder="请输入岗位名称"></div>
+      <div class="mrow"><span>说明</span><textarea id="editPosDesc" placeholder="请输入岗位说明"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editPosModal')">取消</button>
+        <button class="btn primary" onclick="saveEditPos()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ 删除确认弹框 -->
+  <div class="modal-mask" id="confirmModal">
+    <div class="modal-box" style="width:400px;">
+      <h3 id="confirmTitle">确认删除</h3>
+      <p id="confirmMsg" style="font-size:14px;color:#1d2733;margin:0 0 20px;line-height:1.6;"></p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('confirmModal')">取消</button>
+        <button class="btn primary" style="background:#d14343;border-color:#d14343;" id="confirmOkBtn">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+// ── 数据 ──────────────────────────────────────────────
+var UNITS = ['长宁公司', '蜀南气矿', '华鑫盛'];
+
+var deptUnit = {
+  '办公室（党委办公室）':'长宁公司','计划经营部':'长宁公司','财务资产部':'长宁公司',
+  '人力资源部（党委组织部）':'长宁公司','质量安全环保部':'长宁公司','开发管理部':'长宁公司',
+  '地质工程部':'长宁公司','地面建设工程部':'长宁公司','党群工作部（纪委办公室）':'长宁公司',
+  '生产指挥中心':'长宁公司'
+};
+
+var deptPos = {
+  '办公室（党委办公室）':[['机关事务',''],['机要文书',''],['党务秘书',''],['档案管理',''],['综合管理','']],
+  '计划经营部':[['统计与销售管理',''],['法律事务管理',''],['规划、计划管理',''],['市场及招投标管理',''],['物资供应管理',''],['井工程物资管理及市场管理',''],['合同管理',''],['股权与三基管理',''],['规划、计划管理','']],
+  '财务资产部':[['项目核算',''],['总账',''],['材料核算、报销审核',''],['成本核算',''],['出纳','']],
+  '人力资源部（党委组织部）':[['劳动组织、社保公积金管理',''],['培训、员工管理',''],['党组织建设','']],
+  '质量安全环保部':[['职业健康、HSE体系管理',''],['质量计量管理',''],['环保三同时管理',''],['工业安全管理',''],['节能、综合管理',''],['工业安全管理','']],
+  '开发管理部':[['油气水井措施管理',''],['集输综合管理',''],['综合管理',''],['采气场站管理',''],['采气工程管理',''],['采气场站管理','']],
+  '地质工程部':[['综合及投资结算管理',''],['矿权资源管理',''],['科技管理',''],['钻完井工程管理',''],['试修地质、交接井管理',''],['井控及QHSE管理',''],['钻井地质管理',''],['井位部署管理',''],['前期规划管理',''],['压裂试油工程管理','']],
+  '地面建设工程部':[['综合管理',''],['钻前工程',''],['合同、合规',''],['地面工程',''],['地面工程',''],['设计、物资',''],['结算、审计','']],
+  '党群工作部（纪委办公室）':[['新闻宣传、综合管理',''],['纪检管理',''],['新闻宣传','']],
+  '生产指挥中心':[['综合管理',''],['公共关系协调',''],['公共关系协调',''],['党群及培训管理',''],['集输工艺管理（场站）',''],['自然灾害防治、合同结算管理',''],['信息技术管理',''],['土地管理',''],['土地管理',''],['试修管理','']]
+};
+
+var curDept = null;
+var curIsUnit = false;
+var editPosIdx = -1;
+var newPosTags = [];
+
+// ── 工具 ──────────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function fillSelect(sel, opts, current){
+  sel.innerHTML = '';
+  opts.forEach(function(v){
+    var o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    if(v === current) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function deptsByUnit(u){ return Object.keys(deptUnit).filter(function(d){ return deptUnit[d]===u; }); }
+</script>
+<script>
+// ── 树渲染 ────────────────────────────────────────────
+function renderTree(){
+  var root = document.getElementById('treeRoot');
+  root.innerHTML = '';
+  UNITS.forEach(function(unitName){
+    var li = document.createElement('li');
+    var span = document.createElement('span');
+    span.className = 'tree-node';
+    span.innerHTML = unitName + ' <span class="unit-badge">所在单位</span>';
+    span.addEventListener('click', function(e){
+      e.stopPropagation(); setActive(span); selectUnit(unitName);
+    });
+    li.appendChild(span);
+    var depts = deptsByUnit(unitName);
+    if(depts.length){
+      var ul = document.createElement('ul');
+      depts.forEach(function(dName){
+        var dli = document.createElement('li');
+        var ds = document.createElement('span');
+        ds.className = 'tree-node';
+        ds.textContent = dName;
+        ds.addEventListener('click', function(e){
+          e.stopPropagation(); setActive(ds); selectDept(dName, unitName);
+        });
+        dli.appendChild(ds);
+        ul.appendChild(dli);
+      });
+      li.appendChild(ul);
+    }
+    root.appendChild(li);
+  });
+}
+
+function setActive(span){
+  document.querySelectorAll('.tree-node').forEach(function(s){ s.classList.remove('active'); });
+  span.classList.add('active');
+}
+
+function selectUnit(unitName){
+  curDept = null; curIsUnit = true;
+  document.getElementById('deptName').textContent = unitName;
+  document.getElementById('deptMeta').innerHTML =
+    '<span>类型：<strong>所在单位</strong></span>' +
+    '<span>下辖部门：<strong>' + deptsByUnit(unitName).length + ' 个</strong></span>';
+  document.getElementById('deptActions').style.display = 'none';
+  document.getElementById('positionSection').style.display = 'none';
+  document.getElementById('unitPlaceholder').style.display = '';
+}
+
+function selectDept(dName, unitName){
+  curDept = dName; curIsUnit = false;
+  document.getElementById('deptName').textContent = dName;
+  document.getElementById('deptMeta').innerHTML =
+    '<span>所在单位：<strong>' + (unitName || deptUnit[dName] || '—') + '</strong></span>' +
+    '<span>岗位数：<strong>' + (deptPos[dName]||[]).length + ' 个</strong></span>';
+  document.getElementById('deptActions').style.display = '';
+  document.getElementById('positionSection').style.display = '';
+  document.getElementById('unitPlaceholder').style.display = 'none';
+  document.getElementById('posCardTitle').textContent = dName + ' · 岗位列表';
+  renderPositions(dName);
+}
+
+function renderPositions(name){
+  var list = deptPos[name] || [];
+  var tbody = document.getElementById('positionBody');
+  tbody.innerHTML = '';
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#bbb;padding:18px;">暂无岗位，点击「+ 新增岗位」添加</td></tr>';
+    return;
+  }
+  list.forEach(function(p, i){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="col-seq">'+(i+1)+'</td>' +
+      '<td>'+p[0]+'</td>' +
+      '<td>'+(p[1]||'—')+'</td>' +
+      '<td class="col-action">' +
+        '<button class="btn link" data-ep="'+i+'">编辑</button>' +
+        '<a class="btn link danger" href="./confirm-delete.html">删除</a>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-ep]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openEditPos(parseInt(btn.dataset.ep)); });
+  });
+}
+</script>
+<script>
+// ── 部门操作 ──────────────────────────────────────────
+document.getElementById('editDeptBtn').addEventListener('click', function(){
+  if(!curDept) return;
+  fillSelect(document.getElementById('editUnitSel'), UNITS, deptUnit[curDept]);
+  document.getElementById('editDeptNameInput').value = curDept;
+  document.getElementById('editDeptDescInput').value = '';
+  openModal('editDeptModal');
+});
+
+function saveEditDept(){
+  var name = document.getElementById('editDeptNameInput').value.trim();
+  if(!name) return;
+  var unit = document.getElementById('editUnitSel').value;
+  if(name !== curDept){
+    deptPos[name] = deptPos[curDept] || [];
+    delete deptPos[curDept];
+    deptUnit[name] = unit;
+    delete deptUnit[curDept];
+    curDept = name;
+  } else {
+    deptUnit[name] = unit;
+  }
+  renderTree(); selectDept(curDept, unit); closeModal('editDeptModal');
+}
+
+document.getElementById('deleteDeptBtn').addEventListener('click', function(){
+  if(!curDept) return;
+  var cnt = (deptPos[curDept]||[]).length;
+  document.getElementById('confirmTitle').textContent = '确认删除部门';
+  document.getElementById('confirmMsg').textContent =
+    '删除部门「'+curDept+'」后，其下 '+cnt+' 个岗位将一并删除，此操作不可恢复。';
+  document.getElementById('confirmOkBtn').onclick = function(){
+    delete deptPos[curDept]; delete deptUnit[curDept];
+    curDept = null;
+    document.getElementById('deptName').textContent = '请点击左侧部门';
+    document.getElementById('deptMeta').innerHTML = '<span style="color:#aab5be;">选择部门节点查看详情</span>';
+    document.getElementById('deptActions').style.display = 'none';
+    document.getElementById('positionSection').style.display = 'none';
+    renderTree(); closeModal('confirmModal');
+  };
+  openModal('confirmModal');
+});
+
+document.getElementById('addDeptBtn').addEventListener('click', function(e){
+  e.preventDefault(); newPosTags = [];
+  document.getElementById('addDeptPosTags').innerHTML = '';
+  document.getElementById('addDeptPosInput').value = '';
+  document.getElementById('addDeptNameInput').value = '';
+  document.getElementById('addDeptDescInput').value = '';
+  var defUnit = curIsUnit ? document.getElementById('deptName').textContent : '长宁公司';
+  fillSelect(document.getElementById('addUnitSel'), UNITS, defUnit);
+  openModal('addDeptModal');
+});
+
+document.getElementById('addDeptPosInput').addEventListener('keydown', function(e){
+  if(e.key !== 'Enter') return; e.preventDefault();
+  var v = this.value.trim(); if(!v) return;
+  newPosTags.push([v,'']);
+  var tag = document.createElement('span'); tag.className = 'pos-tag';
+  tag.innerHTML = v+' <span style="cursor:pointer;">×</span>';
+  tag.querySelector('span').addEventListener('click', function(){
+    newPosTags = newPosTags.filter(function(p){ return p[0]!==v; }); tag.remove();
+  });
+  document.getElementById('addDeptPosTags').appendChild(tag); this.value = '';
+});
+
+function saveAddDept(){
+  var name = document.getElementById('addDeptNameInput').value.trim();
+  var unit = document.getElementById('addUnitSel').value;
+  if(!name) return;
+  deptPos[name] = newPosTags.slice(); deptUnit[name] = unit; newPosTags = [];
+  renderTree(); closeModal('addDeptModal');
+}
+
+// ── 合并部门 ──────────────────────────────────────────
+document.getElementById('mergeDeptBtn').addEventListener('click', function(e){
+  e.preventDefault();
+  var names = Object.keys(deptPos);
+  fillSelect(document.getElementById('mergeSrcSel'), names, names[0]);
+  fillSelect(document.getElementById('mergeDstSel'), names, names[1]||names[0]);
+  renderMergePreview(); openModal('mergeDeptModal');
+});
+
+function renderMergePreview(){
+  var src = document.getElementById('mergeSrcSel').value;
+  var dst = document.getElementById('mergeDstSel').value;
+  ['Src','Dst'].forEach(function(k){
+    var list = deptPos[k==='Src'?src:dst]||[];
+    document.getElementById('merge'+k+'List').innerHTML = list.length
+      ? list.map(function(p){return '<li>'+p[0]+'</li>';}).join('')
+      : '<li style="color:#bbb;">暂无岗位</li>';
+  });
+}
+
+// ── 岗位操作 ──────────────────────────────────────────
+document.getElementById('addPosBtn').addEventListener('click', function(){
+  document.getElementById('addPosName').value = '';
+  document.getElementById('addPosDesc').value = '';
+  openModal('addPosModal');
+});
+
+function saveAddPos(){
+  var name = document.getElementById('addPosName').value.trim();
+  var desc = document.getElementById('addPosDesc').value.trim();
+  if(!name || !curDept) return;
+  deptPos[curDept].push([name, desc]);
+  renderPositions(curDept); closeModal('addPosModal');
+}
+
+function openEditPos(idx){
+  editPosIdx = idx;
+  var p = (deptPos[curDept]||[])[idx]; if(!p) return;
+  document.getElementById('editPosName').value = p[0];
+  document.getElementById('editPosDesc').value = p[1]||'';
+  openModal('editPosModal');
+}
+
+function saveEditPos(){
+  var name = document.getElementById('editPosName').value.trim();
+  var desc = document.getElementById('editPosDesc').value.trim();
+  if(!name) return;
+  deptPos[curDept][editPosIdx] = [name, desc];
+  renderPositions(curDept); closeModal('editPosModal');
+}
+
+// ── 搜索 ──────────────────────────────────────────────
+document.getElementById('treeSearch').addEventListener('input', function(){
+  var kw = this.value.trim().toLowerCase();
+  document.querySelectorAll('#treeRoot .tree-node').forEach(function(s){
+    var li = s.parentElement;
+    li.style.display = (!kw || s.textContent.toLowerCase().indexOf(kw)>=0) ? '' : 'none';
+  });
+});
+
+// ── 遮罩关闭 ──────────────────────────────────────────
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+});
+
+// ── 初始化 ────────────────────────────────────────────
+renderTree();
+setTimeout(function(){
+  document.querySelectorAll('#treeRoot .tree-node').forEach(function(s){
+    if(s.textContent.trim().indexOf('办公室（党委办公室）')===0){ s.click(); }
+  });
+}, 60);
+</script>
+</body>
+</html>

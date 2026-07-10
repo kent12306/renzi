@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>领导评价</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .dept-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px;}
+    .dept-card{background:#fff;border:1px solid #dfe5ec;border-radius:10px;padding:18px 20px;transition:all .15s;cursor:pointer;position:relative;}
+    .dept-card:hover{border-color:#00AAB7;box-shadow:0 4px 12px rgba(0,170,183,.12);}
+    .dept-card-title{font-size:15px;font-weight:600;color:#1d2733;margin-bottom:8px;}
+    .dept-card-meta{font-size:13px;color:#5f7080;display:flex;flex-direction:column;gap:4px;}
+    .dept-card .status{position:absolute;top:16px;right:16px;}
+
+    .score-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .score-table th,.score-table td{border:1px solid #dfe5ec;padding:10px 12px;text-align:left;}
+    .score-table th{background:#f0f5f7;color:#3d5266;font-weight:600;}
+    .score-table select{width:140px;height:30px;border:1px solid #dfe5ec;border-radius:4px;padding:0 8px;font-size:13px;}
+    .score-table select:focus{border-color:#00AAB7;outline:none;}
+    .score-table input[type="text"]{width:100%;height:30px;border:1px solid #dfe5ec;border-radius:4px;padding:0 8px;font-size:13px;}
+
+    .summary-bar{background:#e6f7f9;border:1px solid #b3e6ea;border-radius:8px;padding:14px 18px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;}
+    .summary-bar .label{font-size:13px;color:#5f7080;}
+    .summary-bar .value{font-size:18px;font-weight:600;color:#00AAB7;}
+
+    /* 右侧抽屉：宽表格型（640px） */
+    .drawer{position:fixed;top:0;right:-680px;width:640px;height:100vh;background:#f8fafb;box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:1500;display:flex;flex-direction:column;transition:right .25s ease;}
+    .drawer.open{right:0;}
+    .drawer-header{padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .drawer-title{font-size:15px;font-weight:600;color:#1d2733;}
+    .drawer-close{width:28px;height:28px;border:none;background:transparent;font-size:20px;color:#8fa3b0;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s;}
+    .drawer-close:hover{background:#f0f5f7;color:#3d5266;}
+    .drawer-body{flex:1;overflow-y:auto;padding:20px;}
+    .drawer-footer{padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 18px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+
+    .eval-info-bar{background:#f8fafc;border:1px solid #eef3f6;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;font-size:13px;}
+    .eval-info-bar dt{color:#5f7080;}
+    .eval-info-bar dd{color:#1d2733;font-weight:500;margin:0;}
+
+    .role-select{background:#fff9e8;border:1px solid #f4d898;border-radius:8px;padding:12px 16px;margin-bottom:16px;}
+    .role-select label{font-size:13px;color:#75540d;font-weight:500;}
+    .role-select select{margin-left:8px;height:32px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font-size:13px;}
+
+    /* 主Tab：本年评价 / 历史评价 */
+    .main-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:0;}
+    .main-tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .main-tab:hover{color:#00AAB7;}
+    .main-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;}
+    .tab-panel{display:none;padding-top:16px;}
+    .tab-panel.active{display:block;}
+
+    /* 历史年度卡片 */
+    .scheme-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
+    .scheme-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#00AAB7;}
+    .scheme-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+    .scheme-card-title{font-size:15px;font-weight:600;color:#1d2733;}
+    .scheme-card-meta{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:#5f7080;margin-top:8px;}
+    .scheme-card-meta span strong{color:#1d2733;font-weight:500;}
+    .scheme-card-summary{background:#f8fafc;border-radius:6px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:16px 24px;font-size:13px;}
+    .scheme-card-summary .summary-item{display:flex;align-items:baseline;gap:4px;}
+    .scheme-card-summary .summary-label{color:#5f7080;}
+    .scheme-card-summary .summary-value{color:#00AAB7;font-weight:600;}
+
+    /* 历史详情弹框内子Tab（批次切换） */
+    .sub-tabs{display:flex;gap:8px;margin-bottom:16px;}
+    .sub-tab{padding:8px 20px;font-size:14px;color:#5f7080;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:6px;cursor:pointer;transition:all .15s;}
+    .sub-tab:hover{background:#E6F7F9;color:#00AAB7;}
+    .sub-tab.active{background:#00AAB7;color:#fff;border-color:#00AAB7;}
+
+    /* 全年进度条（周期色块，与 perf-dept-mutual.html 保持同一套样式） */
+    .period-progress-bar{display:flex;gap:12px;margin-bottom:16px;}
+    .period-progress-item{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:14px 12px;text-align:center;cursor:pointer;transition:all .15s;}
+    .period-progress-item:hover{border-color:#00AAB7;box-shadow:0 2px 8px rgba(0,170,183,.1);}
+    .pp-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:14px;font-weight:600;}
+    .period-progress-item.done{border-color:#b7e4cb;background:#f3fbf7;}
+    .period-progress-item.done .pp-dot{background:#16a36a;color:#fff;}
+    .period-progress-item.current{border-color:#00AAB7;background:#e6f7f9;box-shadow:0 0 0 2px rgba(0,170,183,.15);}
+    .period-progress-item.current .pp-dot{background:#00AAB7;color:#fff;}
+    .period-progress-item.upcoming{background:#f8fafc;}
+    .period-progress-item.upcoming .pp-dot{background:#eef2f5;color:#9ca3af;}
+    .pp-label{font-size:13px;font-weight:600;color:#1d2733;}
+    .period-progress-item.upcoming .pp-label{color:#9ca3af;}
+    .pp-status{font-size:12px;margin-top:4px;}
+    .period-progress-item.done .pp-status{color:#16a36a;}
+    .period-progress-item.current .pp-status{color:#00AAB7;font-weight:600;}
+    .period-progress-item.upcoming .pp-status{color:#9ca3af;}
+
+    /* 周期折叠区 */
+    .period-section{background:#fff;border:1px solid #dfe5ec;border-radius:8px;margin-bottom:14px;overflow:hidden;}
+    .period-section-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:600;color:#1d2733;transition:background .15s;}
+    .period-section-header:hover{background:#f0f5f7;}
+    .period-section-body{padding:16px;display:none;}
+    .period-section.expanded .period-section-body{display:block;}
+    .ps-toggle{color:#8fa3b0;font-size:12px;transition:transform .15s;}
+    .period-section.expanded .ps-toggle{transform:rotate(180deg);}
+    .dept-cards.disabled .dept-card{opacity:.55;cursor:not-allowed;pointer-events:none;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="领导评价"
+  data-desc="领导按评价批次对部门进行6维度考核评价，一年评价2次（10-12月、1-9月），占过程考核权重的70%。">
+
+  <!-- 主Tab：本年评价 / 历史评价 -->
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="current">本年评价</div>
+    <div class="main-tab" data-tab="history">历史评价</div>
+  </div>
+
+  <!-- ==================== 本年评价 Tab ==================== -->
+  <div class="tab-panel active" id="panel-current">
+
+  <!-- 筛选条：方案标题 + 打分状态筛选（右侧），年度固定为本年度 -->
+  <div class="filter-bar" style="margin-bottom:16px;align-items:center;">
+    <span style="font-size:15px;font-weight:600;color:#1d2733;">2026年度过程考核</span>
+    <span style="font-size:13px;color:#5f7080;">考核周期：2025年10月 - 2026年9月</span>
+    <div class="field" style="margin-left:auto;"><span>打分状态</span>
+      <select id="statusFilter" style="width:120px;" onchange="filterByStatus()">
+        <option value="">全部</option>
+        <option value="待打分">待打分</option>
+        <option value="已完成">已完成</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 评价频次说明 -->
+  <div class="notice" style="padding:12px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:8px;font-size:13px;margin-bottom:16px;">
+    <strong>评价频次说明：</strong>领导评价一年进行2次，分别为上年10-12月（单独评价）和当年1-9月（合并评价）。当前登录：<strong>张总经理</strong>，采用5档等级制（7-12分），打分时请先选择您的角色。点击下方进度条可展开对应批次查看评价记录。往年记录请查看「历史评价」Tab。
+  </div>
+
+  <!-- 全年进度条（2个批次） -->
+  <div class="period-progress-bar">
+    <div class="period-progress-item current" onclick="togglePeriod('B1')">
+      <div class="pp-dot">1</div>
+      <div class="pp-label">2025年10-12月</div>
+      <div class="pp-status">当前</div>
+    </div>
+    <div class="period-progress-item upcoming" onclick="togglePeriod('B2')">
+      <div class="pp-dot">2</div>
+      <div class="pp-label">2026年1-9月</div>
+      <div class="pp-status">未到打分时机</div>
+    </div>
+  </div>
+
+  <!-- 批次1：当前批次，默认展开 -->
+  <div class="period-section expanded" id="periodSection-B1">
+    <div class="period-section-header" onclick="togglePeriod('B1')">
+      <span>2025年10-12月（当前，9/10部门待打分）</span>
+      <span class="ps-toggle">▾</span>
+    </div>
+    <div class="period-section-body">
+      <div class="dept-cards">
+        <div class="dept-card" onclick="showScoreModal('办公室（党委办公室）')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">办公室（党委办公室）</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：李主任</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('计划经营部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">计划经营部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：张部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('财务资产部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">财务资产部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：赵部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showDetailModal('人力资源部（党委组织部）','B1')">
+          <span class="status green">已完成</span>
+          <div class="dept-card-title">人力资源部（党委组织部）</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：王主任</span>
+            <span>本批次得分：10.2分</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('质量安全环保部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">质量安全环保部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：钱部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('开发管理部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">开发管理部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：孙部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('地质工程部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">地质工程部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：周部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('地面建设工程部')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">地面建设工程部</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：吴部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('党群工作部（纪委办公室）')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">党群工作部（纪委办公室）</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：郑部长</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+        <div class="dept-card" onclick="showScoreModal('生产指挥中心')">
+          <span class="status amber">待打分</span>
+          <div class="dept-card-title">生产指挥中心</div>
+          <div class="dept-card-meta">
+            <span>部门负责人：冯主任</span>
+            <span>考核维度：6项</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批次2：未到打分时机，默认收起，整体置灰不可点击 -->
+  <div class="period-section" id="periodSection-B2">
+    <div class="period-section-header" onclick="togglePeriod('B2')">
+      <span>2026年1-9月（未到打分时机）</span>
+      <span class="ps-toggle">▾</span>
+    </div>
+    <div class="period-section-body">
+      <div class="notice" style="padding:10px 12px;border:1px solid #f4d898;background:#fff9e8;color:#75540d;border-radius:6px;margin-bottom:14px;font-size:13px;">
+        该批次尚未开始，预计 <strong>2026-10-01</strong> 开放评价。以下为待考核部门预览（不可操作）。
+      </div>
+      <div class="dept-cards disabled">
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">办公室（党委办公室）</div><div class="dept-card-meta"><span>部门负责人：李主任</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">计划经营部</div><div class="dept-card-meta"><span>部门负责人：张部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">财务资产部</div><div class="dept-card-meta"><span>部门负责人：赵部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">人力资源部（党委组织部）</div><div class="dept-card-meta"><span>部门负责人：王主任</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">质量安全环保部</div><div class="dept-card-meta"><span>部门负责人：钱部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">开发管理部</div><div class="dept-card-meta"><span>部门负责人：孙部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">地质工程部</div><div class="dept-card-meta"><span>部门负责人：周部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">地面建设工程部</div><div class="dept-card-meta"><span>部门负责人：吴部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">党群工作部（纪委办公室）</div><div class="dept-card-meta"><span>部门负责人：郑部长</span></div></div>
+        <div class="dept-card"><span class="status" style="background:#eef2f5;color:#9ca3af;">未开放</span><div class="dept-card-title">生产指挥中心</div><div class="dept-card-meta"><span>部门负责人：冯主任</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+  <!-- ==================== 本年评价 Tab 结束 ==================== -->
+
+  <!-- ==================== 历史评价 Tab ==================== -->
+  <div class="tab-panel" id="panel-history">
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar" style="margin-bottom:14px;">
+      <label class="field"><span>考核年度</span>
+        <select id="historyYearFilter" style="width:120px;">
+          <option value="">全部</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </label>
+      <button class="btn sm primary" onclick="filterHistoryYears()">查询</button>
+      <button class="btn sm" onclick="resetHistoryYearFilter()">重置</button>
+      <button class="btn sm" style="margin-left:auto;" onclick="exportHistory()">导出</button>
+    </div>
+
+    <div id="historyYearList">
+      <div class="scheme-card" data-year="2025">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2025年度 领导评价历史</div>
+            <div class="scheme-card-meta">
+              <span>考核周期：<strong>2024年10月 - 2025年9月</strong></span>
+              <span>评价人：<strong>张总经理</strong></span>
+              <span>评价批次：<strong>2次（10-12月、1-9月）</strong></span>
+            </div>
+          </div>
+          <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">已完成评价：</span><span class="summary-value">20/20（部门×批次）</span></div>
+          <div class="summary-item"><span class="summary-label">平均得分：</span><span class="summary-value">103.8分</span></div>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="btn sm" onclick="showHistoryYearDetail('2025')">查看详情</button>
+        </div>
+      </div>
+
+      <div class="scheme-card" data-year="2024">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2024年度 领导评价历史</div>
+            <div class="scheme-card-meta">
+              <span>考核周期：<strong>2023年10月 - 2024年9月</strong></span>
+              <span>评价人：<strong>张总经理</strong></span>
+              <span>评价批次：<strong>2次（10-12月、1-9月）</strong></span>
+            </div>
+          </div>
+          <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">已完成评价：</span><span class="summary-value">20/20（部门×批次）</span></div>
+          <div class="summary-item"><span class="summary-label">平均得分：</span><span class="summary-value">102.6分</span></div>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="btn sm" onclick="showHistoryYearDetail('2024')">查看详情</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="historyYearEmpty" style="display:none;text-align:center;padding:60px 20px;color:#5f7080;">
+      <div style="font-size:48px;margin-bottom:16px;">📋</div>
+      <div style="font-size:14px;">暂无符合条件的历史评价记录</div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹框区域 ==================== -->
+
+  <!-- 历史年度详情弹框 -->
+  <div class="modal-mask" id="historyYearDetailModal">
+    <div class="modal-box" style="width:92vw;max-width:1100px;max-height:90vh;overflow-y:auto;">
+      <h3 id="historyYearDetailTitle">2025年度 领导评价历史 - 张总经理（只读）</h3>
+
+      <!-- 批次切换子Tab -->
+      <div class="sub-tabs" id="historyBatchTabs">
+        <div class="sub-tab active" data-hb="10-12">2024年10-12月</div>
+        <div class="sub-tab" data-hb="1-9">2025年1-9月</div>
+      </div>
+
+      <div class="notice" style="padding:10px 12px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:6px;margin-bottom:14px;font-size:12px;">
+        以下为该批次对各部门的评价记录（只读），点击"查看详情"可查看6个考核维度的评估等级和扣分原因原文。
+      </div>
+
+      <table class="score-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th class="col-seq" style="width:50px;">序号</th>
+            <th>被考核部门</th>
+            <th style="width:100px;">评价角色</th>
+            <th style="width:100px;">加权得分</th>
+            <th class="col-status" style="width:80px;">状态</th>
+            <th class="col-action" style="width:90px;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="historyBatchTableBody">
+          <tr>
+            <td class="col-seq">1</td>
+            <td>办公室（党委办公室）</td>
+            <td>主要领导</td>
+            <td>108.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('办公室（党委办公室）')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">2</td>
+            <td>计划经营部</td>
+            <td>主要领导</td>
+            <td>106.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('计划经营部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">3</td>
+            <td>财务资产部</td>
+            <td>主要领导</td>
+            <td>104.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('财务资产部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">4</td>
+            <td>人力资源部（党委组织部）</td>
+            <td>主要领导</td>
+            <td>107.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('人力资源部（党委组织部）')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">5</td>
+            <td>质量安全环保部</td>
+            <td>主要领导</td>
+            <td>105.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('质量安全环保部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">6</td>
+            <td>开发管理部</td>
+            <td>主要领导</td>
+            <td>108.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('开发管理部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">7</td>
+            <td>地质工程部</td>
+            <td>主要领导</td>
+            <td>102.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('地质工程部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">8</td>
+            <td>地面建设工程部</td>
+            <td>主要领导</td>
+            <td>100.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('地面建设工程部')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">9</td>
+            <td>党群工作部（纪委办公室）</td>
+            <td>主要领导</td>
+            <td>103.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('党群工作部（纪委办公室）')">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq">10</td>
+            <td>生产指挥中心</td>
+            <td>主要领导</td>
+            <td>110.0</td>
+            <td class="col-status"><span class="status green">已完成</span></td>
+            <td class="col-action"><a class="btn link" onclick="showHistoryScoreDetail('生产指挥中心')">查看详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('historyYearDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 历史评价明细弹框（维度+扣分原因原文） -->
+  <div class="modal-mask" id="historyScoreDetailModal">
+    <div class="modal-box" style="width:900px;max-width:96vw;max-height:90vh;overflow-y:auto;">
+      <h3>历史评价明细 - <span id="historyScoreTargetName">办公室（党委办公室）</span></h3>
+
+      <div class="eval-info-bar">
+        <dl style="display:flex;gap:4px;"><dt>被考核部门：</dt><dd id="historyScoreTargetName2">办公室（党委办公室）</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价批次：</dt><dd>2024年10-12月</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价人：</dt><dd>张总经理</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价角色：</dt><dd>主要领导（40%）</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评分：</dt><dd style="color:#00AAB7;font-weight:600;">10.80分</dd></dl>
+      </div>
+
+      <div class="table-scroll">
+        <table class="score-table">
+          <thead>
+            <tr>
+              <th class="col-seq" style="width:50px;">序号</th>
+              <th style="width:160px;">考核维度</th>
+              <th style="width:80px;">维度权重</th>
+              <th>维度说明</th>
+              <th style="width:100px;">评估等级</th>
+              <th style="width:90px;">权重得分</th>
+              <th>扣分原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-seq">一</td>
+              <td>领导团队管理</td>
+              <td>0.20</td>
+              <td>团队建设、人员培养、凝聚力</td>
+              <td><span class="status green">超出预期</span></td>
+              <td style="text-align:center;">2.20</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="col-seq">二</td>
+              <td>业务能力及综合素质</td>
+              <td>0.20</td>
+              <td>专业水平、学习能力、综合素养</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">2.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="col-seq">三</td>
+              <td>工作量及工作难度</td>
+              <td>0.20</td>
+              <td>承担工作量、任务复杂度</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">2.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="col-seq">四</td>
+              <td>工作业绩</td>
+              <td>0.20</td>
+              <td>目标完成情况、工作成效</td>
+              <td><span class="status green">超出预期</span></td>
+              <td style="text-align:center;">2.20</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="col-seq">五</td>
+              <td>党风廉政</td>
+              <td>0.10</td>
+              <td>廉洁自律、作风建设</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">1.20</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="col-seq">六</td>
+              <td>支部及群团建设</td>
+              <td>0.10</td>
+              <td>党建工作、群团活动</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">1.20</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('historyScoreDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 打分抽屉 -->
+  <div class="drawer drawer-wide" id="scoreDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title">领导评价打分 - <span id="targetDeptName">办公室（党委办公室）</span></span>
+      <button class="drawer-close" onclick="closeScoreDrawer()">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="eval-info-bar">
+        <dl style="display:flex;gap:4px;"><dt>被考核部门：</dt><dd id="targetDeptName2">办公室（党委办公室）</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价批次：</dt><dd>2025年10-12月</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价人：</dt><dd>张总经理</dd></dl>
+      </div>
+
+      <!-- 角色选择 -->
+      <div class="role-select">
+        <label>请选择您的角色：
+          <select id="leaderRole">
+            <option value="">请选择</option>
+            <option value="main" selected>主要领导（权重40%）</option>
+            <option value="charge">分管领导（权重25%）</option>
+            <option value="other">其他领导（权重5%）</option>
+          </select>
+        </label>
+        <span style="margin-left:16px;font-size:12px;color:#8fa3b0;">同一部门可有多个领导打分，系统按角色权重汇总</span>
+      </div>
+
+      <!-- 评分说明 -->
+      <div class="notice" style="padding:10px 12px;border:1px solid #f4d898;background:#fff9e8;color:#75540d;border-radius:6px;margin-bottom:14px;font-size:12px;">
+        评估等级：第一级(未达预期)7-8分 | 第二级(基本达到)9分 | 第三级(达到预期)10分 | 第四级(超出预期)11分 | 第五级(业绩突出)12分
+      </div>
+
+      <div class="table-scroll" style="margin-bottom:16px;">
+        <table class="score-table">
+          <thead>
+            <tr>
+              <th style="width:50px;">序号</th>
+              <th style="width:160px;">考核维度</th>
+              <th style="width:80px;">维度权重</th>
+              <th>维度说明</th>
+              <th style="width:150px;">评估等级</th>
+              <th style="width:90px;">权重得分</th>
+              <th style="width:150px;">扣分原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>一</td>
+              <td>领导团队管理</td>
+              <td>0.20</td>
+              <td>团队建设、人员培养、凝聚力</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option selected>第三级(10)</option>
+                  <option>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">2.00</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+            <tr>
+              <td>二</td>
+              <td>业务能力及综合素质</td>
+              <td>0.20</td>
+              <td>专业水平、学习能力、综合素养</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option>第三级(10)</option>
+                  <option selected>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">2.20</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+            <tr>
+              <td>三</td>
+              <td>工作量及工作难度</td>
+              <td>0.20</td>
+              <td>承担工作量、任务复杂度</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option selected>第三级(10)</option>
+                  <option>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">2.00</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+            <tr>
+              <td>四</td>
+              <td>工作业绩</td>
+              <td>0.20</td>
+              <td>目标完成情况、工作成效</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option selected>第三级(10)</option>
+                  <option>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">2.00</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+            <tr>
+              <td>五</td>
+              <td>党风廉政</td>
+              <td>0.10</td>
+              <td>廉洁自律、作风建设</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option selected>第三级(10)</option>
+                  <option>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">1.00</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+            <tr>
+              <td>六</td>
+              <td>支部及群团建设</td>
+              <td>0.10</td>
+              <td>党建工作、群团活动</td>
+              <td>
+                <select>
+                  <option>请选择</option>
+                  <option>第一级(7-8)</option>
+                  <option>第二级(9)</option>
+                  <option selected>第三级(10)</option>
+                  <option>第四级(11)</option>
+                  <option>第五级(12)</option>
+                </select>
+              </td>
+              <td style="text-align:center;font-weight:500;color:#00AAB7;">1.00</td>
+              <td><input type="text" placeholder="可选"></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc;font-weight:600;">
+              <td colspan="2" style="text-align:right;">维度权重合计</td>
+              <td>1.00</td>
+              <td colspan="2" style="text-align:right;">权重得分合计</td>
+              <td style="text-align:center;color:#00AAB7;">10.20</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="summary-bar">
+        <div>
+          <span class="label">评价人角色：<strong>主要领导（40%）</strong></span>
+        </div>
+        <div>
+          <span class="label">本次评分：</span>
+          <span class="value">10.20分</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeScoreDrawer()">取消</button>
+      <button class="btn">暂存</button>
+      <button class="btn primary" onclick="closeScoreDrawer()">提交评分</button>
+    </div>
+  </div>
+
+  <!-- 查看详情弹框（本年内已完成批次的只读详情） -->
+  <div class="modal-mask" id="detailModal">
+    <div class="modal-box" style="width:900px;max-width:96vw;max-height:90vh;overflow-y:auto;">
+      <h3>领导评价详情 - <span id="detailDeptName">人力资源部（党委组织部）</span></h3>
+      
+      <div class="eval-info-bar">
+        <dl style="display:flex;gap:4px;"><dt>被考核部门：</dt><dd id="detailDeptName2">人力资源部（党委组织部）</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价批次：</dt><dd id="detailPeriodLabel">2025年10-12月</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价人：</dt><dd>张总经理</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评价角色：</dt><dd>主要领导（40%）</dd></dl>
+        <dl style="display:flex;gap:4px;"><dt>评分：</dt><dd style="color:#00AAB7;font-weight:600;">10.20分</dd></dl>
+      </div>
+
+      <div class="table-scroll">
+        <table class="score-table">
+          <thead>
+            <tr>
+              <th style="width:50px;">序号</th>
+              <th style="width:160px;">考核维度</th>
+              <th style="width:80px;">维度权重</th>
+              <th>维度说明</th>
+              <th style="width:100px;">评估等级</th>
+              <th style="width:90px;">权重得分</th>
+              <th>扣分原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>一</td>
+              <td>领导团队管理</td>
+              <td>0.20</td>
+              <td>团队建设、人员培养、凝聚力</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">2.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>二</td>
+              <td>业务能力及综合素质</td>
+              <td>0.20</td>
+              <td>专业水平、学习能力、综合素养</td>
+              <td><span class="status green">超出预期</span></td>
+              <td style="text-align:center;">2.20</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>三</td>
+              <td>工作量及工作难度</td>
+              <td>0.20</td>
+              <td>承担工作量、任务复杂度</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">2.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>四</td>
+              <td>工作业绩</td>
+              <td>0.20</td>
+              <td>目标完成情况、工作成效</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">2.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>五</td>
+              <td>党风廉政</td>
+              <td>0.10</td>
+              <td>廉洁自律、作风建设</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">1.00</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>六</td>
+              <td>支部及群团建设</td>
+              <td>0.10</td>
+              <td>党建工作、群团活动</td>
+              <td><span class="status green">达到预期</span></td>
+              <td style="text-align:center;">1.00</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc;font-weight:600;">
+              <td colspan="2" style="text-align:right;">维度权重合计</td>
+              <td>1.00</td>
+              <td colspan="2" style="text-align:right;">权重得分合计</td>
+              <td style="text-align:center;color:#00AAB7;">10.20</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('detailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+function showScoreModal(deptName){
+  document.getElementById('targetDeptName').textContent = deptName;
+  document.getElementById('targetDeptName2').textContent = deptName;
+  document.getElementById('scoreDrawer').classList.add('open');
+}
+function closeScoreDrawer(){
+  document.getElementById('scoreDrawer').classList.remove('open');
+}
+function showDetailModal(deptName, period){
+  deptName = deptName || '人力资源部（党委组织部）';
+  var periodLabelMap = {B1:'2025年10-12月', B2:'2026年1-9月'};
+  document.getElementById('detailDeptName').textContent = deptName;
+  document.getElementById('detailDeptName2').textContent = deptName;
+  document.getElementById('detailPeriodLabel').textContent = periodLabelMap[period] || '2025年10-12月';
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target === m) m.classList.remove('show'); });
+});
+
+// ========== 全年进度条：折叠区展开/收起 ==========
+function togglePeriod(b){
+  var section = document.getElementById('periodSection-' + b);
+  if(!section) return;
+  var isExpanded = section.classList.contains('expanded');
+  section.classList.toggle('expanded', !isExpanded);
+  if(!isExpanded){
+    section.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+// ========== 打分状态筛选 ==========
+function filterByStatus(){
+  var status = document.getElementById('statusFilter').value;
+  document.querySelectorAll('#panel-current .dept-cards:not(.disabled) .dept-card').forEach(function(card){
+    var statusEl = card.querySelector('.status');
+    var cardStatus = statusEl ? statusEl.textContent.trim() : '';
+    var show = !status || cardStatus === status;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// ========== 主Tab切换：本年评价 / 历史评价 ==========
+document.querySelectorAll('.main-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.main-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    this.classList.add('active');
+    document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// ========== 历史评价：年度筛选 ==========
+function filterHistoryYears(){
+  var year = document.getElementById('historyYearFilter').value;
+  var cards = document.querySelectorAll('#historyYearList .scheme-card');
+  var visibleCount = 0;
+  cards.forEach(function(card){
+    var show = !year || card.dataset.year === year;
+    card.style.display = show ? '' : 'none';
+    if(show) visibleCount++;
+  });
+  document.getElementById('historyYearEmpty').style.display = visibleCount === 0 ? 'block' : 'none';
+}
+function resetHistoryYearFilter(){
+  document.getElementById('historyYearFilter').value = '';
+  filterHistoryYears();
+}
+function exportHistory(){
+  alert('导出功能：将当前年度领导评价历史打分明细导出为Excel文件');
+}
+
+// ========== 历史评价：年度详情弹框 ==========
+var currentHistoryYear = '2025';
+function showHistoryYearDetail(year){
+  currentHistoryYear = year;
+  document.getElementById('historyYearDetailTitle').textContent = year + '年度 领导评价历史 - 张总经理（只读）';
+  document.querySelectorAll('#historyBatchTabs .sub-tab').forEach(function(t,i){ t.classList.toggle('active', i===0); });
+  document.getElementById('historyYearDetailModal').classList.add('show');
+}
+
+// 批次子Tab切换（原型演示用，实际应按批次重新渲染表格数据）
+document.querySelectorAll('#historyBatchTabs .sub-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('#historyBatchTabs .sub-tab').forEach(function(t){ t.classList.remove('active'); });
+    this.classList.add('active');
+  });
+});
+
+// ========== 历史评价：评价明细弹框 ==========
+function showHistoryScoreDetail(deptName){
+  document.getElementById('historyScoreTargetName').textContent = deptName;
+  document.getElementById('historyScoreTargetName2').textContent = deptName;
+  document.getElementById('historyScoreDetailModal').classList.add('show');
+}
+</script>
+</body>
+</html>

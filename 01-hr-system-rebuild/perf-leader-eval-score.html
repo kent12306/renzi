@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>领导评价打分</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .eval-header{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:20px 24px;margin-bottom:16px;position:relative;overflow:hidden;}
+    .eval-header::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#00AAB7,#5dcdd6);}
+    .eval-header h2{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 12px;}
+    .eval-info{display:flex;flex-wrap:wrap;gap:24px;font-size:14px;color:#5f7080;}
+    .eval-info strong{color:#1d2733;}
+    .role-select{background:#e6f7f9;border:1px solid #b3e6ea;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+    .role-select label{font-size:14px;color:#5f7080;}
+    .role-select select{width:160px;}
+    .score-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;margin-bottom:16px;}
+    .score-card-header{padding:14px 20px;border-bottom:1px solid #eef3f6;display:flex;justify-content:space-between;align-items:center;}
+    .score-card-header h3{font-size:15px;font-weight:600;color:#1d2733;margin:0;display:flex;align-items:center;gap:8px;}
+    .score-card-header h3 .seq{background:#00AAB7;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+    .score-card-header .weight{font-size:13px;color:#8fa3b0;}
+    .score-card-body{padding:16px 20px;}
+    .score-row{display:flex;align-items:center;gap:16px;margin-bottom:12px;}
+    .score-row:last-child{margin-bottom:0;}
+    .score-label{width:100px;font-size:14px;color:#5f7080;}
+    .score-options{display:flex;gap:8px;flex:1;}
+    .score-opt{padding:8px 16px;border:1px solid #dfe5ec;border-radius:6px;font-size:13px;color:#5f7080;cursor:pointer;transition:all .15s;text-align:center;min-width:100px;}
+    .score-opt:hover{border-color:#00AAB7;color:#00AAB7;}
+    .score-opt.active{background:#00AAB7;border-color:#00AAB7;color:#fff;}
+    .score-opt small{display:block;font-size:11px;opacity:.8;}
+    .score-input{width:80px;text-align:center;}
+    .score-result{font-size:14px;color:#00AAB7;font-weight:600;min-width:80px;text-align:right;}
+    .remark-row{margin-top:12px;padding-top:12px;border-top:1px solid #eef3f6;}
+    .remark-row label{font-size:13px;color:#5f7080;display:block;margin-bottom:6px;}
+    .remark-row textarea{width:100%;min-height:60px;resize:vertical;}
+    .summary-card{background:#f0fbfc;border:1px solid #b3e6ea;border-radius:8px;padding:20px 24px;margin-bottom:16px;}
+    .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:8px 0;border-bottom:1px solid rgba(0,170,183,0.2);}
+    .summary-row:last-child{border-bottom:none;padding-top:12px;}
+    .summary-row .label{color:#5f7080;}
+    .summary-row .value{font-weight:600;color:#1d2733;}
+    .summary-row.total .value{font-size:20px;color:#00AAB7;}
+    .page-actions{display:flex;justify-content:flex-end;gap:12px;padding-top:16px;border-top:1px solid #dfe5ec;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="领导评价打分"
+  data-desc="对部门进行 6 维度评价，选择评估等级后系统自动计算权重得分。"
+  data-actions='<a class="btn" href="./perf-leader-eval-list.html">返回列表</a>'>
+
+  <!-- 被评价部门信息 -->
+  <div class="eval-header">
+    <h2>财务资产部 - 2026年Q2领导评价</h2>
+    <div class="eval-info">
+      <span>部门负责人：<strong>陈部长</strong></span>
+      <span>考核周期：<strong>2026年4-6月</strong></span>
+      <span>评价截止：<strong>2026-07-15</strong></span>
+      <span>当前状态：<span class="status amber">进行中</span></span>
+    </div>
+  </div>
+
+  <!-- 评价角色选择 -->
+  <div class="role-select">
+    <label>我的评价角色：</label>
+    <select id="roleSel" onchange="updateRole()">
+      <option value="main">主要领导（权重 40%）</option>
+      <option value="branch">分管领导（权重 25%）</option>
+      <option value="other">其他领导（权重 5%）</option>
+    </select>
+    <span style="font-size:12px;color:#8fa3b0;">请根据实际身份选择评价角色</span>
+  </div>
+
+  <!-- 评分卡片 -->
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">一</span>领导团队管理</h3>
+      <span class="weight">权重：0.20</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：团队建设、人员培养、凝聚力</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt active" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="10" min="7" max="12">
+        <span class="score-result">权重得分：2.00</span>
+      </div>
+      <div class="remark-row">
+        <label>扣分原因（可选）</label>
+        <textarea placeholder="如有扣分请说明原因"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">二</span>业务能力及综合素质</h3>
+      <span class="weight">权重：0.20</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：专业水平、学习能力、综合素养</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt active" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="11" min="7" max="12">
+        <span class="score-result">权重得分：2.20</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">三</span>工作量及工作难度</h3>
+      <span class="weight">权重：0.20</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：承担工作量、任务复杂度</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt active" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="10" min="7" max="12">
+        <span class="score-result">权重得分：2.00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">四</span>工作业绩</h3>
+      <span class="weight">权重：0.20</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：目标完成情况、工作成效</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt active" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="11" min="7" max="12">
+        <span class="score-result">权重得分：2.20</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">五</span>党风廉政</h3>
+      <span class="weight">权重：0.10</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：廉洁自律、作风建设</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt active" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="10" min="7" max="12">
+        <span class="score-result">权重得分：1.00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-card-header">
+      <h3><span class="seq">六</span>支部及群团建设</h3>
+      <span class="weight">权重：0.10</span>
+    </div>
+    <div class="score-card-body">
+      <p style="font-size:13px;color:#8fa3b0;margin:0 0 12px;">评价内容：党建工作、群团活动</p>
+      <div class="score-row">
+        <span class="score-label">评估等级</span>
+        <div class="score-options">
+          <div class="score-opt" data-score="7"><small>第一级</small>未达预期<small>7-8分</small></div>
+          <div class="score-opt active" data-score="9"><small>第二级</small>基本达到<small>9分</small></div>
+          <div class="score-opt" data-score="10"><small>第三级</small>达到预期<small>10分</small></div>
+          <div class="score-opt" data-score="11"><small>第四级</small>超出预期<small>11分</small></div>
+          <div class="score-opt" data-score="12"><small>第五级</small>十分突出<small>12分</small></div>
+        </div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">评估分数</span>
+        <input type="number" class="score-input" value="9" min="7" max="12">
+        <span class="score-result">权重得分：0.90</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 汇总 -->
+  <div class="summary-card">
+    <div class="summary-row">
+      <span class="label">一、领导团队管理（0.20）</span>
+      <span class="value">2.00</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">二、业务能力及综合素质（0.20）</span>
+      <span class="value">2.20</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">三、工作量及工作难度（0.20）</span>
+      <span class="value">2.00</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">四、工作业绩（0.20）</span>
+      <span class="value">2.20</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">五、党风廉政（0.10）</span>
+      <span class="value">1.00</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">六、支部及群团建设（0.10）</span>
+      <span class="value">0.90</span>
+    </div>
+    <div class="summary-row total">
+      <span class="label" style="font-weight:600;color:#1d2733;">评价总分</span>
+      <span class="value">10.30</span>
+    </div>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="page-actions">
+    <button class="btn" onclick="saveDraft()">保存草稿</button>
+    <button class="btn primary" onclick="submitScore()">提交评价</button>
+  </div>
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// 等级选择交互
+document.querySelectorAll('.score-options').forEach(function(group){
+  group.querySelectorAll('.score-opt').forEach(function(opt){
+    opt.addEventListener('click', function(){
+      group.querySelectorAll('.score-opt').forEach(function(o){ o.classList.remove('active'); });
+      opt.classList.add('active');
+      var input = group.closest('.score-card-body').querySelector('.score-input');
+      if(input) input.value = opt.dataset.score;
+    });
+  });
+});
+
+function updateRole(){
+  var role = document.getElementById('roleSel').value;
+  var roleNames = {main:'主要领导',branch:'分管领导',other:'其他领导'};
+  console.log('切换角色：' + roleNames[role]);
+}
+
+function saveDraft(){ alert('草稿已保存（原型演示）'); }
+function submitScore(){
+  if(confirm('确认提交评价？提交后将无法修改。')){
+    alert('评价已提交（原型演示）');
+    location.href = './perf-leader-eval-list.html';
+  }
+}
+</script>
+</body>
+</html>

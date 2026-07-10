@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>绩效兑现</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid #dfe5ec;}
+    .tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .tab:hover{color:#00AAB7;}
+    .tab.active{color:#00AAB7;border-bottom-color:#00AAB7;font-weight:600;}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+
+    .stats-row{display:flex;gap:16px;margin-bottom:16px;}
+    .stat-card{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;text-align:center;}
+    .stat-card .num{font-size:26px;font-weight:700;color:#00AAB7;font-variant-numeric:tabular-nums;}
+    .stat-card .label{font-size:13px;color:#8fa3b0;margin-top:4px;}
+    .stat-card.highlight{background:linear-gradient(135deg,#00AAB7 0%,#0098a6 100%);border:none;}
+    .stat-card.highlight .num,.stat-card.highlight .label{color:#fff;}
+
+    .rank-badge{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:12px;font-weight:600;}
+    .rank-badge.gold{background:#fbbf24;color:#fff;}
+    .rank-badge.silver{background:#9ca3af;color:#fff;}
+    .rank-badge.bronze{background:#d97706;color:#fff;}
+    .rank-badge.normal{background:#eef3f6;color:#5f7080;}
+
+    .score-bar{display:flex;align-items:center;gap:8px;}
+    .score-bar .bar{flex:1;height:8px;background:#eef3f6;border-radius:4px;overflow:hidden;min-width:50px;}
+    .score-bar .bar .fill{height:100%;border-radius:4px;}
+    .score-bar .bar .fill.high{background:linear-gradient(90deg,#38a169,#68d391);}
+    .score-bar .bar .fill.mid{background:linear-gradient(90deg,#00AAB7,#38bec9);}
+    .score-bar .value{width:46px;text-align:right;font-weight:600;color:#1e2b3a;}
+
+    .grade-tag{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;}
+    .grade-tag.excellent{background:#d1fae5;color:#059669;}
+    .grade-tag.qualified{background:#e6f7f9;color:#00AAB7;}
+    .grade-tag.basic{background:#fef3c7;color:#b7791f;}
+
+    .formula-card{background:#f8fafb;border:1px solid #dfe5ec;border-radius:8px;padding:16px 20px;margin-bottom:16px;}
+    .formula-card h4{font-size:13px;color:#5f7080;margin:0 0 10px;font-weight:600;}
+    .formula-card code{display:block;background:#fff;border:1px solid #eef3f6;border-radius:6px;padding:10px 14px;font-size:13px;color:#1e2b3a;line-height:1.7;font-family:Menlo,Consolas,"Courier New",monospace;white-space:pre-wrap;}
+    .formula-card .note{font-size:12px;color:#8fa3b0;margin-top:8px;}
+
+    /* 分配金额条 */
+    .alloc-bar{display:flex;align-items:center;gap:16px;background:#e6f7f9;border:1px solid #b3e6ea;border-radius:8px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap;}
+    .alloc-bar .item{display:flex;align-items:center;gap:8px;}
+    .alloc-bar label{font-size:13px;color:#00838c;font-weight:600;}
+    .alloc-bar input{height:36px;width:180px;border:1px solid #b3e6ea;border-radius:6px;padding:0 10px;font:inherit;font-size:14px;text-align:right;}
+    .alloc-bar input:focus{outline:none;border-color:#00AAB7;box-shadow:0 0 0 2px rgba(0,170,183,.15);}
+    .alloc-bar .result{font-size:13px;color:#5f7080;}
+    .alloc-bar .result strong{color:#00AAB7;font-size:15px;font-variant-numeric:tabular-nums;}
+
+    .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .table-scroll table{table-layout:auto;min-width:1900px;width:100%;}
+    .sticky-col{position:sticky;left:0;background:#fff;font-weight:500;z-index:1;}
+    .table-scroll thead .sticky-col{background:#f0f5f7;}
+
+    .coef-link{color:#00AAB7;cursor:pointer;text-decoration:underline;font-size:12px;margin-left:4px;}
+    td.col-num{white-space:nowrap;}
+    .result-total{font-weight:700;color:#00AAB7;font-size:14px;}
+    .result-final{font-weight:700;color:#c2410c;font-size:15px;}
+
+    /* 系数明细弹框 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;width:640px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 16px;}
+    .month-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .month-table th,.month-table td{padding:8px 10px;border-bottom:1px solid #eef3f6;text-align:center;}
+    .month-table th{background:#f0f5f7;color:#3d5266;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #eef3f6;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="绩效兑现"
+  data-desc="串联岗位层级系数、部门业绩、过程考核、民主测评、业绩合同等考核结果，计算个人应兑现绩效总分与预分配结果，用于发年终奖。一年兑现一次。仅长宁正式员工。"
+  data-actions='<button class="btn" onclick="alert(&apos;导出功能开发中&apos;)">导出汇总</button>'>
+
+  <!-- 年度筛选 -->
+  <div class="filter-bar" style="margin-bottom:16px;">
+    <div class="field"><span>年度</span>
+      <select id="yearSel" style="width:100px;"><option>2025</option><option>2024</option></select>
+    </div>
+  </div>
+
+  <!-- 计算公式说明 -->
+  <div class="formula-card">
+    <h4>个人应兑现绩效总分计算公式</h4>
+    <code>个人应兑现绩效总分 = 部门业绩分 × (
+    个人系数合计 × 0.7
+  + 部门岗位价值系数 × 0.1
+  + 部门人员配置率 × 0.1
+  + 部门人员兑现在岗月份 × 0.1 × 各层级绩效应兑现比例
+)</code>
+    <div class="note">每分值 = 分配金额（全公司统一录入一次） ÷ 全公司所有人"个人应兑现绩效总分"之和；预分配结果 = 个人应兑现绩效总分 × 每分值。修改分配金额后自动联动刷新全表。</div>
+  </div>
+
+  <!-- Tab 切换 -->
+  <div class="tabs">
+    <div class="tab active" data-tab="personal">个人绩效兑现汇总</div>
+    <div class="tab" data-tab="dept">部门绩效汇总</div>
+  </div>
+
+  <!-- ============ 个人绩效兑现汇总 Tab ============ -->
+  <div id="tab-personal" class="tab-content active">
+
+    <!-- 全公司统一分配金额 -->
+    <div class="alloc-bar">
+      <div class="item">
+        <label>分配金额（全公司统一，一年填一次）</label>
+        <input type="number" id="allocAmount" value="100000" oninput="recalcAll()">
+        <span style="color:#00838c;">元</span>
+      </div>
+      <div class="result">每分值 = 分配金额 ÷ 全公司个人应兑现绩效总分之和 = <strong id="perScoreVal">—</strong></div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num" id="statCount">6</div>
+        <div class="label">考核人数</div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="num" id="statAvgTotal">—</div>
+        <div class="label">平均个人应兑现绩效总分</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statAGrade">1</div>
+        <div class="label">业绩档次A人数</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statSumResult">—</div>
+        <div class="label">预分配结果合计（元）</div>
+      </div>
+    </div>
+
+    <!-- 筛选 -->
+    <div class="filter-bar">
+      <div class="field"><span>部门</span>
+        <select id="deptFilter" style="width:180px;">
+          <option value="">全部部门</option>
+          <option>办公室（党委办公室）</option>
+          <option>人力资源部（党委组织部）</option>
+          <option>财务资产部</option>
+        </select>
+      </div>
+      <div class="field"><span>员工姓名</span>
+        <input type="text" placeholder="输入姓名" style="width:120px;">
+      </div>
+      <button class="btn">查询</button>
+      <button class="btn">重置</button>
+    </div>
+
+    <!-- 个人绩效兑现列表 -->
+    <section class="card table-card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th class="col-seq sticky-col">序号</th>
+            <th class="sticky-col" style="left:52px;">员工编号</th>
+            <th>部门</th>
+            <th>岗位</th>
+            <th>姓名</th>
+            <th>岗位层级</th>
+            <th class="col-num">个人系数合计<br><small style="font-weight:400;color:#8fa3b0;">1-12月</small></th>
+            <th class="col-num">部门业绩分</th>
+            <th class="col-num">部门岗位<br>价值系数</th>
+            <th class="col-num">部门人员<br>配置率</th>
+            <th class="col-num">兑现在岗<br>月份</th>
+            <th class="col-status">综合测评结果</th>
+            <th class="col-status">业绩档次</th>
+            <th class="col-status">综合绩效档次</th>
+            <th class="col-num">个人绩效<br>应兑现比例</th>
+            <th class="col-num">个人应兑现<br>绩效总分</th>
+            <th class="col-num">预分配结果<br>（元）</th>
+          </tr></thead>
+          <tbody id="personalTableBody"><!-- 由JS渲染 --></tbody>
+        </table>
+      </div>
+    </section>
+    <p class="hint" style="margin-top:10px;color:#8fa3b0;font-size:12px;">
+      说明：个人系数合计点击可查看1-12月系数明细；业绩档次来源于「业绩档次评定」，综合测评结果来源于「民主测评」，其余带有下划线数值均为系统自动计算，不可编辑。
+    </p>
+  </div>
+
+  <!-- ============ 部门绩效汇总 Tab（本次未改造，维持部门业绩合同+过程考核汇总展示） ============ -->
+  <div id="tab-dept" class="tab-content">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">10</div>
+        <div class="label">考核部门数</div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="num">95.2</div>
+        <div class="label">平均绩效分</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3</div>
+        <div class="label">优秀部门</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">7</div>
+        <div class="label">称职部门</div>
+      </div>
+    </div>
+
+    <section class="card table-card">
+      <table>
+        <thead><tr>
+          <th class="col-seq">排名</th>
+          <th>部门名称</th>
+          <th>部门负责人</th>
+          <th>业绩合同分</th>
+          <th>过程考核分<br><small style="font-weight:400;color:#8fa3b0;">（季度平均）</small></th>
+          <th>年度绩效总分</th>
+          <th>考核等次</th>
+          <th class="col-action">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="col-seq"><span class="rank-badge gold">1</span></td>
+            <td>党群工作部（纪委办公室）</td>
+            <td>孙书记</td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:98%;"></div></div><span class="value">98.5</span></div></td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:99%;"></div></div><span class="value">99.2</span></div></td>
+            <td><strong style="color:#00AAB7;font-size:16px;">98.9</strong></td>
+            <td><span class="grade-tag excellent">优秀</span></td>
+            <td class="col-action"><a class="btn link" href="#">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge silver">2</span></td>
+            <td>人力资源部（党委组织部）</td>
+            <td>刘主任</td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:96%;"></div></div><span class="value">96.8</span></div></td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:98%;"></div></div><span class="value">98.5</span></div></td>
+            <td><strong style="color:#00AAB7;font-size:16px;">97.7</strong></td>
+            <td><span class="grade-tag excellent">优秀</span></td>
+            <td class="col-action"><a class="btn link" href="#">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge bronze">3</span></td>
+            <td>质量安全环保部</td>
+            <td>郑部长</td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:95%;"></div></div><span class="value">95.5</span></div></td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:97%;"></div></div><span class="value">97.8</span></div></td>
+            <td><strong style="color:#00AAB7;font-size:16px;">96.7</strong></td>
+            <td><span class="grade-tag excellent">优秀</span></td>
+            <td class="col-action"><a class="btn link" href="#">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">4</span></td>
+            <td>办公室（党委办公室）</td>
+            <td>杨主任</td>
+            <td><div class="score-bar"><div class="bar"><div class="fill mid" style="width:94%;"></div></div><span class="value">94.2</span></div></td>
+            <td><div class="score-bar"><div class="bar"><div class="fill high" style="width:96%;"></div></div><span class="value">96.5</span></div></td>
+            <td><strong style="color:#00AAB7;font-size:16px;">95.4</strong></td>
+            <td><span class="grade-tag qualified">称职</span></td>
+            <td class="col-action"><a class="btn link" href="#">查看详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- 系数明细弹框 -->
+  <div class="modal-mask" id="coefDetailModal">
+    <div class="modal-box">
+      <h3 id="coefDetailTitle">系数明细 - 张明</h3>
+      <table class="month-table">
+        <thead><tr id="coefDetailHead"></tr></thead>
+        <tbody><tr id="coefDetailRow"></tr></tbody>
+      </table>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('coefDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// ── Tab 切换 ──────────────────────────────────
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── 兑现比例规则表（来源：绩效兑现规则配置） ──────────────
+// 规则按顺序匹配第一条命中的
+var CASHOUT_RULES = [
+  { grade: 'A', evalIn: ['优秀','称职'], ratio: 1.0 },
+  { gradeIn: ['B','C','D'], evalIn: ['优秀','称职'], ratio: 1.0 },
+  { gradeIn: ['A','B','C','D'], evalIn: ['称职'], ratio: 0.9 }
+];
+
+function matchCashoutRatio(grade, evalResult) {
+  for (var i = 0; i < CASHOUT_RULES.length; i++) {
+    var r = CASHOUT_RULES[i];
+    var gradeOk = r.grade ? (r.grade === grade) : (r.gradeIn.indexOf(grade) > -1);
+    var evalOk = r.evalIn.indexOf(evalResult) > -1;
+    if (gradeOk && evalOk) return r.ratio;
+  }
+  return 0;
+}
+
+// ── 综合绩效档次规则 ──────────────
+function calcOverallGrade(grade, evalResult) {
+  if (evalResult === '优秀' || evalResult === '称职') {
+    if (evalResult === '优秀' && grade === 'A') return 'A+';
+    return grade;
+  }
+  return grade;
+}
+
+// ── 样例数据（模拟系统各模块联动取数结果） ──────────────
+var records = [
+  {
+    empNo:'XT2025010', dept:'人力资源部（党委组织部）', position:'劳动组织、社保公积金管理', name:'张明',
+    posLevel:'三级工程师',
+    monthCoef:[0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9],
+    deptScore:102.87, deptValueCoef:1.06, deptStaffRatio:1.11,
+    onDutyMonths:12,
+    evalResult:'优秀', grade:'A'
+  },
+  {
+    empNo:'XT2025011', dept:'人力资源部（党委组织部）', position:'培训、员工管理', name:'李芳',
+    posLevel:'主办',
+    monthCoef:[0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5],
+    deptScore:102.87, deptValueCoef:1.06, deptStaffRatio:1.11,
+    onDutyMonths:12,
+    evalResult:'称职', grade:'B'
+  },
+  {
+    empNo:'XT2025012', dept:'人力资源部（党委组织部）', position:'党组织建设', name:'王强',
+    posLevel:'二级主管',
+    monthCoef:[0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,null,null],
+    deptScore:102.87, deptValueCoef:1.06, deptStaffRatio:1.11,
+    onDutyMonths:10.83,
+    evalResult:'称职', grade:'B'
+  },
+  {
+    empNo:'XT2025013', dept:'人力资源部（党委组织部）', position:'劳动组织、社保公积金管理', name:'赵敏',
+    posLevel:'二级高级主管',
+    monthCoef:[0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9],
+    deptScore:102.87, deptValueCoef:1.06, deptStaffRatio:1.11,
+    onDutyMonths:12,
+    evalResult:'称职', grade:'C'
+  },
+  {
+    empNo:'XT2025014', dept:'办公室（党委办公室）', position:'综合管理', name:'陈刚',
+    posLevel:'三级正',
+    monthCoef:[1,1,1,1,1,1,1,1,1,1,1,1],
+    deptScore:100.73, deptValueCoef:1.04, deptStaffRatio:1.07,
+    onDutyMonths:12,
+    evalResult:'优秀', grade:'A'
+  },
+  {
+    empNo:'XT2025015', dept:'办公室（党委办公室）', position:'机关事务', name:'周晓',
+    posLevel:'助理主办',
+    monthCoef:[null,null,null,null,null,null,null,null,0.4,0.4,0.4,0.4],
+    deptScore:100.73, deptValueCoef:1.04, deptStaffRatio:1.07,
+    onDutyMonths:4.59,
+    evalResult:'称职', grade:'C'
+  }
+];
+
+function sum(arr) { return arr.reduce(function(a,b){ return a + (b || 0); }, 0); }
+function round(v, n) { var p = Math.pow(10, n); return Math.round(v * p) / p; }
+
+function computeRecord(rec) {
+  var coefSum = round(sum(rec.monthCoef), 2);
+  var ratio = matchCashoutRatio(rec.grade, rec.evalResult);
+  var overallGrade = calcOverallGrade(rec.grade, rec.evalResult);
+  if (overallGrade === 'A+') ratio = round(ratio * 1.1, 4);
+  var total = rec.deptScore * (
+    coefSum * 0.7 +
+    rec.deptValueCoef * 0.1 +
+    rec.deptStaffRatio * 0.1 +
+    rec.onDutyMonths * 0.1 * ratio
+  );
+  total = round(total, 4);
+  return { coefSum: coefSum, ratio: ratio, overallGrade: overallGrade, total: total };
+}
+
+var MONTH_LABELS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function gradeTagHtml(g) {
+  var cls = (g === 'A' || g === 'A+') ? 'excellent' : (g === 'B' ? 'qualified' : 'basic');
+  return '<span class="grade-tag ' + cls + '">' + g + '</span>';
+}
+
+function renderTable() {
+  var body = document.getElementById('personalTableBody');
+  var allocAmount = parseFloat(document.getElementById('allocAmount').value) || 0;
+
+  var computed = records.map(computeRecord);
+  var totalSum = sum(computed.map(function(c){ return c.total; }));
+  var perScore = totalSum > 0 ? allocAmount / totalSum : 0;
+
+  document.getElementById('perScoreVal').textContent = totalSum > 0 ? round(perScore, 5) : '—';
+
+  var rows = '';
+  records.forEach(function(rec, idx) {
+    var c = computed[idx];
+    var result = round(c.total * perScore, 2);
+    rows += '<tr>' +
+      '<td class="col-seq sticky-col">' + (idx + 1) + '</td>' +
+      '<td class="sticky-col" style="left:52px;">' + rec.empNo + '</td>' +
+      '<td>' + rec.dept + '</td>' +
+      '<td>' + rec.position + '</td>' +
+      '<td>' + rec.name + '</td>' +
+      '<td>' + rec.posLevel + '</td>' +
+      '<td class="col-num">' + c.coefSum.toFixed(2) + '<span class="coef-link" onclick="showCoefDetail(' + idx + ')">查看明细</span></td>' +
+      '<td class="col-num">' + rec.deptScore + '</td>' +
+      '<td class="col-num">' + rec.deptValueCoef + '</td>' +
+      '<td class="col-num">' + rec.deptStaffRatio + '</td>' +
+      '<td class="col-num">' + rec.onDutyMonths + '</td>' +
+      '<td class="col-status">' + rec.evalResult + '</td>' +
+      '<td class="col-status">' + gradeTagHtml(rec.grade) + '</td>' +
+      '<td class="col-status">' + gradeTagHtml(c.overallGrade) + '</td>' +
+      '<td class="col-num">' + (c.ratio * 100).toFixed(1) + '%</td>' +
+      '<td class="col-num result-total">' + c.total.toFixed(4) + '</td>' +
+      '<td class="col-num result-final">' + result.toFixed(2) + '</td>' +
+      '</tr>';
+  });
+  body.innerHTML = rows;
+
+  // 统计卡片
+  document.getElementById('statCount').textContent = records.length;
+  document.getElementById('statAvgTotal').textContent = records.length ? round(totalSum / records.length, 4) : '—';
+  document.getElementById('statAGrade').textContent = records.filter(function(r){ return r.grade === 'A'; }).length;
+  var sumResult = sum(computed.map(function(c){ return round(c.total * perScore, 2); }));
+  document.getElementById('statSumResult').textContent = round(sumResult, 2);
+}
+
+function recalcAll() { renderTable(); }
+
+function showCoefDetail(idx) {
+  var rec = records[idx];
+  document.getElementById('coefDetailTitle').textContent = '系数明细 - ' + rec.name + '（' + rec.posLevel + '）';
+  var head = '<th>月份</th>' + MONTH_LABELS.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>合计</th>';
+  document.getElementById('coefDetailHead').innerHTML = head;
+  var sumVal = round(sum(rec.monthCoef), 2);
+  var row = '<td style="font-weight:600;">系数</td>' + rec.monthCoef.map(function(v){ return '<td>' + (v === null ? '—' : v) + '</td>'; }).join('') + '<td style="font-weight:700;color:#00AAB7;">' + sumVal + '</td>';
+  document.getElementById('coefDetailRow').innerHTML = row;
+  document.getElementById('coefDetailModal').classList.add('show');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if (e.target === m) m.classList.remove('show'); });
+});
+
+renderTable();
+</script>
+</body>
+</html>

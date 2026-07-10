@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部门业绩合同</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .stats-row{display:flex;gap:16px;margin-bottom:16px;}
+    .stat-card{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;text-align:center;}
+    .stat-card .num{font-size:28px;font-weight:700;color:#00AAB7;}
+    .stat-card .label{font-size:13px;color:#8fa3b0;margin-top:4px;}
+    .stat-card.warning .num{color:#b7791f;}
+    .stat-card.success .num{color:#38a169;}
+
+    .contract-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:4px;font-size:12px;font-weight:500;}
+    .contract-status.draft{background:#f5f7fa;color:#5f7080;}
+    .contract-status.submitted{background:#e6f7f9;color:#00AAB7;}
+    .contract-status.scoring{background:#fef3c7;color:#b7791f;}
+    .contract-status.completed{background:#d1fae5;color:#38a169;}
+
+    .score-cell{font-weight:600;}
+    .score-cell.high{color:#38a169;}
+    .score-cell.mid{color:#00AAB7;}
+
+    .role-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;margin-right:4px;}
+    .role-tag.sender{background:#e0e7ff;color:#4338ca;}
+    .role-tag.receiver{background:#fce7f3;color:#be185d;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="部门业绩合同"
+  data-desc="管理部门年度业绩合同，受约人（部门负责人）填写指标，发约人（分管领导）评分。"
+  data-actions='<a class="btn primary" href="./perf-dept-contract-fill.html">新增合同</a>'>
+
+  <!-- 年度选择 -->
+  <div class="filter-bar" style="margin-bottom:16px;">
+    <div class="field"><span>年度</span>
+      <select id="yearSel" style="width:100px;"><option>2026</option><option>2025</option><option>2024</option></select>
+    </div>
+    <div class="field"><span>部门</span>
+      <select style="width:180px;">
+        <option value="">全部部门</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+        <option>财务资产部</option>
+        <option>人力资源部（党委组织部）</option>
+        <option>质量安全环保部</option>
+        <option>开发管理部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+      </select>
+    </div>
+    <div class="field"><span>合同状态</span>
+      <select style="width:120px;">
+        <option value="">全部</option>
+        <option>草稿</option>
+        <option>已提交</option>
+        <option>待评分</option>
+        <option>已完成</option>
+      </select>
+    </div>
+    <button class="btn">查询</button>
+    <button class="btn">重置</button>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">10</div>
+      <div class="label">合同总数</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="num">2</div>
+      <div class="label">待填写指标</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">1</div>
+      <div class="label">待评分</div>
+    </div>
+    <div class="stat-card success">
+      <div class="num">7</div>
+      <div class="label">已完成</div>
+    </div>
+  </div>
+
+  <!-- 合同列表 -->
+  <section class="card table-card">
+    <table>
+      <thead><tr>
+        <th class="col-seq">序号</th>
+        <th>受约部门</th>
+        <th>受约人（部门负责人）</th>
+        <th>发约人（分管领导）</th>
+        <th>合同有效期</th>
+        <th>指标数</th>
+        <th>综合绩效分</th>
+        <th class="col-status">状态</th>
+        <th class="col-action">操作</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td>
+          <td>办公室（党委办公室）</td>
+          <td><span class="role-tag receiver">受</span>杨主任</td>
+          <td><span class="role-tag sender">发</span>王副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>10</td>
+          <td><span class="score-cell high">10.85</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>计划经营部</td>
+          <td><span class="role-tag receiver">受</span>马部长</td>
+          <td><span class="role-tag sender">发</span>李副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>12</td>
+          <td><span class="score-cell high">10.52</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td>财务资产部</td>
+          <td><span class="role-tag receiver">受</span>陈部长</td>
+          <td><span class="role-tag sender">发</span>李副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>9</td>
+          <td><span class="score-cell mid">10.28</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td>
+          <td>人力资源部（党委组织部）</td>
+          <td><span class="role-tag receiver">受</span>刘主任</td>
+          <td><span class="role-tag sender">发</span>王副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>8</td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="contract-status scoring">待评分</span></td>
+          <td class="col-action"><a class="btn link primary" href="./perf-dept-contract-score.html">去评分</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td>
+          <td>质量安全环保部</td>
+          <td><span class="role-tag receiver">受</span>郑部长</td>
+          <td><span class="role-tag sender">发</span>张副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>11</td>
+          <td><span class="score-cell high">10.65</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td>
+          <td>开发管理部</td>
+          <td><span class="role-tag receiver">受</span>张主任</td>
+          <td><span class="role-tag sender">发</span>张副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>10</td>
+          <td><span class="score-cell mid">10.15</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">7</td>
+          <td>地质工程部</td>
+          <td><span class="role-tag receiver">受</span>李总工</td>
+          <td><span class="role-tag sender">发</span>张副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>0</td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="contract-status draft">草稿</span></td>
+          <td class="col-action">
+            <a class="btn link" href="./perf-dept-contract-fill.html">编辑</a>
+            <a class="btn link danger" href="./confirm-delete.html">删除</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">8</td>
+          <td>地面建设工程部</td>
+          <td><span class="role-tag receiver">受</span>沈部长</td>
+          <td><span class="role-tag sender">发</span>李副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>9</td>
+          <td><span class="score-cell mid">10.38</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">9</td>
+          <td>党群工作部（纪委办公室）</td>
+          <td><span class="role-tag receiver">受</span>孙书记</td>
+          <td><span class="role-tag sender">发</span>王副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>7</td>
+          <td><span class="score-cell high">10.92</span></td>
+          <td class="col-status"><span class="contract-status completed">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-dept-contract-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">10</td>
+          <td>生产指挥中心</td>
+          <td><span class="role-tag receiver">受</span>周主任</td>
+          <td><span class="role-tag sender">发</span>张副总</td>
+          <td>2026-01-01 ~ 2026-12-31</td>
+          <td>0</td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="contract-status draft">草稿</span></td>
+          <td class="col-action">
+            <a class="btn link" href="./perf-dept-contract-fill.html">编辑</a>
+            <a class="btn link danger" href="./confirm-delete.html">删除</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="hint" style="margin-top:16px;">
+    说明：部门业绩合同为年度合同，受约人（部门负责人）填写指标后提交，由发约人（分管领导）评分。<br>
+    <span class="role-tag sender">发</span> 表示发约人（评分方）&nbsp;&nbsp;
+    <span class="role-tag receiver">受</span> 表示受约人（填写方）
+  </p>
+</main>
+
+<script src="../shared/nav.js"></script>
+</body>
+</html>

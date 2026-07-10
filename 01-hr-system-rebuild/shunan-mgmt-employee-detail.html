@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>蜀南管理人员档案</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <link rel="stylesheet" href="../shared/profile.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="员工档案" data-desc="蜀南管理人员 360 档案：基本信息与异动记录集中查看。"
+    data-actions='<a class="btn" href="./shunan-mgmt-employees.html">返回列表</a><a class="btn" href="./shunan-mgmt-employee-edit.html">编辑资料</a>'>
+
+    <div class="profile-header">
+      <div class="profile-avatar">赵</div>
+      <div class="profile-meta">
+        <div class="profile-name">赵明 <span class="profile-badge">在册在岗</span></div>
+        <div class="profile-sub">
+          <span>员工编号：<strong>SN2025001</strong></span>
+          <span>组织单位：<strong>开发管理部</strong></span>
+          <span>岗位：<strong>项目经理</strong></span>
+          <span>人员类型：<strong>蜀南管理人员</strong></span>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn" type="button" onclick="openModal('deptTransferModal')">部门调动</button>
+        <button class="btn" type="button" onclick="openModal('retireModal')">退休</button>
+        <button class="btn danger" type="button" onclick="openModal('leaveModal')">办理离职</button>
+      </div>
+    </div>
+
+    <div class="profile-tabs">
+      <div class="profile-tab active" data-tab="info">基本信息</div>
+      <div class="profile-tab" data-tab="change">异动记录</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-info">
+      <section class="card form-page">
+        <h3>基本信息</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>组织单位</span><strong>开发管理部</strong></div>
+          <div><span>姓名</span><strong>赵明</strong></div>
+          <div><span>岗位</span><strong>项目经理</strong></div>
+          <div><span>性别</span><strong>男</strong></div>
+          <div><span>婚姻状况</span><strong>已婚</strong></div>
+          <div><span>民族</span><strong>汉族</strong></div>
+          <div><span>籍贯</span><strong>四川泸州</strong></div>
+          <div><span>出生日期</span><strong>1988-06-15</strong></div>
+          <div><span>年龄</span><strong>38</strong></div>
+          <div><span>参加工作时间</span><strong>2010-07-01</strong></div>
+          <div><span>工作年限</span><strong>16</strong></div>
+          <div><span>岗位序列</span><strong>管理序列</strong></div>
+          <div><span>岗位类别</span><strong>基层领导人员</strong></div>
+          <div><span>职务称谓</span><strong>部门正职</strong></div>
+          <div><span>岗位层级</span><strong>管理序列</strong></div>
+          <div><span>级别</span><strong>M5</strong></div>
+          <div><span>政治面貌</span><strong>中共党员</strong></div>
+          <div><span>任现职级时间/聘任时间</span><strong>2022-01-01</strong></div>
+          <div><span>所属支部</span><strong>蜀南党支部</strong></div>
+          <div><span>入党时间</span><strong>2012-06-30</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>学历信息</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>学习形式</span><strong>全日制</strong></div>
+          <div><span>文化程度</span><strong>大学本科</strong></div>
+          <div><span>现学位</span><strong>学士</strong></div>
+          <div><span>毕业时间</span><strong>2010-06-30</strong></div>
+          <div><span>毕业学校</span><strong>西南石油大学</strong></div>
+          <div><span>所学专业</span><strong>石油工程</strong></div>
+          <div><span>所学专业类别</span><strong>工学</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>原学历信息</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>原学位</span><strong>-</strong></div>
+          <div><span>原学历</span><strong>大学专科</strong></div>
+          <div><span>原毕业时间</span><strong>2008-06-30</strong></div>
+          <div><span>原所学专业</span><strong>机械制造</strong></div>
+          <div><span>原毕业院校</span><strong>四川工程职业技术学院</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>职称信息</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>资格专业</span><strong>石油工程</strong></div>
+          <div><span>职称</span><strong>工程师</strong></div>
+          <div><span>资格取得时间</span><strong>2015-09-01</strong></div>
+          <div><span>取得途径</span><strong>评审</strong></div>
+          <div><span>发证机构</span><strong>四川省人社厅</strong></div>
+          <div><span>签发时间</span><strong>2015-10-01</strong></div>
+          <div><span>聘现岗时间</span><strong>2022-01-01</strong></div>
+          <div><span>任现职级时间</span><strong>2022-01-01</strong></div>
+          <div><span>现从事专业</span><strong>项目管理</strong></div>
+          <div><span>从事时间</span><strong>2010-07-01</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>入职信息</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>到本企业时间</span><strong>2020-06-01</strong></div>
+          <div><span>来本单位时间</span><strong>2020-06-01</strong></div>
+          <div><span>首次加入中石油日期</span><strong>2010-07-01</strong></div>
+          <div><span>员工编号</span><strong>SN2025001</strong></div>
+          <div><span>身份证号</span><strong>5105021988xxxx1234</strong></div>
+          <div><span>任干形式</span><strong>聘任</strong></div>
+          <div><span>任干时间</span><strong>2022-01-01</strong></div>
+          <div><span>员工状态</span><strong>在册在岗</strong></div>
+          <div><span>聘任时间</span><strong>2022-01-01</strong></div>
+          <div><span>聘任岗位</span><strong>项目经理</strong></div>
+        </div>
+      </section>
+
+      <section class="card form-page detail-section">
+        <h3>其他</h3>
+        <div class="readonly-grid employee-grid">
+          <div><span>备注</span><strong>-</strong></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="tab-change">
+      <section class="card table-card">
+        <table class="timeline-table">
+          <thead>
+            <tr><th>异动类型</th><th>生效日期</th><th>变动内容</th><th>变动原因</th><th>操作人</th><th>状态</th><th class="col-action">操作</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="chg-type chg-job">部门调动</span></td>
+              <td>2024-02-01</td>
+              <td>采气场站管理（生产指挥中心）→ 采气场站管理（开发管理部）</td>
+              <td>人员调配</td>
+              <td>hr_user</td>
+              <td><span class="chg-status">已生效</span></td>
+              <td class="col-action"><a class="btn link" href="javascript:void(0);" onclick="showChangeDetail('dept')">查看详情</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="notice" style="margin-top:12px;">异动记录由部门调动、离职、退休操作自动生成，作为人员管理的依据。</div>
+      </section>
+    </div>
+
+  <!-- 部门调动弹框 -->
+  <div class="modal-mask" id="deptTransferModal">
+    <div class="modal-box">
+      <h3>部门调动 · 赵明</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>SN2025001</strong></span>
+        <span>当前部门：<strong>开发管理部</strong></span>
+        <span>当前岗位：<strong>采气场站管理</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 新部门</span></label>
+          <select id="dtNewDept" onchange="fillDtPos()">
+            <option value="">请选择</option>
+            <option>办公室（党委办公室）</option>
+            <option>计划经营部</option>
+            <option>财务资产部</option>
+            <option>人力资源部（党委组织部）</option>
+            <option>质量安全环保部</option>
+            <option>地质工程部</option>
+            <option>地面建设工程部</option>
+            <option>党群工作部（纪委办公室）</option>
+            <option>生产指挥中心</option>
+          </select>
+        </div>
+        <div><label><span class="label-text"><span class="required">*</span> 新岗位</span></label>
+          <select id="dtNewPos"><option value="">请先选择新部门</option></select>
+        </div>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 生效日期</span></label><input type="date"></div>
+        <div><label>变动原因</label><textarea placeholder="请输入变动原因"></textarea></div>
+      </div>
+      <div class="mrow"><label>变动文件</label><input type="file"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('deptTransferModal')">取消</button>
+        <button class="btn primary" type="button" onclick="closeModal('deptTransferModal')">确认调动</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 退休弹框 -->
+  <div class="modal-mask" id="retireModal">
+    <div class="modal-box">
+      <h3>办理退休 · 赵明</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>SN2025001</strong></span>
+        <span>当前部门：<strong>开发管理部</strong></span>
+        <span>当前岗位：<strong>采气场站管理</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 退休日期</span></label><input type="date"></div>
+        <div><label>工作交接人</label>
+          <select><option value="">请选择同部门人员</option><option>张三（开发管理部）</option><option>李四（开发管理部）</option></select>
+        </div>
+      </div>
+      <div class="mrow"><label>退休原因</label><textarea placeholder="请输入退休原因"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('retireModal')">取消</button>
+        <button class="btn primary" type="button" onclick="closeModal('retireModal')">确认退休</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 办理离职弹框 -->
+  <div class="modal-mask" id="leaveModal">
+    <div class="modal-box">
+      <h3>办理离职 · 赵明</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>SN2025001</strong></span>
+        <span>部门：<strong>开发管理部</strong></span>
+        <span>岗位：<strong>采气场站管理</strong></span>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 离职日期</span></label><input type="date"></div>
+        <div><label><span class="label-text"><span class="required">*</span> 离职类型</span></label>
+          <select><option value="">请选择</option><option>主动离职</option><option>辞退离职</option><option>退休离职</option></select>
+        </div>
+      </div>
+      <div class="mrow two">
+        <div><label><span class="label-text"><span class="required">*</span> 离职原因</span></label><input placeholder="请输入"></div>
+        <div><label>工作交接人</label><select><option value="">请选择同部门人员</option><option>李四（研发部）</option><option>王五（研发部）</option></select></div>
+      </div>
+      <div class="mrow"><label>附件</label><input type="file"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('leaveModal')">取消</button>
+        <button class="btn danger" type="button" onclick="closeModal('leaveModal')">确认离职</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 异动详情弹框 -->
+  <div class="modal-mask" id="changeDetailModal">
+    <div class="modal-box">
+      <h3 id="changeDetailTitle">异动详情</h3>
+      <div class="modal-emp">
+        <span>员工编号：<strong>SN2025001</strong></span>
+        <span>姓名：<strong>赵明</strong></span>
+        <span>部门：<strong>开发管理部</strong></span>
+      </div>
+      <div id="changeDetailContent"></div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeModal('changeDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script>
+    var deptPositions = {
+      '办公室（党委办公室）': ['机关事务','机要文书','党务秘书','档案管理','综合管理'],
+      '计划经营部': ['统计与销售管理','法律事务管理','规划、计划管理','合同管理','股权与三基管理'],
+      '财务资产部': ['项目核算','总账','材料核算、报销审核','成本核算','出纳'],
+      '人力资源部（党委组织部）': ['劳动组织、社保公积金管理','培训、员工管理','党组织建设'],
+      '质量安全环保部': ['职业健康、HSE体系管理','质量计量管理','工业安全管理','节能、综合管理'],
+      '地质工程部': ['综合及投资结算管理','矿权资源管理','科技管理','钻完井工程管理','前期规划管理'],
+      '地面建设工程部': ['综合管理','钻前工程','合同、合规','地面工程','结算、审计'],
+      '党群工作部（纪委办公室）': ['新闻宣传、综合管理','纪检管理','新闻宣传'],
+      '生产指挥中心': ['综合管理','公共关系协调','集输工艺管理（场站）','信息技术管理','试修管理']
+    };
+    function fillDtPos() {
+      var dept = document.getElementById('dtNewDept').value;
+      var sel = document.getElementById('dtNewPos');
+      sel.innerHTML = '<option value="">请选择新岗位</option>';
+      (deptPositions[dept] || []).forEach(function(p) {
+        var o = document.createElement('option'); o.textContent = p; sel.appendChild(o);
+      });
+    }
+    function openModal(id){ document.getElementById(id).classList.add('show'); }
+    function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+    document.querySelectorAll('.modal-mask').forEach(function(m){
+      m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+    });
+
+    // 异动详情查看
+    function showChangeDetail(type) {
+      var title = '', content = '';
+      if (type === 'dept') {
+        title = '部门调动详情';
+        content = '<div class="readonly-grid" style="grid-template-columns:auto 1fr;gap:10px 16px;">' +
+          '<span style="color:#8fa3b0;">异动类型</span><strong>部门调动</strong>' +
+          '<span style="color:#8fa3b0;">生效日期</span><strong>2024-02-01</strong>' +
+          '<span style="color:#8fa3b0;">原部门</span><strong>生产指挥中心</strong>' +
+          '<span style="color:#8fa3b0;">原岗位</span><strong>采气场站管理</strong>' +
+          '<span style="color:#8fa3b0;">新部门</span><strong>开发管理部</strong>' +
+          '<span style="color:#8fa3b0;">新岗位</span><strong>采气场站管理</strong>' +
+          '<span style="color:#8fa3b0;">变动原因</span><strong>人员调配</strong>' +
+          '<span style="color:#8fa3b0;">操作人</span><strong>hr_user</strong>' +
+          '<span style="color:#8fa3b0;">操作时间</span><strong>2024-01-20 14:30</strong>' +
+          '</div>';
+      }
+      document.getElementById('changeDetailTitle').textContent = title;
+      document.getElementById('changeDetailContent').innerHTML = content;
+      openModal('changeDetailModal');
+    }
+  </script>
+</body>
+</html>

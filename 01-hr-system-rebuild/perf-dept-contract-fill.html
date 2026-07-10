@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>协作填写完成值</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 部门信息卡 */
+    .dept-info-card { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:14px 18px; margin-bottom:16px; }
+    .dept-info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px 24px; }
+    .dept-info-grid dl { display:flex; align-items:center; gap:4px; margin:0; font-size:13px; }
+    .dept-info-grid dt { color:#5f7080; }
+    .dept-info-grid dd { color:#1d2733; font-weight:500; margin:0; }
+
+    /* 流程进度条 */
+    .flow-stepper { display:flex; align-items:center; background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+    .flow-step { display:flex; align-items:center; gap:10px; flex:1; position:relative; }
+    .flow-step:not(:last-child)::after { content:''; position:absolute; right:0; top:50%; transform:translateY(-50%); width:0; height:0; border:8px solid transparent; border-left-color:#dfe5ec; }
+    .flow-step.active:not(:last-child)::after { border-left-color:#00AAB7; }
+    .flow-step.done:not(:last-child)::after { border-left-color:#16a36a; }
+    .flow-num { width:28px; height:28px; border-radius:50%; background:#f1f5f9; color:#64748b; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .flow-step.active .flow-num { background:#00AAB7; color:#fff; }
+    .flow-step.done .flow-num { background:#16a36a; color:#fff; }
+    .flow-info { display:flex; flex-direction:column; gap:2px; }
+    .flow-title { font-size:14px; font-weight:500; color:#64748b; }
+    .flow-step.active .flow-title { color:#00AAB7; font-weight:600; }
+    .flow-step.done .flow-title { color:#16a36a; }
+    .flow-desc { font-size:12px; color:#9ca3af; }
+    .flow-step.active .flow-desc { color:#5f7080; }
+
+    /* 填写说明 */
+    .fill-notice { padding:12px 14px; border:1px solid #b3e6ea; background:#e6f7f9; color:#00838c; border-radius:8px; margin-bottom:16px; font-size:13px; line-height:1.6; }
+
+    /* 协作进度卡片 */
+    .progress-card { background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+    .progress-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .progress-title { font-size:14px; font-weight:600; color:#1d2733; }
+    .progress-bar-track { height:8px; background:#eef3f6; border-radius:4px; overflow:hidden; margin-bottom:10px; }
+    .progress-bar-fill { height:100%; background:#00AAB7; transition:width .2s; }
+    .progress-detail { font-size:13px; color:#5f7080; }
+    .progress-detail strong { color:#1d2733; }
+    .progress-detail .unfilled { color:#dc2626; }
+
+    /* 填写表格 */
+    .fill-card { background:#fff; border:1px solid #dfe5ec; border-radius:8px; overflow:hidden; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .fill-table { width:100%; border-collapse:collapse; font-size:13px; table-layout:auto; min-width:1040px; }
+    .fill-table th, .fill-table td { padding:9px 12px; text-align:left; border-bottom:1px solid #eef3f6; vertical-align:middle; }
+    .fill-table th { background:#f0f5f7; font-weight:600; color:#3d5266; font-size:13px; }
+    .fill-table .col-seq { text-align:center; width:52px; }
+
+    /* 分类行 */
+    .fill-table .cat-row { background:#e6f7f9; }
+    .fill-table .cat-row td { font-weight:600; color:#00838c; }
+
+    /* 子分类单元格 */
+    .fill-table .subcat-cell { background:#f8fafc; font-weight:500; color:#3d5266; }
+
+    .fill-table tr.row-unfilled { background:#fff7f7; }
+    .filled-value { color:#00AAB7; font-weight:600; }
+    .unfilled-value { color:#dc2626; font-size:12px; }
+    .writer-name { color:#1d2733; }
+    .writer-time { color:#8fa3b0; font-size:12px; }
+
+    /* 弹框 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 14px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+    .mrow{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+    .mrow label{font-size:13px;color:#5f7080;}
+    .mrow input,.mrow textarea{height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;font-size:14px;}
+    .mrow input:focus,.mrow textarea:focus{border-color:#00AAB7;outline:none;box-shadow:0 0 0 2px rgba(0,170,183,0.15);}
+    .mrow textarea{height:70px;padding:10px;resize:vertical;}
+    .modal-readonly-info{background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#5f7080;}
+    .modal-readonly-info strong{color:#1d2733;}
+    .overwrite-warning{background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#c2410c;}
+
+    /* 右侧抽屉：表单型（360px） */
+    .drawer{position:fixed;top:0;right:-400px;width:360px;height:100vh;background:#f8fafb;box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:1500;display:flex;flex-direction:column;transition:right .25s ease;}
+    .drawer.open{right:0;}
+    .drawer-header{padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .drawer-title{font-size:15px;font-weight:600;color:#1d2733;}
+    .drawer-close{width:28px;height:28px;border:none;background:transparent;font-size:20px;color:#8fa3b0;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s;}
+    .drawer-close:hover{background:#f0f5f7;color:#3d5266;}
+    .drawer-body{flex:1;overflow-y:auto;padding:20px;}
+    .drawer-footer{padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+
+    /* 底部操作栏 */
+    .action-bar { background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .action-bar .left-hint{font-size:12px;color:#9ca3af;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="协作填写完成值" data-desc="与其他评分领导协作填写部门业绩合同的完成值，任一未填写指标均可被任意评分领导填写。" data-breadcrumb="绩效管理 / 部门业绩合同 / 协作填写完成值">
+
+  <!-- 部门信息卡 -->
+  <div class="dept-info-card">
+    <div class="dept-info-grid">
+      <dl><dt>部门名称：</dt><dd>办公室（党委办公室）</dd></dl>
+      <dl><dt>部门负责人：</dt><dd>李主任</dd></dl>
+      <dl><dt>合同年度：</dt><dd>2026</dd></dl>
+      <dl><dt>发布时间：</dt><dd>2026-01-10</dd></dl>
+      <dl><dt>评分领导：</dt><dd>王副总、张副总</dd></dl>
+      <dl><dt>填报截止：</dt><dd>2026-12-20 18:00</dd></dl>
+    </div>
+  </div>
+
+  <!-- 流程进度条 -->
+  <div class="flow-stepper">
+    <div class="flow-step done">
+      <div class="flow-num">✓</div>
+      <div class="flow-info">
+        <div class="flow-title">指标配置</div>
+        <div class="flow-desc">填写指标并发布</div>
+      </div>
+    </div>
+    <div class="flow-step active">
+      <div class="flow-num">2</div>
+      <div class="flow-info">
+        <div class="flow-title">填写完成值</div>
+        <div class="flow-desc">评分领导协作填写</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-info">
+        <div class="flow-title">结果确认</div>
+        <div class="flow-desc">部门确认结果</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-info">
+        <div class="flow-title">HR归档</div>
+        <div class="flow-desc">归档完成</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 填写说明 -->
+  <div class="fill-notice">
+    本合同由 <strong>王副总、张副总</strong> 共同协作填写完成值：系统不知道每人具体分管哪些指标，请根据自己分管的业务自行判断填写哪些行。
+    任一指标一旦被他人填写，您仍可点击"编辑"覆盖修改（会提示覆盖确认）。<strong>每一行填写后会立即保存，无需额外提交</strong>；
+    页面底部的"完成填报"用于提交整份合同（含全部评分领导已填写的完成值，而非仅您本人填写的部分），点击后整份合同锁定，全部评分领导均不可再修改；
+    到达填报截止时间后，系统将自动锁定，未填写的指标完成值按 0 分计入。
+  </div>
+
+  <!-- 协作填写进度 -->
+  <div class="progress-card">
+    <div class="progress-head">
+      <div class="progress-title" id="progressTitle">📊 填写进度：3/12 项已填写</div>
+      <span style="font-size:12px;color:#9ca3af;">当前身份：王副总（演示）</span>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressBarFill" style="width:25%;"></div></div>
+    <div class="progress-detail" id="progressDetail">
+      评分领导填写情况：<strong>王副总</strong>（2项）· <strong>张副总</strong>（1项）· <span class="unfilled">9项未填写</span>
+    </div>
+  </div>
+
+  <!-- 填写表格 -->
+  <div class="fill-card">
+    <div class="table-scroll">
+      <table class="fill-table" id="fillTable">
+        <thead>
+          <tr>
+            <th class="col-seq">序号</th>
+            <th style="width:100px;">一级分类</th>
+            <th style="width:100px;">二级分类</th>
+            <th>指标名称</th>
+            <th style="width:70px;">计量单位</th>
+            <th style="width:60px;">权重</th>
+            <th style="width:120px;">预算目标值</th>
+            <th style="width:110px;">完成值</th>
+            <th style="width:90px;">填写人</th>
+            <th style="width:100px;">填写时间</th>
+            <th style="width:70px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 效益类 -->
+          <tr class="cat-row"><td colspan="11">关键业绩指标（权重合计：85%）</td></tr>
+          <tr data-row="1" data-target="84,127">
+            <td class="col-seq">1</td>
+            <td rowspan="3" class="subcat-cell">关键业绩指标</td>
+            <td rowspan="3" class="subcat-cell">(一) 效益类</td>
+            <td>净利润</td>
+            <td>万元</td>
+            <td>5%</td>
+            <td>84,127</td>
+            <td class="cell-value"><span class="filled-value">85,240</span></td>
+            <td class="cell-writer"><span class="writer-name">王副总</span></td>
+            <td class="cell-time"><span class="writer-time">06-18</span></td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">编辑</a></td>
+          </tr>
+          <tr data-row="2" data-target="44.3">
+            <td class="col-seq">2</td>
+            <td>油气商品量</td>
+            <td>亿立方米</td>
+            <td>5%</td>
+            <td>44.3</td>
+            <td class="cell-value"><span class="filled-value">45.1</span></td>
+            <td class="cell-writer"><span class="writer-name">王副总</span></td>
+            <td class="cell-time"><span class="writer-time">06-18</span></td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">编辑</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="3" data-target="100">
+            <td class="col-seq">3</td>
+            <td>绩效考核覆盖率</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <!-- 营运类 -->
+          <tr data-row="4" data-target="按分公司相关文件执行">
+            <td class="col-seq">4</td>
+            <td rowspan="7" class="subcat-cell">关键业绩指标</td>
+            <td rowspan="7" class="subcat-cell">(二) 营运类</td>
+            <td>人工成本控制</td>
+            <td>万元</td>
+            <td>10%</td>
+            <td>按分公司相关文件执行</td>
+            <td class="cell-value"><span class="filled-value">达成</span></td>
+            <td class="cell-writer"><span class="writer-name">张副总</span></td>
+            <td class="cell-time"><span class="writer-time">06-19</span></td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">编辑</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="5" data-target="100">
+            <td class="col-seq">5</td>
+            <td>重点工作完成评价（多维度考核）</td>
+            <td>分</td>
+            <td>15%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="6" data-target="100">
+            <td class="col-seq">6</td>
+            <td>培训计划完成率</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="7" data-target="4123">
+            <td class="col-seq">7</td>
+            <td>全员劳动生产率</td>
+            <td>万元/人</td>
+            <td>5%</td>
+            <td>4123</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="8" data-target="100">
+            <td class="col-seq">8</td>
+            <td>合规性管理</td>
+            <td>%</td>
+            <td>5%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="9" data-target="100">
+            <td class="col-seq">9</td>
+            <td>QHSE管理绩效考核</td>
+            <td>分</td>
+            <td>10%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="10" data-target="90">
+            <td class="col-seq">10</td>
+            <td>领导班子建设</td>
+            <td>分</td>
+            <td>5%</td>
+            <td>90</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <!-- 党建类 -->
+          <tr class="row-unfilled" data-row="11" data-target="95">
+            <td class="col-seq">11</td>
+            <td rowspan="2" class="subcat-cell">关键业绩指标</td>
+            <td rowspan="2" class="subcat-cell">(三) 党建类</td>
+            <td>党建工作评价</td>
+            <td>%</td>
+            <td>15%</td>
+            <td>95</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+          <tr class="row-unfilled" data-row="12" data-target="100">
+            <td class="col-seq">12</td>
+            <td>人才强企工程</td>
+            <td>%</td>
+            <td>10%</td>
+            <td>100</td>
+            <td class="cell-value"><span class="unfilled-value">— 未填写</span></td>
+            <td class="cell-writer">—</td>
+            <td class="cell-time">—</td>
+            <td><a class="btn link sm" onclick="openFillModal(this)">填写</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 底部操作栏 -->
+  <div class="action-bar">
+    <span class="left-hint">每行填写后即时保存；点击右侧按钮将提交整份合同的完成值并锁定，全部评分领导均不可再修改。</span>
+    <div style="display:flex;gap:12px;">
+      <a href="perf-dept-contract.html#pending" class="btn" onclick="sessionStorage.setItem('activeTab','pending')">返回列表</a>
+      <button class="btn primary" onclick="submitFill()">完成填报</button>
+    </div>
+  </div>
+
+  <!-- 填写/编辑完成值抽屉 -->
+  <div class="drawer" id="fillDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="fillModalTitle">填写完成值</span>
+      <button class="drawer-close" onclick="closeFillModal()">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="overwrite-warning" id="overwriteWarning" style="display:none;">
+        该项已由 <strong id="overwriteWriter"></strong> 于 <span id="overwriteTime"></span> 填写，确认修改？
+      </div>
+      <div class="modal-readonly-info">
+        指标名称：<strong id="fillIndicatorName"></strong>　
+        预算目标值：<strong id="fillTargetValue"></strong>
+      </div>
+      <div class="mrow">
+        <label>完成值</label>
+        <input type="text" id="fillValueInput" placeholder="请输入完成值">
+      </div>
+      <div class="mrow">
+        <label>备注（可选）</label>
+        <textarea id="fillRemarkInput" placeholder="请输入备注"></textarea>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeFillModal()">取消</button>
+      <button class="btn primary" onclick="saveFillModal()">确认填写</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+var CURRENT_USER = '王副总'; // 原型演示：当前登录评分领导身份
+var currentEditingRow = null;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function nowLabel(){
+  var d = new Date();
+  return pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+
+function openFillModal(triggerEl) {
+  var row = triggerEl.closest('tr');
+  currentEditingRow = row;
+  var name = row.children[3] ? row.children[3].textContent.trim() : row.querySelector('td:nth-child(4)').textContent.trim();
+  document.getElementById('fillIndicatorName').textContent = name;
+  document.getElementById('fillTargetValue').textContent = row.dataset.target || '—';
+
+  var writerEl = row.querySelector('.cell-writer .writer-name');
+  var isFilled = !!writerEl;
+  var titleEl = document.getElementById('fillModalTitle');
+  var warnEl = document.getElementById('overwriteWarning');
+
+  if (isFilled) {
+    titleEl.textContent = '编辑完成值';
+    warnEl.style.display = 'block';
+    document.getElementById('overwriteWriter').textContent = writerEl.textContent;
+    document.getElementById('overwriteTime').textContent = row.querySelector('.cell-time .writer-time').textContent;
+    var currentVal = row.querySelector('.cell-value .filled-value');
+    document.getElementById('fillValueInput').value = currentVal ? currentVal.textContent : '';
+  } else {
+    titleEl.textContent = '填写完成值';
+    warnEl.style.display = 'none';
+    document.getElementById('fillValueInput').value = '';
+  }
+  document.getElementById('fillRemarkInput').value = '';
+  document.getElementById('fillDrawer').classList.add('open');
+}
+
+function closeFillModal() {
+  document.getElementById('fillDrawer').classList.remove('open');
+  currentEditingRow = null;
+}
+
+function saveFillModal() {
+  var val = document.getElementById('fillValueInput').value.trim();
+  if (!val) { alert('请填写完成值'); return; }
+  if (!currentEditingRow) return;
+
+  var row = currentEditingRow;
+  row.classList.remove('row-unfilled');
+  row.querySelector('.cell-value').innerHTML = '<span class="filled-value">' + val + '</span>';
+  row.querySelector('.cell-writer').innerHTML = '<span class="writer-name">' + CURRENT_USER + '</span>';
+  row.querySelector('.cell-time').innerHTML = '<span class="writer-time">' + nowLabel() + '</span>';
+  row.querySelector('td:last-child a').textContent = '编辑';
+
+  closeFillModal();
+  refreshProgress();
+}
+
+function refreshProgress() {
+  var rows = document.querySelectorAll('#fillTable tbody tr[data-row]');
+  var total = rows.length;
+  var filledByWriter = {};
+  var filledCount = 0;
+  rows.forEach(function(row){
+    var writerEl = row.querySelector('.cell-writer .writer-name');
+    if (writerEl) {
+      filledCount++;
+      var name = writerEl.textContent;
+      filledByWriter[name] = (filledByWriter[name] || 0) + 1;
+    }
+  });
+  var unfilled = total - filledCount;
+  document.getElementById('progressTitle').textContent = '📊 填写进度：' + filledCount + '/' + total + ' 项已填写';
+  document.getElementById('progressBarFill').style.width = (total ? (filledCount/total*100) : 0) + '%';
+
+  var parts = Object.keys(filledByWriter).map(function(name){
+    return '<strong>' + name + '</strong>（' + filledByWriter[name] + '项）';
+  });
+  var detailHtml = '评分领导填写情况：' + parts.join('· ');
+  if (unfilled > 0) {
+    detailHtml += (parts.length ? '· ' : '') + '<span class="unfilled">' + unfilled + '项未填写</span>';
+  }
+  document.getElementById('progressDetail').innerHTML = detailHtml;
+}
+
+// 完成填报：提交的是「办公室（党委办公室）」整份合同的完成值（含全部评分领导已填写的内容），不是仅本人填写的部分
+function submitFill() {
+  var rows = document.querySelectorAll('#fillTable tbody tr[data-row]');
+  var unfilledCount = 0;
+  rows.forEach(function(row){
+    if (!row.querySelector('.cell-writer .writer-name')) unfilledCount++;
+  });
+
+  var msg = '本次将提交「办公室（党委办公室）」整份合同的完成值（含全部评分领导已填写的内容，而非仅您本人填写的部分）。提交后合同锁定，所有评分领导均不可再修改，确认完成填报？';
+  if (unfilledCount > 0) {
+    msg = '仍有 ' + unfilledCount + ' 项指标未填写，未填写项将按 0 分计入计算。' + msg;
+  }
+
+  if (confirm(msg)) {
+    alert('完成填报，已通知部门负责人「李主任」确认结果');
+    sessionStorage.setItem('activeTab', 'pending');
+    window.location.href = 'perf-dept-contract.html';
+  }
+}
+</script>
+</body>
+</html>

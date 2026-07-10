@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新增外包人员</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="新增外包人员" data-desc="录入外包人员基础信息，字段与台账一致。">
+    <section class="card form-page">
+
+      <h3 class="form-section-title">基础信息</h3>
+      <div class="form-grid outsourced-grid">
+        <label><span class="label-text">服务单位</span> <input value="长宁公司" disabled style="background:#f5f7fa;color:#64748b;"></label>
+        <label><span class="label-text"><span class="required">*</span> 服务三级单位</span>
+          <select id="serviceUnit">
+            <option value="">请选择</option>
+            <option>办公室（党委办公室）</option>
+            <option>计划经营部</option>
+            <option>财务资产部</option>
+            <option>人力资源部（党委组织部）</option>
+            <option>质量安全环保部</option>
+            <option>开发管理部</option>
+            <option>地质工程部</option>
+            <option>地面建设工程部</option>
+            <option>党群工作部（纪委办公室）</option>
+            <option>生产指挥中心</option>
+          </select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 所属项目</span><select><option value="">请选择</option><option>驻场专业技术</option><option>长宁公司存量驻场专业技术项目</option><option>驻场操作服务</option></select></label>
+        <label><span class="label-text"><span class="required">*</span> 所属单位</span><select><option value="">请选择</option><option>成都项目部</option><option>泸州项目部</option></select></label>
+        <label><span class="label-text"><span class="required">*</span> 姓名</span> <input placeholder="请输入"></label>
+        <label><span class="label-text"><span class="required">*</span> 身份证号</span> <input placeholder="请输入"></label>
+        <label><span class="label-text"><span class="required">*</span> 性别</span>
+          <select><option value="">请选择</option><option>男</option><option>女</option></select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 婚姻状况</span>
+          <select><option value="">请选择</option><option>未婚</option><option>已婚</option><option>离异</option><option>丧偶</option></select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 出生日期</span> <input type="date"></label>
+        <label><span class="label-text"><span class="required">*</span> 民族</span> <input placeholder="请输入"></label>
+        <label><span class="label-text"><span class="required">*</span> 籍贯</span> <input placeholder="请输入"></label>
+        <label><span class="label-text"><span class="required">*</span> 参加工作时间</span> <input type="date"></label>
+        <label><span class="label-text"><span class="required">*</span> 宝石花入职时间</span> <input type="date"></label>
+        <label><span class="label-text"><span class="required">*</span> 政治面貌</span><select><option value="">请选择</option><option>群众</option><option>共青团员</option><option>中共党员</option></select></label>
+        <label><span class="label-text"><span class="required">*</span> 岗位类别</span>
+          <select id="postCategory">
+            <option value="">请选择</option>
+            <option>专业技术人员</option>
+            <option>一般管理人员</option>
+            <option>操作服务人员</option>
+          </select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 岗位</span><select id="position"><option value="">请选择岗位</option></select></label>
+      </div>
+
+      <h3 class="form-section-title">文化程度</h3>
+      <div class="form-grid outsourced-grid">
+        <label>原文化程度
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="oldEdu" onchange="toggleCustom(this,'oldEduCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>小学</option><option>初中</option><option>中专</option>
+              <option>高中</option><option>技校</option><option>成人大专</option>
+              <option>成人本科</option><option>大学本科</option><option>硕士研究生</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="oldEduCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 现文化程度</span>
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="newEdu" onchange="toggleCustom(this,'newEduCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>小学</option><option>初中</option><option>中专</option>
+              <option>高中</option><option>技校</option><option>成人大专</option>
+              <option>成人本科</option><option>大学本科</option><option>硕士研究生</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="newEduCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label class="wide">何年何月何院校何专业毕业 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">技能资格（现工种）</h3>
+      <div class="form-grid outsourced-grid">
+        <label>领域（专业）
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="field" onchange="toggleCustom(this,'fieldCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>勘探开发</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="fieldCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label>现工种名称 <input placeholder="请输入"></label>
+        <label>工种方向
+          <select id="workDirection">
+            <option value="">请选择</option>
+            <option value="601060301">采气工</option>
+            <option value="631010301">电工</option>
+            <option value="628020600">天然气压缩机操作工</option>
+            <option value="616021201">油气管道保护工</option>
+            <option value="631010300">电工（高压）</option>
+          </select>
+        </label>
+        <label>工种代码 <input id="workCode" placeholder="选择工种方向后自动带出" readonly></label>
+        <label>现工种等级
+          <div class="custom-inline" style="display:flex;gap:8px;align-items:center;">
+            <select id="curGrade" onchange="toggleCustom(this,'curGradeCustom')" style="flex:1;"><option value="">请选择</option><option>未取证</option><option>初级工</option><option>中级工</option><option>高级工</option><option>技师</option><option>高级技师</option><option>特级技师</option><option value="__custom__">自定义</option></select>
+            <input id="curGradeCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+        <label>现工种取证时间 <input type="date"></label>
+        <label>现证书编号 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">其它工种</h3>
+      <div style="margin:0 16px 24px;">
+        <table class="other-worktype-table" id="otherWorkTable" style="border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;" class="col-seq">序号</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其它工种（等级）</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其他工种时间</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;">其它工种证书编号</th>
+              <th style="padding:9px 12px;background:#f0f5f7;border-bottom:1px solid #eef3f6;width:72px;" class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="otherWorkBody"></tbody>
+        </table>
+        <button class="btn" type="button" id="addWorkBtn" style="margin-top:10px;">+ 添加其它工种</button>
+      </div>
+
+      <h3 class="form-section-title">压力容器</h3>
+      <div class="form-grid outsourced-grid">
+        <label>有效期至 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">电工</h3>
+      <div class="form-grid outsourced-grid">
+        <label>有效期至 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">消防设施操作</h3>
+      <div class="form-grid outsourced-grid">
+        <label>取证时间 <input type="date"></label>
+        <label>取证编码 <input placeholder="请输入"></label>
+      </div>
+
+      <div class="page-actions">
+        <a class="btn" href="./outsourced-employees.html">取消</a>
+        <a class="btn primary" href="./outsourced-employees.html">保存</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script>
+    // 工种方向 → 工种代码 联动
+    document.getElementById('workDirection').addEventListener('change', function() {
+      document.getElementById('workCode').value = this.value || '';
+    });
+
+    // 自定义选项联动
+    function toggleCustom(sel, inputId) {
+      var input = document.getElementById(inputId);
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    // 其它工种：动态增删
+    var gradeOptions = '<option value="">请选择</option><option>未取证</option><option>初级工</option><option>中级工</option><option>高级工</option><option>技师</option><option>高级技师</option><option>特级技师</option><option value="__custom__">自定义</option>';
+
+    function renderOtherWork() {
+      var rows = document.getElementById('otherWorkBody').querySelectorAll('tr');
+      rows.forEach(function(r, i) { r.cells[0].textContent = i + 1; });
+    }
+
+    function toggleRowGrade(sel) {
+      var input = sel.parentNode.querySelector('.grade-custom');
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    function addOtherWork() {
+      var tbody = document.getElementById('otherWorkBody');
+      var tr = document.createElement('tr');
+      var td = 'style="padding:6px 10px;border-bottom:1px solid #eef3f6;"';
+      var inputStyle = 'style="border:1px solid #e0e8ec;border-radius:6px;padding:4px 8px;font-size:13px;width:100%;box-sizing:border-box;"';
+      tr.innerHTML =
+        '<td ' + td + ' style="border:1px solid #e8e8e8;padding:6px 10px;text-align:center;"></td>' +
+        '<td ' + td + '>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<select onchange="toggleRowGrade(this)" ' + inputStyle + '>' + gradeOptions + '</select>' +
+            '<input type="text" class="grade-custom" placeholder="请输入" style="border:1px solid #e0e8ec;border-radius:6px;padding:4px 8px;font-size:13px;flex:1;box-sizing:border-box;display:none;">' +
+          '</div>' +
+        '</td>' +
+        '<td ' + td + '><input type="date" ' + inputStyle + '></td>' +
+        '<td ' + td + '><input type="text" placeholder="请输入" ' + inputStyle + '></td>' +
+        '<td ' + td + ' style="border:1px solid #e8e8e8;padding:6px 10px;text-align:center;"><button class="btn link danger" type="button" onclick="removeOtherWork(this)">删除</button></td>';
+      tbody.appendChild(tr);
+      renderOtherWork();
+    }
+
+    function removeOtherWork(btn) {
+      btn.closest('tr').remove();
+      renderOtherWork();
+    }
+
+    document.getElementById('addWorkBtn').addEventListener('click', addOtherWork);
+    addOtherWork();
+  </script>
+</body>
+</html>

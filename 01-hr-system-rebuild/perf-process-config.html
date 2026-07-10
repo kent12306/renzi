@@ -1,0 +1,2001 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>考核配置</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 主Tab：本年方案配置 / 历史方案配置 */
+    .main-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:0;}
+    .main-tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .main-tab:hover{color:#00AAB7;}
+    .main-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;}
+    .tab-panel{display:none;padding-top:16px;}
+    .tab-panel.active{display:block;}
+
+    /* 方案状态条 */
+    .scheme-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;border:1px solid #dfe5ec;border-radius:8px;margin-bottom:16px;}
+    .scheme-title{font-size:16px;font-weight:600;color:#1d2733;}
+    .scheme-meta{display:flex;align-items:center;gap:16px;font-size:13px;color:#5f7080;}
+
+    /* 流程进度条 */
+    .flow-stepper{display:flex;align-items:center;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px 20px;margin-bottom:16px;}
+    .flow-step{display:flex;align-items:center;gap:10px;flex:1;position:relative;cursor:pointer;}
+    .flow-step:not(:last-child)::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:0;height:0;border:8px solid transparent;border-left-color:#dfe5ec;}
+    .flow-step.active:not(:last-child)::after{border-left-color:#00AAB7;}
+    .flow-step.done:not(:last-child)::after{border-left-color:#16a36a;}
+    .flow-num{width:28px;height:28px;border-radius:50%;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .flow-step.active .flow-num{background:#00AAB7;color:#fff;}
+    .flow-step.done .flow-num{background:#16a36a;color:#fff;}
+    .flow-info{display:flex;flex-direction:column;gap:2px;}
+    .flow-title{font-size:14px;font-weight:500;color:#64748b;}
+    .flow-step.active .flow-title{color:#00AAB7;font-weight:600;}
+    .flow-step.done .flow-title{color:#16a36a;}
+    .flow-desc{font-size:12px;color:#9ca3af;}
+    .flow-step.active .flow-desc{color:#5f7080;}
+</style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="考核配置" data-desc="配置过程考核方案，包含部门考核细则、领导评价和权重配置。">
+
+  <style>
+    /* 两栏布局（步骤1简化后） */
+    .two-col-layout{display:flex;gap:16px;min-height:520px;}
+    .col-tree{width:240px;flex-shrink:0;background:#fff;border:1px solid #dfe5ec;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+    .col-detail{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+    .col-header{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #dfe5ec;font-size:14px;font-weight:600;color:#1d2733;}
+
+    /* 分类树 */
+    .tree-list{flex:1;overflow-y:auto;padding:8px 0;}
+    .tree-item{padding:8px 16px;font-size:13px;color:#5f7080;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;}
+    .tree-item:hover{background:#f0f5f7;color:#1d2733;}
+    .tree-item.active{background:#e6f7f9;color:#00AAB7;font-weight:500;}
+    .tree-item.level-1{font-weight:600;color:#1d2733;}
+    .tree-item.level-2{padding-left:32px;}
+    .tree-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9ca3af;}
+    .tree-item.level-1 .tree-icon{color:#00AAB7;}
+    .tree-item .tree-add{margin-left:auto;opacity:0;font-size:14px;color:#00AAB7;cursor:pointer;padding:2px 6px;}
+    .tree-item:hover .tree-add{opacity:1;}
+    .tree-actions{padding:10px 16px;border-bottom:1px solid #dfe5ec;background:#f8fafc;}
+
+    /* 视图切换 */
+    .view-toggle{display:inline-flex;border:1px solid #dfe5ec;border-radius:6px;overflow:hidden;}
+    .view-toggle .view-btn{padding:6px 14px;font-size:13px;background:#fff;color:#5f7080;border:none;cursor:pointer;}
+    .view-toggle .view-btn:not(:last-child){border-right:1px solid #dfe5ec;}
+    .view-toggle .view-btn:hover{background:#f8fafc;color:#00AAB7;}
+    .view-toggle .view-btn.active{background:#00AAB7;color:#fff;}
+
+    /* 配置表格 */
+    .config-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .config-table th,.config-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #eef3f6;vertical-align:middle;}
+    .config-table th{background:#f0f5f7;font-weight:600;color:#3d5266;}
+    .config-table .cat-row{background:#e6f7f9;}
+    .config-table .cat-row td{font-weight:600;color:#00838c;}
+
+    /* 开关组件 */
+    .switch{position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle;}
+    .switch input{opacity:0;width:0;height:0;}
+    .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ccd5dc;border-radius:22px;transition:all .2s;}
+    .switch .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:all .2s;}
+    .switch input:checked+.slider{background:#00AAB7;}
+    .switch input:checked+.slider::before{transform:translateX(18px);}
+
+    /* 部门Tag */
+    .dept-tags{display:flex;flex-wrap:wrap;gap:4px;}
+    .dept-tag{display:inline-flex;padding:2px 8px;background:#e6f7f9;color:#00838c;border-radius:4px;font-size:12px;cursor:pointer;}
+    .dept-tag.all{background:#dcfce7;color:#15803d;}
+
+    /* 弹框 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 18px;}
+    .mrow{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;font-size:14px;color:#5f7080;}
+    .mrow input,.mrow select,.mrow textarea{border:1px solid #dfe5ec;border-radius:6px;padding:8px 10px;font:inherit;width:100%;}
+    .mrow input,.mrow select{height:36px;}
+    .mrow textarea{min-height:70px;resize:vertical;}
+    .mrow input:focus,.mrow select:focus,.mrow textarea:focus{border-color:#00AAB7;outline:none;box-shadow:0 0 0 2px rgba(0,170,183,0.15);}
+    .label-text{font-size:14px;color:#5f7080;}
+    .required{color:#d14343;margin-right:2px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+
+    /* 右侧抽屉：表单型（360px，字段纵向排列场景，如新增/编辑指标、细则、分类、维度、部门配置） */
+    .drawer{position:fixed;top:0;right:-400px;width:360px;height:100vh;background:#f8fafb;box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:1500;display:flex;flex-direction:column;transition:right .25s ease;}
+    .drawer.open{right:0;}
+    /* 右侧抽屉：宽表格型（640px，含表格/多行录入的打分、填写完成值等场景） */
+    .drawer.drawer-wide{width:640px;right:-680px;}
+    .drawer-header{padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .drawer-title{font-size:15px;font-weight:600;color:#1d2733;}
+    .drawer-close{width:28px;height:28px;border:none;background:transparent;font-size:20px;color:#8fa3b0;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s;}
+    .drawer-close:hover{background:#f0f5f7;color:#3d5266;}
+    .drawer-body{flex:1;overflow-y:auto;padding:20px;}
+    .drawer-footer{padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+
+    /* 部门勾选框 */
+    .dept-checkbox-group{padding:12px;background:#f8fafc;border-radius:6px;border:1px solid #eef3f6;}
+    .dept-checkbox-group .check-all{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #eef3f6;}
+    .dept-checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+    .dept-checkbox-grid label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;}
+    .dept-checkbox-grid input[type="checkbox"]{width:16px;height:16px;margin:0;}
+
+    /* 步骤底部操作条 */
+    .step-actions{display:flex;justify-content:space-between;align-items:center;padding:16px 0;margin-top:16px;border-top:1px solid #eef3f6;}
+    .step-actions .left{display:flex;gap:10px;}
+    .step-actions .right{display:flex;gap:10px;}
+
+    /* 权重配置卡片 */
+    .weight-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:20px;margin-bottom:16px;}
+    .weight-card h4{font-size:15px;font-weight:600;color:#1d2733;margin:0 0 16px;display:flex;align-items:center;gap:8px;}
+    .weight-card h4::before{content:'';width:3px;height:14px;background:#00AAB7;border-radius:2px;}
+    .weight-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .weight-row label{width:140px;font-size:14px;color:#5f7080;}
+    .weight-row input{width:80px;height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;text-align:center;}
+    .weight-row span{color:#5f7080;font-size:14px;}
+    .weight-total{padding:12px 16px;background:#e6f7f9;border-radius:6px;display:flex;align-items:center;gap:12px;margin-top:16px;}
+    .weight-total .val{font-weight:600;color:#00AAB7;font-size:15px;}
+    .weight-total .val.error{color:#d14343;}
+
+    /* 历史年度列表 */
+    .history-list{display:flex;flex-direction:column;gap:12px;}
+    .history-item{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s;}
+    .history-item:hover{border-color:#00AAB7;background:#f8fffe;}
+    .history-item .year{font-size:16px;font-weight:600;color:#1d2733;}
+    .history-item .meta{font-size:13px;color:#5f7080;}
+  </style>
+
+  <!-- ========== 主Tab ========== -->
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="current">本年方案配置</div>
+    <div class="main-tab" data-tab="history">历史方案配置</div>
+  </div>
+
+  <!-- ========== 当年方案配置 Tab ========== -->
+  <div class="tab-panel active" id="panel-current">
+    
+    <!-- 方案状态条 -->
+    <div class="scheme-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="scheme-title">2026年度过程考核方案</span>
+        <span class="status green">已发布</span>
+      </div>
+      <div class="scheme-meta">
+        <span>考核周期：2025年10月 - 2026年9月</span>
+        <a class="btn link" onclick="showCopyFromHistoryModal()">复制往年方案</a>
+        <button class="btn primary" onclick="showPublishConfirm()">发布方案</button>
+      </div>
+    </div>
+
+    <!-- 流程进度条 -->
+    <div class="flow-stepper">
+      <div class="flow-step active" data-step="1" onclick="goToStep(1)">
+        <div class="flow-num">1</div>
+        <div class="flow-info">
+          <div class="flow-title">部门考核细则</div>
+          <div class="flow-desc">配置各部门考核内容</div>
+        </div>
+      </div>
+      <div class="flow-step" data-step="2" onclick="goToStep(2)">
+        <div class="flow-num">2</div>
+        <div class="flow-info">
+          <div class="flow-title">领导评价</div>
+          <div class="flow-desc">配置领导评价内容</div>
+        </div>
+      </div>
+      <div class="flow-step" data-step="3" onclick="goToStep(3)">
+        <div class="flow-num">3</div>
+        <div class="flow-info">
+          <div class="flow-title">权重配置</div>
+          <div class="flow-desc">设置考核权重占比</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 步骤1：部门考核细则 ========== -->
+    <div class="step-content" id="step1" style="display:block;">
+      <div class="notice" style="padding:12px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:8px;margin-bottom:16px;">
+        配置部门间互评的考核细则。每条细则可指定适用于哪些被考核部门，打分时仅显示适用于该部门的细则。所有细则权重之和应为 100。
+      </div>
+      <div class="two-col-layout" style="display:flex;gap:16px;min-height:520px;">
+        <!-- 左栏：指标分类 -->
+        <div class="col-tree">
+          <div class="col-header">指标分类</div>
+          <div class="tree-actions">
+            <button class="btn sm" style="width:100%;" onclick="showAddCatModal()">+ 新增一级分类</button>
+          </div>
+          <div class="tree-list" id="treeList">
+            <div class="tree-item level-1 active" data-cat="all"><span class="tree-icon">●</span>全部细则（17项）</div>
+            <div class="tree-item level-1" data-cat="doc"><span class="tree-icon">▶</span>一 文书管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('doc')">+</span></div>
+            <div class="tree-item level-1" data-cat="seal"><span class="tree-icon">▶</span>二 印章管理（2项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('seal')">+</span></div>
+            <div class="tree-item level-1" data-cat="meeting"><span class="tree-icon">▶</span>三 会议管理（2项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('meeting')">+</span></div>
+            <div class="tree-item level-1" data-cat="supervise"><span class="tree-icon">▶</span>四 督办工作管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('supervise')">+</span></div>
+            <div class="tree-item level-1" data-cat="secret"><span class="tree-icon">▶</span>五 保密管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('secret')">+</span></div>
+            <div class="tree-item level-1" data-cat="emergency"><span class="tree-icon">▶</span>六 应急协调管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('emergency')">+</span></div>
+            <div class="tree-item level-1" data-cat="vehicle"><span class="tree-icon">▶</span>七 车辆管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('vehicle')">+</span></div>
+            <div class="tree-item level-1" data-cat="peace"><span class="tree-icon">▶</span>八 平安企业建设（4项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('peace')">+</span></div>
+            <div class="tree-item level-1" data-cat="affairs"><span class="tree-icon">▶</span>九 机关事务管理（3项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('affairs')">+</span></div>
+            <div class="tree-item level-1" data-cat="archive"><span class="tree-icon">▶</span>十 档案管理（1项）<span class="tree-add" onclick="event.stopPropagation();showAddSubCatModal('archive')">+</span></div>
+          </div>
+        </div>
+
+        <!-- 右栏：细则明细 -->
+        <div class="col-detail">
+          <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #dfe5ec;display:flex;justify-content:space-between;align-items:center;">
+            <div class="view-toggle">
+              <button class="view-btn active" id="viewTree" onclick="switchView('tree')">结构视图</button>
+              <button class="view-btn" id="viewFull" onclick="switchView('full')">全貌视图</button>
+            </div>
+            <button class="btn sm primary" onclick="showAddRuleModal()">+ 新增细则</button>
+          </div>
+
+          <!-- 结构视图 -->
+          <div id="treeView" style="padding:16px;flex:1;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div id="currentCatTitle" style="font-size:14px;font-weight:600;color:#1d2733;">全部细则（17项）</div>
+              <div id="weightSummary" style="font-size:13px;color:#5f7080;">权重合计：<strong style="color:#00AAB7;">100</strong></div>
+            </div>
+            <div class="table-scroll">
+              <table class="config-table" style="min-width:1000px;">
+                <thead>
+                  <tr>
+                    <th class="col-seq" style="width:50px;">序号</th>
+                    <th style="width:160px;">过程控制考核内容</th>
+                    <th style="min-width:240px;">考核标准及要求</th>
+                    <th style="width:60px;">权重</th>
+                    <th style="width:70px;">单项总分</th>
+                    <th style="min-width:180px;">被考核部门</th>
+                    <th style="width:70px;">备注</th>
+                    <th class="col-status" style="width:60px;">状态</th>
+                    <th class="col-action" style="width:80px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="ruleTableBody">
+                  <!-- 由JavaScript动态渲染 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 全貌视图 -->
+          <div id="fullView" style="padding:16px;display:none;flex:1;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="font-size:14px;font-weight:600;color:#1d2733;">全部细则（17项）</div>
+              <div style="font-size:13px;color:#5f7080;">权重合计：<strong style="color:#00AAB7;">100</strong></div>
+            </div>
+            <div class="table-scroll">
+              <table class="config-table" style="min-width:1100px;">
+                <thead>
+                  <tr>
+                    <th style="width:130px;">过程控制考核内容</th>
+                    <th style="width:45px;">序号</th>
+                    <th style="width:180px;">过程控制考核内容（小项）</th>
+                    <th style="min-width:260px;">考核标准及要求</th>
+                    <th style="width:55px;">权重</th>
+                    <th style="width:60px;">单项总分</th>
+                    <th style="width:100px;">被考核部门</th>
+                    <th style="width:90px;">备注</th>
+                  </tr>
+                </thead>
+                <tbody id="fullViewBody"></tbody>
+                <tfoot>
+                  <tr style="background:#e6f7f9;font-weight:600;">
+                    <td colspan="4" style="text-align:right;color:#00838c;">权重合计</td>
+                    <td style="color:#00838c;">100</td>
+                    <td colspan="3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步骤1底部操作 -->
+      <div class="step-actions">
+        <div class="left"></div>
+        <div class="right">
+          <button class="btn primary" onclick="goToStep(2)">下一步：领导评价 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 步骤2：领导评价 ========== -->
+    <div class="step-content" id="step2" style="display:none;">
+      <div class="notice" style="padding:12px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:8px;margin-bottom:16px;">
+        领导评价共 6 个考核内容，所有部门统一使用。考核内容和权重可配置，权重之和必须等于 100%。
+      </div>
+
+      <section class="card" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h4 style="font-size:15px;font-weight:600;color:#1d2733;margin:0;display:flex;align-items:center;gap:8px;">
+            <span style="width:3px;height:14px;background:#00AAB7;border-radius:2px;"></span>
+            过程控制考核内容配置
+          </h4>
+          <button class="btn" onclick="showAddDimensionModal()">+ 新增考核内容</button>
+        </div>
+
+        <table class="config-table" id="dimensionTable">
+          <thead>
+            <tr>
+              <th class="col-seq">序号</th>
+              <th>过程控制考核内容</th>
+              <th style="width:100px;">权重</th>
+              <th>考核标准及要求</th>
+              <th class="col-status">状态</th>
+              <th class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="dimensionTableBody">
+            <tr>
+              <td class="col-seq">一</td>
+              <td>领导团队管理</td>
+              <td>20%</td>
+              <td>团队建设、人员培养、凝聚力</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('领导团队管理','团队建设、人员培养、凝聚力','20')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+            <tr>
+              <td class="col-seq">二</td>
+              <td>业务能力及综合素质</td>
+              <td>20%</td>
+              <td>专业水平、学习能力、综合素养</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('业务能力及综合素质','专业水平、学习能力、综合素养','20')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+            <tr>
+              <td class="col-seq">三</td>
+              <td>工作量及工作难度</td>
+              <td>20%</td>
+              <td>承担工作量、任务复杂度</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('工作量及工作难度','承担工作量、任务复杂度','20')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+            <tr>
+              <td class="col-seq">四</td>
+              <td>工作业绩</td>
+              <td>20%</td>
+              <td>目标完成情况、工作成效</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('工作业绩','目标完成情况、工作成效','20')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+            <tr>
+              <td class="col-seq">五</td>
+              <td>党风廉政</td>
+              <td>10%</td>
+              <td>廉洁自律、作风建设</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('党风廉政','廉洁自律、作风建设','10')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+            <tr>
+              <td class="col-seq">六</td>
+              <td>支部及群团建设</td>
+              <td>10%</td>
+              <td>党建工作、群团活动</td>
+              <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+              <td class="col-action"><a class="btn link" onclick="showEditDimensionModal('支部及群团建设','党建工作、群团活动','10')">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#e6f7f9;font-weight:600;">
+              <td colspan="2" style="text-align:right;color:#00838c;">权重合计</td>
+              <td id="dimensionWeightTotal" style="color:#00838c;">100%</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+
+      <!-- 步骤2底部操作 -->
+      <div class="step-actions">
+        <div class="left">
+          <button class="btn" onclick="goToStep(1)">← 上一步</button>
+        </div>
+        <div class="right">
+          <button class="btn primary" onclick="goToStep(3)">下一步：权重配置 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 步骤3：权重配置 ========== -->
+    <div class="step-content" id="step3" style="display:none;">
+      <div class="notice" style="padding:12px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:8px;margin-bottom:16px;">
+        配置过程考核的权重占比。部门相互考核与领导考核之和必须等于 100%，领导角色权重之和必须等于领导考核部门权重。
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <!-- 考核组成权重 -->
+        <div class="weight-card">
+          <h4>考核组成权重</h4>
+          <p style="font-size:13px;color:#5f7080;margin:0 0 16px;">部门相互考核与领导考核的权重占比，之和必须等于 100%</p>
+          
+          <div class="weight-row">
+            <label><span class="required">*</span> 部门相互考核</label>
+            <input type="number" id="mutualWeight" value="30" min="0" max="100" oninput="calcTotalWeight()">
+            <span>%</span>
+          </div>
+          <div class="weight-row">
+            <label><span class="required">*</span> 领导考核部门</label>
+            <input type="number" id="leaderWeight" value="70" min="0" max="100" oninput="calcTotalWeight();calcRoleWeight()">
+            <span>%</span>
+          </div>
+          <div class="weight-total" id="totalWeightDisplay">
+            <span style="color:#5f7080;">权重合计：</span>
+            <span class="val" id="totalWeightVal">100%</span>
+            <span id="totalWeightStatus" style="margin-left:8px;font-size:12px;color:#16a36a;">✓ 配置正确</span>
+          </div>
+          <div id="totalWeightError" style="display:none;color:#d14343;font-size:13px;margin-top:8px;">
+            权重合计必须等于 100%
+          </div>
+        </div>
+
+        <!-- 领导角色权重（整合卡片） -->
+        <div class="weight-card" style="padding:0;overflow:hidden;">
+          <h4 style="padding:16px 20px 0;margin-bottom:12px;">领导角色权重</h4>
+          <p style="font-size:13px;color:#5f7080;margin:0 0 12px;padding:0 20px;">同一被考核部门可有多个领导打分，按角色权重汇总。之和需等于「领导考核部门」权重。</p>
+          
+          <!-- 内嵌Tab -->
+          <style>
+            .role-weight-tabs{display:flex;border-bottom:1px solid #eef3f6;padding:0 20px;margin-bottom:0;}
+            .role-weight-tab{padding:10px 16px;font-size:13px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+            .role-weight-tab:hover{color:#00AAB7;}
+            .role-weight-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;background:#fff;}
+            .role-weight-tab .badge{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:#e6f7f9;color:#00AAB7;border-radius:9px;font-size:11px;margin-left:6px;}
+            .role-weight-panel{display:none;padding:16px 20px 20px;}
+            .role-weight-panel.active{display:block;}
+          </style>
+          <div class="role-weight-tabs">
+            <div class="role-weight-tab active" data-panel="globalConfig" onclick="switchRoleWeightTab('globalConfig')">全局默认配置</div>
+            <div class="role-weight-tab" data-panel="deptConfig" onclick="switchRoleWeightTab('deptConfig')">部门特殊配置<span class="badge" id="deptConfigCount">1</span></div>
+          </div>
+
+          <!-- 全局默认配置 Tab -->
+          <div class="role-weight-panel active" id="panel-globalConfig">
+            <div style="font-size:12px;color:#8fa3b0;margin-bottom:14px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
+              未配置特殊权重的部门统一使用此配置。同一层级有多人打分时取平均值。
+            </div>
+            <div class="weight-row">
+              <label><span class="required">*</span> 主要领导</label>
+              <input type="number" id="roleWeight2" value="40" min="0" max="100" oninput="calcRoleWeight()">
+              <span>%</span>
+              <span style="font-size:11px;color:#8fa3b0;margin-left:6px;">（固定1人）</span>
+            </div>
+            <div class="weight-row">
+              <label><span class="required">*</span> 分管领导</label>
+              <input type="number" id="roleWeight1" value="25" min="0" max="100" oninput="calcRoleWeight()">
+              <span>%</span>
+              <span style="font-size:11px;color:#8fa3b0;margin-left:6px;">（可多人）</span>
+            </div>
+            <div class="weight-row">
+              <label><span class="required">*</span> 其他领导</label>
+              <input type="number" id="roleWeight3" value="5" min="0" max="100" oninput="calcRoleWeight()">
+              <span>%</span>
+              <span style="font-size:11px;color:#8fa3b0;margin-left:6px;">（可多人；0%时禁用）</span>
+            </div>
+            <div class="weight-total" id="roleWeightDisplay">
+              <span style="color:#5f7080;">角色权重合计：</span>
+              <span class="val" id="roleWeightVal">70%</span>
+              <span style="color:#5f7080;margin-left:4px;">/ 需等于</span>
+              <span id="roleWeightTarget" style="color:#00AAB7;font-weight:600;margin-left:4px;">70%</span>
+              <span id="roleWeightStatus" style="margin-left:8px;font-size:12px;color:#16a36a;">✓ 配置正确</span>
+            </div>
+            <div id="roleWeightError" style="display:none;color:#d14343;font-size:13px;margin-top:8px;">
+              角色权重合计必须等于领导考核部门权重
+            </div>
+          </div>
+
+          <!-- 部门特殊配置 Tab -->
+          <div class="role-weight-panel" id="panel-deptConfig">
+            <div style="font-size:12px;color:#8fa3b0;margin-bottom:14px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
+              部分部门的领导评价层级与全局配置不同，可单独配置。权重之和需等于「领导考核部门」权重（<span id="deptConfigLeaderWeight">70</span>%）。
+            </div>
+            
+            <!-- 已配置部门列表 -->
+            <div id="deptSpecialConfigList">
+              <!-- 计划经营部特殊配置示例 -->
+              <div class="dept-special-item" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border:1px solid #eef3f6;border-radius:6px;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                  <span style="font-size:13px;font-weight:500;color:#1d2733;min-width:90px;">计划经营部</span>
+                  <div style="display:flex;gap:10px;font-size:12px;color:#5f7080;">
+                    <span>主要 <strong style="color:#00AAB7;">40%</strong></span>
+                    <span>分管 <strong style="color:#00AAB7;">30%</strong></span>
+                    <span style="color:#9ca3af;text-decoration:line-through;">其他 禁用</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                  <a class="btn link sm" onclick="showEditDeptConfigModal('计划经营部')">编辑</a>
+                  <a class="btn link danger sm" onclick="removeDeptConfig('计划经营部')">删除</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- 无特殊配置提示 -->
+            <div id="deptSpecialConfigEmpty" style="display:none;text-align:center;padding:20px;color:#8fa3b0;font-size:13px;background:#f8fafc;border-radius:6px;">
+              暂无部门特殊配置，所有部门使用全局默认配置
+            </div>
+
+            <!-- 新增部门配置按钮 -->
+            <div style="margin-top:12px;">
+              <button class="btn sm" onclick="showAddDeptConfigModal()">+ 新增部门配置</button>
+            </div>
+
+            <!-- 配置说明 -->
+            <div style="margin-top:14px;padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:11px;color:#c2410c;line-height:1.7;">
+              <strong>说明：</strong>某层级权重为0%时，该部门打分入口不显示该层级。配置按年度保存，不影响历史已归档数据。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 配置预览 -->
+      <div class="weight-card" style="margin-top:20px;">
+        <h4>配置预览</h4>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px;">
+          <div style="padding:14px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:13px;color:#5f7080;margin-bottom:6px;">部门相互考核</div>
+            <div style="font-size:24px;font-weight:600;color:#00AAB7;" id="previewMutual">30%</div>
+          </div>
+          <div style="padding:14px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:13px;color:#5f7080;margin-bottom:6px;">领导考核部门（全局默认）</div>
+            <div style="font-size:24px;font-weight:600;color:#00AAB7;" id="previewLeader">70%</div>
+            <div style="font-size:11px;color:#8fa3b0;margin-top:4px;">
+              主要<span id="previewRole2">40%</span> · 分管<span id="previewRole1">25%</span> · 其他<span id="previewRole3">5%</span>
+            </div>
+          </div>
+          <div style="padding:14px;background:#e6f7f9;border-radius:8px;text-align:center;">
+            <div style="font-size:13px;color:#00838c;margin-bottom:6px;">权重总计</div>
+            <div style="font-size:24px;font-weight:600;color:#00838c;" id="previewTotal">100%</div>
+          </div>
+        </div>
+        <!-- 部门特殊配置预览 -->
+        <div id="previewDeptSpecial" style="margin-top:14px;padding:12px 14px;background:#f0f5f7;border-radius:6px;font-size:12px;color:#5f7080;">
+          <strong style="color:#1d2733;">部门特殊配置（<span id="previewDeptCount">1</span>个）：</strong>
+          <span id="previewDeptList">计划经营部（主要40% · 分管30% · 其他禁用）</span>
+        </div>
+      </div>
+
+      <!-- 步骤3底部操作 -->
+      <div class="step-actions">
+        <div class="left">
+          <button class="btn" onclick="goToStep(2)">← 上一步</button>
+        </div>
+        <div class="right">
+          <button class="btn" onclick="saveDraft()">保存草稿</button>
+          <button class="btn primary" onclick="showPublishConfirm()">完成配置并发布</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 历史方案配置 Tab ========== -->
+  <div class="tab-panel" id="panel-history">
+    <style>
+      .scheme-card { background:#fff; border:1px solid #dfe5ec; border-radius:8px; padding:16px 20px; margin-bottom:14px; position:relative; overflow:hidden; }
+      .scheme-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:#00AAB7; }
+      .scheme-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+      .scheme-card-title { font-size:15px; font-weight:600; color:#1d2733; }
+      .scheme-card-meta { display:flex; gap:20px; flex-wrap:wrap; font-size:13px; color:#5f7080; margin-top:8px; }
+      .scheme-card-meta span strong { color:#1d2733; font-weight:500; }
+      .scheme-card-summary { background:#f8fafc; border-radius:6px; padding:12px 14px; display:flex; flex-wrap:wrap; gap:16px 24px; font-size:13px; }
+      .scheme-card-summary .summary-item { display:flex; align-items:baseline; gap:4px; }
+      .scheme-card-summary .summary-label { color:#5f7080; }
+      .scheme-card-summary .summary-value { color:#00AAB7; font-weight:600; }
+    </style>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar" style="margin-bottom:14px;">
+      <label class="field"><span>年度</span>
+        <select id="historySchemeYearFilter" style="width:100px;">
+          <option value="">全部</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+      </label>
+      <button class="btn sm primary" onclick="filterHistorySchemes()">查询</button>
+      <button class="btn sm" onclick="resetHistorySchemeFilter()">重置</button>
+    </div>
+
+    <div id="historySchemeList">
+      <div class="scheme-card" data-year="2025">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2025年度过程考核方案</div>
+            <div class="scheme-card-meta">
+              <span>发布时间：<strong>2025-01-01</strong></span>
+              <span>发布人：<strong>张三</strong></span>
+              <span>版本：<strong>V3</strong></span>
+            </div>
+          </div>
+          <div>
+            <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+          </div>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">部门互评权重：</span><span class="summary-value">30%</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价权重：</span><span class="summary-value">70%</span></div>
+          <div class="summary-item"><span class="summary-label">考核细则：</span><span class="summary-value">17项</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价内容：</span><span class="summary-value">6项</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn sm" onclick="showHistoryDetail(2025)">查看详情</button>
+          <button class="btn sm" onclick="copyFromHistoryYear(2025)">复制到当年</button>
+          <button class="btn sm" onclick="exportHistoryScheme(2025)">导出</button>
+        </div>
+      </div>
+
+      <div class="scheme-card" data-year="2024">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2024年度过程考核方案</div>
+            <div class="scheme-card-meta">
+              <span>发布时间：<strong>2024-01-01</strong></span>
+              <span>发布人：<strong>李四</strong></span>
+              <span>版本：<strong>V2</strong></span>
+            </div>
+          </div>
+          <div>
+            <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+          </div>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">部门互评权重：</span><span class="summary-value">30%</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价权重：</span><span class="summary-value">70%</span></div>
+          <div class="summary-item"><span class="summary-label">考核细则：</span><span class="summary-value">17项</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价内容：</span><span class="summary-value">6项</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn sm" onclick="showHistoryDetail(2024)">查看详情</button>
+          <button class="btn sm" onclick="copyFromHistoryYear(2024)">复制到当年</button>
+          <button class="btn sm" onclick="exportHistoryScheme(2024)">导出</button>
+        </div>
+      </div>
+
+      <div class="scheme-card" data-year="2023">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2023年度过程考核方案</div>
+            <div class="scheme-card-meta">
+              <span>发布时间：<strong>2023-01-01</strong></span>
+              <span>发布人：<strong>王五</strong></span>
+              <span>版本：<strong>V1</strong></span>
+            </div>
+          </div>
+          <div>
+            <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+          </div>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">部门互评权重：</span><span class="summary-value">25%</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价权重：</span><span class="summary-value">75%</span></div>
+          <div class="summary-item"><span class="summary-label">考核细则：</span><span class="summary-value">15项</span></div>
+          <div class="summary-item"><span class="summary-label">领导评价内容：</span><span class="summary-value">6项</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn sm" onclick="showHistoryDetail(2023)">查看详情</button>
+          <button class="btn sm" onclick="copyFromHistoryYear(2023)">复制到当年</button>
+          <button class="btn sm" onclick="exportHistoryScheme(2023)">导出</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 无数据提示 -->
+    <div id="historySchemeEmpty" style="display:none;text-align:center;padding:60px 20px;color:#5f7080;">
+      <div style="font-size:48px;margin-bottom:16px;">📋</div>
+      <div style="font-size:14px;">暂无符合条件的历史方案</div>
+    </div>
+  </div>
+
+  <!-- ========== 弹框区域 ========== -->
+
+  <!-- 发布确认弹框 -->
+  <div class="modal-mask" id="publishConfirmModal">
+    <div class="modal-box" style="width:520px;">
+      <h3>发布确认</h3>
+      <div id="publishErrorNotice" style="display:none;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:14px;font-size:13px;color:#dc2626;">
+        <strong>无法发布：</strong>权重配置不正确，请先修正后再发布。
+      </div>
+      <div style="padding:16px;background:#f8fafc;border-radius:8px;margin-bottom:14px;">
+        <div style="font-size:14px;color:#1d2733;margin-bottom:12px;">发布后，2026年度过程考核方案将正式生效。</div>
+        <div style="font-size:13px;color:#5f7080;line-height:1.7;">
+          <div>· 部门相互考核权重：<strong style="color:#00AAB7;" id="publishMutualWeight">30%</strong></div>
+          <div>· 领导考核部门权重：<strong style="color:#00AAB7;" id="publishLeaderWeight">70%</strong></div>
+          <div style="margin-left:16px;font-size:12px;color:#8fa3b0;">（全局默认：主要领导 <span id="publishRole2">40%</span> + 分管领导 <span id="publishRole1">25%</span> + 其他领导 <span id="publishRole3">5%</span>）</div>
+          <div>· 部门特殊配置：<strong style="color:#1d2733;">1个部门</strong><span style="font-size:12px;color:#8fa3b0;margin-left:6px;">（计划经营部）</span></div>
+          <div>· 部门考核细则：<strong style="color:#1d2733;">17项已配置</strong></div>
+          <div>· 领导评价考核内容：<strong style="color:#1d2733;">6项</strong></div>
+        </div>
+      </div>
+      <div class="mrow">
+        <span class="label-text">发布说明（可选）</span>
+        <textarea id="publishNote" rows="2" placeholder="填写本次发布的变更说明"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('publishConfirmModal')">取消</button>
+        <button class="btn primary" id="publishBtn" onclick="confirmPublish()">确认发布</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增一级分类抽屉 -->
+  <div class="drawer" id="addCatDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title">新增一级分类</span>
+      <button class="drawer-close" onclick="closeDrawer('addCatDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 分类序号</span>
+        <input placeholder="如：九" style="width:80px;">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 分类名称</span>
+        <input placeholder="请输入分类名称">
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('addCatDrawer')">取消</button>
+      <button class="btn primary" onclick="closeDrawer('addCatDrawer')">保存</button>
+    </div>
+  </div>
+
+  <!-- 新增二级分类抽屉 -->
+  <div class="drawer" id="addSubCatDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title">新增二级分类</span>
+      <button class="drawer-close" onclick="closeDrawer('addSubCatDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 所属一级分类</span>
+        <select id="addSubCatParent">
+          <option value="doc">一 文书管理</option>
+          <option value="seal">二 印章管理</option>
+          <option value="meeting">三 会议管理</option>
+          <option value="supervise">四 督办工作管理</option>
+          <option value="secret">五 保密管理</option>
+          <option value="emergency">六 应急协调管理</option>
+          <option value="vehicle">七 车辆管理</option>
+          <option value="peace">八 平安企业建设</option>
+          <option value="affairs">九 机关事务管理</option>
+          <option value="archive">十 档案管理</option>
+        </select>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 分类名称</span>
+        <input id="addSubCatName" placeholder="请输入分类名称">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 排序号</span>
+        <input id="addSubCatSort" type="number" placeholder="如：1" style="width:100px;">
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('addSubCatDrawer')">取消</button>
+      <button class="btn primary" onclick="closeDrawer('addSubCatDrawer')">保存</button>
+    </div>
+  </div>
+
+  <!-- 新增/编辑细则抽屉 -->
+  <div class="drawer" id="ruleDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="ruleDrawerTitle">新增考核细则</span>
+      <button class="drawer-close" onclick="closeDrawer('ruleDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 一级分类</span>
+          <select id="drawerRuleCat1" onchange="updateSubCatOptions('drawerRuleCat1','drawerRuleCat2')">
+            <option value="">请选择</option>
+            <option value="doc">一 文书管理</option>
+            <option value="seal">二 印章管理</option>
+            <option value="meeting">三 会议管理</option>
+            <option value="supervise">四 督办工作管理</option>
+            <option value="secret">五 保密管理</option>
+            <option value="emergency">六 应急协调管理</option>
+            <option value="vehicle">七 车辆管理</option>
+            <option value="peace">八 平安企业建设</option>
+            <option value="affairs">九 机关事务管理</option>
+            <option value="archive">十 档案管理</option>
+          </select>
+        </div>
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 二级分类</span>
+          <select id="drawerRuleCat2">
+            <option value="">请先选择一级分类</option>
+          </select>
+        </div>
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 过程控制考核内容</span>
+          <input id="drawerRuleName" placeholder="请输入考核内容名称">
+        </div>
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 考核标准及要求</span>
+          <textarea id="drawerRuleStd" rows="4" placeholder="请输入详细的考核标准和扣分规则"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="mrow">
+            <span class="label-text"><span class="required">*</span> 权重</span>
+            <input type="number" id="drawerRuleWeight" placeholder="0~100">
+          </div>
+          <div class="mrow">
+            <span class="label-text"><span class="required">*</span> 单项总分</span>
+            <input type="number" id="drawerRuleScore" value="100">
+          </div>
+        </div>
+        <div class="mrow">
+          <span class="label-text"><span class="required">*</span> 被考核部门</span>
+          <div class="dept-checkbox-group">
+            <div class="check-all">
+              <label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#00AAB7;cursor:pointer;">
+                <input type="checkbox" id="drawerDeptAll" style="width:16px;height:16px;"> 全选/取消全选
+              </label>
+            </div>
+            <div class="dept-checkbox-grid" id="drawerDeptGrid">
+              <label><input type="checkbox" checked> 办公室（党委办公室）</label>
+              <label><input type="checkbox" checked> 计划经营部</label>
+              <label><input type="checkbox" checked> 财务资产部</label>
+              <label><input type="checkbox" checked> 人力资源部（党委组织部）</label>
+              <label><input type="checkbox" checked> 质量安全环保部</label>
+              <label><input type="checkbox" checked> 开发管理部</label>
+              <label><input type="checkbox" checked> 地质工程部</label>
+              <label><input type="checkbox" checked> 地面建设工程部</label>
+              <label><input type="checkbox" checked> 党群工作部（纪委办公室）</label>
+              <label><input type="checkbox" checked> 生产指挥中心</label>
+            </div>
+          </div>
+        </div>
+        <div class="mrow">
+          <span class="label-text">备注</span>
+          <input id="drawerRuleRemark" placeholder="可选">
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('ruleDrawer')">取消</button>
+      <button class="btn primary" onclick="saveRuleFromDrawer()">保存</button>
+    </div>
+  </div>
+
+  <!-- 被考核部门选择弹框 -->
+  <div class="modal-mask" id="deptSelectModal">
+    <div class="modal-box" style="width:480px;">
+      <h3>选择被考核部门</h3>
+      <div class="dept-checkbox-group">
+        <div class="check-all">
+          <label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#00AAB7;cursor:pointer;">
+            <input type="checkbox" checked> 全选/取消全选
+          </label>
+        </div>
+        <div class="dept-checkbox-grid">
+          <label><input type="checkbox" checked> 办公室（党委办公室）</label>
+          <label><input type="checkbox" checked> 计划经营部</label>
+          <label><input type="checkbox" checked> 财务资产部</label>
+          <label><input type="checkbox" checked> 人力资源部（党委组织部）</label>
+          <label><input type="checkbox" checked> 质量安全环保部</label>
+          <label><input type="checkbox" checked> 开发管理部</label>
+          <label><input type="checkbox" checked> 地质工程部</label>
+          <label><input type="checkbox" checked> 地面建设工程部</label>
+          <label><input type="checkbox" checked> 党群工作部（纪委办公室）</label>
+          <label><input type="checkbox" checked> 生产指挥中心</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('deptSelectModal')">取消</button>
+        <button class="btn primary" onclick="closeModal('deptSelectModal')">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增考核内容抽屉 -->
+  <div class="drawer" id="addDimensionDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title">新增考核内容</span>
+      <button class="drawer-close" onclick="closeDrawer('addDimensionDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 过程控制考核内容</span>
+        <input id="addDimName" placeholder="请输入考核内容名称">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 考核标准及要求</span>
+        <textarea id="addDimStd" rows="3" placeholder="请输入考核标准及要求"></textarea>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 权重</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="number" id="addDimWeight" placeholder="0~100" style="width:100px;" oninput="validateDimWeight('add')">
+          <span style="color:#5f7080;">%</span>
+        </div>
+        <span id="addDimWeightHint" style="font-size:12px;color:#8fa3b0;margin-top:4px;">当前已配置权重合计 100%，新增后需调整其他项权重</span>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('addDimensionDrawer')">取消</button>
+      <button class="btn primary" onclick="saveDimension('add')">保存</button>
+    </div>
+  </div>
+
+  <!-- 编辑考核内容抽屉 -->
+  <div class="drawer" id="editDimensionDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title">编辑考核内容</span>
+      <button class="drawer-close" onclick="closeDrawer('editDimensionDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 过程控制考核内容</span>
+        <input id="editDimName" value="领导团队管理">
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 考核标准及要求</span>
+        <textarea id="editDimStd" rows="3">团队建设、人员培养、凝聚力</textarea>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 权重</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="number" id="editDimWeight" value="20" style="width:100px;" oninput="validateDimWeight('edit')">
+          <span style="color:#5f7080;">%</span>
+        </div>
+        <span id="editDimWeightHint" style="font-size:12px;color:#8fa3b0;margin-top:4px;">所有考核内容权重之和应为 100%</span>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('editDimensionDrawer')">取消</button>
+      <button class="btn primary" onclick="saveDimension('edit')">保存</button>
+    </div>
+  </div>
+
+  <!-- 历史年度详情弹框 -->
+  <div class="modal-mask" id="historyDetailModal">
+    <div class="modal-box" style="width:90vw;max-width:1200px;max-height:90vh;overflow-y:auto;">
+      <h3 id="historyDetailTitle">2025年度过程考核方案（只读）</h3>
+      
+      <!-- 方案基本信息 -->
+      <div style="padding:14px;background:#f8fafc;border-radius:8px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;font-size:13px;">
+          <div><span style="color:#5f7080;">发布时间：</span><strong id="historyDetailDate">2025-01-01</strong></div>
+          <div><span style="color:#5f7080;">部门互评权重：</span><strong style="color:#00AAB7;" id="historyDetailMutual">30%</strong></div>
+          <div><span style="color:#5f7080;">领导评价权重：</span><strong style="color:#00AAB7;" id="historyDetailLeader">70%</strong></div>
+          <div><span style="color:#5f7080;">状态：</span><span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span></div>
+        </div>
+      </div>
+
+      <!-- 步骤Tab切换 -->
+      <style>
+        .history-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:16px;}
+        .history-tab{padding:10px 20px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+        .history-tab:hover{color:#00AAB7;}
+        .history-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;}
+        .history-panel{display:none;}
+        .history-panel.active{display:block;}
+      </style>
+      <div class="history-tabs">
+        <div class="history-tab active" data-panel="h-step1">部门考核细则</div>
+        <div class="history-tab" data-panel="h-step2">领导评价</div>
+        <div class="history-tab" data-panel="h-step3">权重配置</div>
+      </div>
+
+      <!-- 步骤1：部门考核细则（只读） -->
+      <div class="history-panel active" id="h-step1">
+        <div style="display:flex;gap:16px;min-height:480px;">
+          <!-- 左侧部门列表 -->
+          <div style="width:200px;flex-shrink:0;background:#fff;border:1px solid #dfe5ec;border-radius:8px;overflow:hidden;">
+            <div style="padding:10px 14px;background:#f8fafc;border-bottom:1px solid #dfe5ec;font-size:13px;font-weight:600;color:#1d2733;">考核方部门</div>
+            <div style="padding:8px 0;max-height:420px;overflow-y:auto;">
+              <div class="history-dept-item active" style="padding:8px 14px;font-size:13px;color:#00AAB7;background:#e6f7f9;cursor:pointer;">办公室（党委办公室）</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">计划经营部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">财务资产部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">人力资源部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">质量安全环保部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">开发管理部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">地质工程部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">地面建设工程部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">党群工作部</div>
+              <div class="history-dept-item" style="padding:8px 14px;font-size:13px;color:#5f7080;cursor:pointer;">生产指挥中心</div>
+            </div>
+          </div>
+          <!-- 右侧细则表格 -->
+          <div style="flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;overflow:hidden;">
+            <div style="padding:10px 14px;background:#f8fafc;border-bottom:1px solid #dfe5ec;font-size:13px;font-weight:600;color:#1d2733;">
+              办公室（党委办公室） - 全部细则（13项）
+            </div>
+            <div style="padding:12px;max-height:420px;overflow-y:auto;">
+              <table class="config-table" style="font-size:12px;">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">序号</th>
+                    <th style="width:120px;">过程控制考核内容</th>
+                    <th>考核标准及要求</th>
+                    <th style="width:50px;">权重</th>
+                    <th style="width:80px;">被考核部门</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>公文收发执行情况</td><td>1.提交OA公文内容更改扣1分；2.OA公文无故中止扣1分...</td><td>10</td><td>各部室</td></tr>
+                  <tr><td>2</td><td>规范印章保管和交接</td><td>1.未指定专人管理扣2分；2.印章滥用该项分全扣...</td><td>2</td><td>各部室</td></tr>
+                  <tr><td>3</td><td>印章使用审批手续</td><td>1.审批流程不规范扣1分；2.空白印章扣2分...</td><td>3</td><td>各部室</td></tr>
+                  <tr><td>4</td><td>严格会议审批管理</td><td>召开发生会议费的会议不事前申请扣2分...</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>5</td><td>会议准备充分</td><td>1.会议准备不充分扣1-5分；2.手机铃响扣1分...</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>6</td><td>督办工作管理</td><td>1.未按要求完成督办事项扣3分...</td><td>15</td><td>各部室</td></tr>
+                  <tr><td>7</td><td>保密日常管理</td><td>1.未及时销毁涉密资料扣2分...</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>8</td><td>突发事件信息报送</td><td>1.未及时上报扣2分；2.及时上报奖励1-3分</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>9</td><td>车辆管理</td><td>1.公车私用扣5分；2.擅自延长使用时间扣1分...</td><td>10</td><td>各部室</td></tr>
+                  <tr><td>10</td><td>平安企业建设</td><td>1.矛盾上交扣1-5分；2.群体性事件加倍扣分...</td><td>20</td><td>各部室</td></tr>
+                  <tr><td>11</td><td>办公用品管理</td><td>1.无发放台账扣2分；2.超预算使用扣1分...</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>12</td><td>内务及安全隐患</td><td>1.用电隐患扣1分；2.内务差扣0.5分...</td><td>5</td><td>各部室</td></tr>
+                  <tr><td>13</td><td>档案归档工作</td><td>1.未及时归档扣2分；2.资料不齐全扣2分</td><td>10</td><td>各部室</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr style="background:#e6f7f9;font-weight:600;">
+                    <td colspan="3" style="text-align:right;color:#00838c;">权重合计</td>
+                    <td style="color:#00838c;">100</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步骤2：领导评价（只读） -->
+      <div class="history-panel" id="h-step2">
+        <div style="background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;">
+          <div style="font-size:14px;font-weight:600;color:#1d2733;margin-bottom:12px;">过程控制考核内容配置</div>
+          <table class="config-table">
+            <thead>
+              <tr>
+                <th style="width:60px;">序号</th>
+                <th>过程控制考核内容</th>
+                <th style="width:80px;">权重</th>
+                <th>考核标准及要求</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>一</td><td>领导团队管理</td><td>20%</td><td>团队建设、人员培养、凝聚力</td></tr>
+              <tr><td>二</td><td>业务能力及综合素质</td><td>20%</td><td>专业水平、学习能力、综合素养</td></tr>
+              <tr><td>三</td><td>工作量及工作难度</td><td>20%</td><td>承担工作量、任务复杂度</td></tr>
+              <tr><td>四</td><td>工作业绩</td><td>20%</td><td>目标完成情况、工作成效</td></tr>
+              <tr><td>五</td><td>党风廉政</td><td>10%</td><td>廉洁自律、作风建设</td></tr>
+              <tr><td>六</td><td>支部及群团建设</td><td>10%</td><td>党建工作、群团活动</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:#e6f7f9;font-weight:600;">
+                <td colspan="2" style="text-align:right;color:#00838c;">权重合计</td>
+                <td style="color:#00838c;">100%</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 步骤3：权重配置（只读） -->
+      <div class="history-panel" id="h-step3">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <!-- 考核组成权重 -->
+          <div style="background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;">
+            <div style="font-size:14px;font-weight:600;color:#1d2733;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+              <span style="width:3px;height:14px;background:#00AAB7;border-radius:2px;"></span>
+              考核组成权重
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+                <span style="color:#5f7080;">部门相互考核</span>
+                <strong style="color:#1d2733;">30%</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+                <span style="color:#5f7080;">领导考核部门</span>
+                <strong style="color:#1d2733;">70%</strong>
+              </div>
+            </div>
+          </div>
+          <!-- 领导角色权重（全局默认） -->
+          <div style="background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;">
+            <div style="font-size:14px;font-weight:600;color:#1d2733;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+              <span style="width:3px;height:14px;background:#00AAB7;border-radius:2px;"></span>
+              领导角色权重（全局默认）
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+                <span style="color:#5f7080;">主要领导</span>
+                <strong style="color:#1d2733;">40%</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+                <span style="color:#5f7080;">分管领导</span>
+                <strong style="color:#1d2733;">25%</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+                <span style="color:#5f7080;">其他领导</span>
+                <strong style="color:#1d2733;">5%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 部门特殊配置（历史只读） -->
+        <div style="background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;margin-top:16px;">
+          <div style="font-size:14px;font-weight:600;color:#1d2733;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span style="width:3px;height:14px;background:#00AAB7;border-radius:2px;"></span>
+            部门特殊配置
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:6px;">
+              <span style="font-size:13px;font-weight:500;color:#1d2733;">计划经营部</span>
+              <span style="font-size:13px;color:#5f7080;">主要领导 40% · 分管领导 30% · <span style="color:#9ca3af;text-decoration:line-through;">其他领导 禁用</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex;justify-content:space-between;">
+        <button class="btn" id="historyDetailCopyBtn" onclick="copyFromHistoryYear(currentHistoryYear)">复制到当年方案</button>
+        <button class="btn" onclick="closeModal('historyDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 复制往年方案弹框 ==================== -->
+  <div class="modal-mask" id="copyFromHistoryModal">
+    <div class="modal-box" style="width:420px;">
+      <h3>复制往年方案</h3>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#c2410c;display:none;" id="copyOverwriteWarning">
+        <strong>注意：</strong>当前年度已配置方案数据，复制操作将覆盖现有内容。
+      </div>
+      <div class="mrow">
+        <label>选择历史年度</label>
+        <select id="copyYearSelect" style="height:38px;">
+          <option value="">请选择年度</option>
+          <option value="2025">2025年度</option>
+          <option value="2024">2024年度</option>
+          <option value="2023">2023年度</option>
+        </select>
+      </div>
+      <div style="font-size:13px;color:#5f7080;margin-top:8px;">
+        复制后将获取所选年度的考核细则、领导评价内容和权重配置，您可以在此基础上进行修改。
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('copyFromHistoryModal')">取消</button>
+        <button class="btn primary" onclick="confirmCopyFromHistory()">确认复制</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 部门特殊配置抽屉 ==================== -->
+  <div class="drawer" id="deptConfigDrawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="deptConfigModalTitle">配置部门领导角色权重</span>
+      <button class="drawer-close" onclick="closeDrawer('deptConfigDrawer')">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="notice" style="padding:10px 14px;border:1px solid #b3e6ea;background:#e6f7f9;color:#00838c;border-radius:6px;margin-bottom:16px;font-size:13px;">
+        为该部门单独配置领导评价的角色权重。权重之和必须等于「领导考核部门」权重（<span id="deptConfigRequiredWeight">70</span>%）。
+      </div>
+      
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 选择部门</span>
+        <select id="deptConfigDept" style="height:38px;">
+          <option value="">请选择部门</option>
+          <option value="办公室（党委办公室）">办公室（党委办公室）</option>
+          <option value="计划经营部" disabled>计划经营部（已配置）</option>
+          <option value="财务资产部">财务资产部</option>
+          <option value="人力资源部（党委组织部）">人力资源部（党委组织部）</option>
+          <option value="质量安全环保部">质量安全环保部</option>
+          <option value="开发管理部">开发管理部</option>
+          <option value="地质工程部">地质工程部</option>
+          <option value="地面建设工程部">地面建设工程部</option>
+          <option value="党群工作部（纪委办公室）">党群工作部（纪委办公室）</option>
+          <option value="生产指挥中心">生产指挥中心</option>
+        </select>
+      </div>
+
+      <!-- 领导层级配置 -->
+      <div style="margin:16px 0;padding:16px;background:#f8fafc;border-radius:8px;">
+        <div style="font-size:14px;font-weight:600;color:#1d2733;margin-bottom:14px;">领导层级配置</div>
+        
+        <!-- 主要领导 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef3f6;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label class="switch" style="pointer-events:none;opacity:0.6;">
+              <input type="checkbox" checked disabled>
+              <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;color:#1d2733;">主要领导</span>
+            <span style="font-size:11px;color:#8fa3b0;background:#f1f5f9;padding:2px 6px;border-radius:4px;">固定1人</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="deptConfigRole2" value="40" min="0" max="100" style="width:70px;height:32px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;text-align:center;" oninput="calcDeptConfigWeight()">
+            <span style="color:#5f7080;">%</span>
+          </div>
+        </div>
+
+        <!-- 分管领导 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef3f6;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label class="switch">
+              <input type="checkbox" id="deptConfigRole1Enable" checked onchange="toggleDeptConfigRole(1)">
+              <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;color:#1d2733;">分管领导</span>
+            <span style="font-size:11px;color:#8fa3b0;background:#f1f5f9;padding:2px 6px;border-radius:4px;">可多人</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="deptConfigRole1" value="25" min="0" max="100" style="width:70px;height:32px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;text-align:center;" oninput="calcDeptConfigWeight()">
+            <span style="color:#5f7080;">%</span>
+          </div>
+        </div>
+
+        <!-- 其他领导 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label class="switch">
+              <input type="checkbox" id="deptConfigRole3Enable" checked onchange="toggleDeptConfigRole(3)">
+              <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;color:#1d2733;">其他领导</span>
+            <span style="font-size:11px;color:#8fa3b0;background:#f1f5f9;padding:2px 6px;border-radius:4px;">可多人</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="deptConfigRole3" value="5" min="0" max="100" style="width:70px;height:32px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;text-align:center;" oninput="calcDeptConfigWeight()">
+            <span style="color:#5f7080;">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 权重合计校验 -->
+      <div id="deptConfigWeightDisplay" style="padding:12px 16px;background:#e6f7f9;border-radius:6px;display:flex;align-items:center;gap:12px;">
+        <span style="color:#5f7080;">权重合计：</span>
+        <span class="val" id="deptConfigWeightVal" style="font-weight:600;color:#00AAB7;font-size:15px;">70%</span>
+        <span style="color:#5f7080;">/ 需等于</span>
+        <span style="color:#00AAB7;font-weight:600;" id="deptConfigWeightTarget">70%</span>
+        <span id="deptConfigWeightStatus" style="margin-left:8px;font-size:12px;color:#16a36a;">✓ 配置正确</span>
+      </div>
+      <div id="deptConfigWeightError" style="display:none;color:#d14343;font-size:13px;margin-top:8px;">
+        权重合计必须等于领导考核部门权重
+      </div>
+
+      <!-- 禁用层级提示 -->
+      <div id="deptConfigDisabledTip" style="display:none;margin-top:12px;padding:10px 14px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;font-size:12px;color:#b45309;">
+        <strong>提示：</strong>禁用的层级在该部门的领导打分入口中将不显示。
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('deptConfigDrawer')">取消</button>
+      <button class="btn primary" id="deptConfigSaveBtn" onclick="saveDeptConfig()">保存配置</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+  // ========== 主Tab切换 ==========
+  document.querySelectorAll('.main-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ========== 步骤切换 ==========
+  function goToStep(step) {
+    // 隐藏所有步骤内容
+    document.querySelectorAll('.step-content').forEach(c => c.style.display = 'none');
+    // 显示目标步骤
+    document.getElementById('step' + step).style.display = 'block';
+    // 更新步骤条状态
+    document.querySelectorAll('.flow-step').forEach((item, idx) => {
+      item.classList.remove('active', 'done');
+      if (idx + 1 < step) item.classList.add('done');
+      if (idx + 1 === step) item.classList.add('active');
+    });
+  }
+
+  // ========== 部门选择（左栏） ==========
+  document.querySelectorAll('#deptList .dept-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('#deptList .dept-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+      const deptName = this.textContent.trim();
+      document.getElementById('currentCatTitle').textContent = deptName + ' - 全部细则（17项）';
+    });
+  });
+
+  // ========== 分类树选择 ==========
+  document.querySelectorAll('#treeList .tree-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('#treeList .tree-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+      const cat = this.dataset.cat;
+      renderTreeViewTable(cat);
+    });
+  });
+
+  // ========== 结构视图表格渲染 ==========
+  const ruleData = [
+    {cat:'doc',catName:'一 文书管理',catWeight:10,rows:[{seq:1,name:'公文收、发、行文规定、执行情况；OA阅办件、批办件办理的时效和质量',std:'1.提交OA公文内容更改、流程重置申请，1次扣1分；2.OA公文无故中止发文流程，1次扣1分；3.行文格式不规范，文种混用、错别字等，1次扣0.5分；4.24小时内未启动收文流程，1次扣1分；5.传阅件未查收超5个工作日，1次扣1分...',w:10,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'seal',catName:'二 印章管理',catWeight:5,rows:[{seq:2,name:'规范印章保管和交接',std:'1.未指定专人管理，交接无记录，使用无登记，一次扣2分；2.印章滥用、误用和丢失的，该项分全扣；3.任何单位和个人不得随意刻制、更换印章，该项分全扣。',w:2,s:100,dept:'各部室',remark:'—'},{seq:3,name:'严格履行印章使用审批手续',std:'1.印章使用、审批流程不规范，一次扣1分；2.公文、便签、介绍信等出现空白印章，1次扣2分；3.模仿领导签名，一次扣5分。',w:3,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'meeting',catName:'三 会议管理',catWeight:10,rows:[{seq:4,name:'严格会议审批管理',std:'召开发生会议费的会议不事前申请，发现一次扣2分。会议费用超标准的，一次扣2分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:5,name:'会议准备充分',std:'1.因会议准备不充分，造成较大不良影响的，视情节轻重扣主办单位一次1-5分；2.会议途中手机铃响影响会议秩序一次扣1分；3.会后3个工作日内完成纪要发送，超时扣1分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'supervise',catName:'四 督办工作管理',catWeight:15,rows:[{seq:6,name:'准时、高质量完成各项督办工作',std:'1.未按要求完成督办事项，一次扣3分；2.督办事项未按时间节点推进和反馈的，一次扣2分；3.按时报送单位工作总结等各类材料，未按时报送或敷衍了事、完成质量较差的，一次扣3分；4.按要求提前完成工作，奖励1-3分。',w:15,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'secret',catName:'五 保密管理',catWeight:5,rows:[{seq:7,name:'按相关要求开展保密日常管理工作',std:'1.未及时按保密办通知集中销毁涉密资料的，一次扣2分；2.保密管理不规范、保密审核流程不规范、涉密资料管理不规范，私自建立微信等工作群传输内部资料的，发现一次扣2分。',w:5,s:100,dept:'各部室',remark:'调减比例由10%到5%'}]},
+    {cat:'emergency',catName:'六 应急协调管理',catWeight:5,rows:[{seq:8,name:'及时报送突发事件信息',std:'1.未及时上报，一次扣2分；2.及时上报，避免事态恶化，奖励1-3分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'vehicle',catName:'七 车辆管理',catWeight:10,rows:[{seq:9,name:'严格执行车辆申请、审批手续，服从车辆调度安排，认真履行相关监护人职责',std:'1.以公事为名，公车私用的，发现一次扣5分；2.擅自延长车辆使用时间，扰乱车辆安排的，一次扣1分；3.安全监护人不履行安全监督职能，乘车人员不系安全带的，一次扣5分；4.擅自涂改用车申请单，一次扣1分。',w:10,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'peace',catName:'八 平安企业建设',catWeight:20,rows:[{seq:10,name:'及时化解各类矛盾，无群体上访事件、无矛盾激化',std:'积极开展不稳定因素排查，及时处理解决信访案件。不积极主动处理本单位接访、协调工作，导致矛盾上交到公司，每出现一次扣1分，问题反映到分公司扣2分，问题反映到集团公司扣5分，涉及群体性事件的加倍扣分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:11,name:'按要求开展反恐重点项目达标建设和管理',std:'因整改不力未完成达标验收，收到属地公安机关整改通知单的，一次扣2分。限定期间未完成达标整改，收到书面警告的，一次扣3分。因管理问题未通过属地公安机关专项检查的，一项问题扣1分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:12,name:'无违法违纪事件、无邪教人员',std:'1.出现内部矛盾激化、社会治安、上访事件，一件一次扣2分；2.帮教措施或监控人不落实扣2分；3.发生邪教组织活动扣2分；4.发生一起有责治安案件扣5分；5.发生"黄、赌、毒"案件扣5分；6.被上级或公安机关查处的涉油涉气案件，扣5分；7.及时上报信息，阻止事态恶化并把损失降到最小加1-3分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:13,name:'其他四川油气田平安建设事项',std:'按照四川省、四川油气田平安建设考核规定，发现相关问题涉及部门，一次一件扣3分。不配合检查考核，造成影响，一次一件扣5分。获得相应表彰，奖励5-20分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'affairs',catName:'九 机关事务管理',catWeight:15,rows:[{seq:14,name:'规范办公用品和低值易耗品申请和发放程序',std:'1.无发放台账，每次扣2分；2.办公用品超预算计划使用，每次扣1分；3.擅自安排办公用品供应商提供办公物品和耗材的，发现一次扣3分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:15,name:'内务整洁、无安全隐患',std:'1.存在用电等隐患，每次扣1分；2.内务差，在办公场所大量存放私人物品，每次扣0.5分；3.员工衣着不合体，每人次扣0.5分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:16,name:'严格执行业务招待管理办法',std:'1.超标准、超范围接待，一次扣5分；2.食堂招待未提前报备，一次扣1分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+    {cat:'archive',catName:'十 档案管理',catWeight:5,rows:[{seq:17,name:'按相关要求完成资料归档工作',std:'1.各类资料未及时完成归档工作，一次扣2分；2.归档资料不齐全、不规范，未按要求整改，一次扣2分。',w:5,s:100,dept:'各部室',remark:'—'}]}
+  ];
+  
+  function renderTreeViewTable(cat) {
+    let html = '';
+    let totalCount = 0;
+    let totalWeight = 0;
+    let titleText = '';
+    
+    if(cat === 'all') {
+      // 全部细则：不显示分类行，直接显示所有细则
+      ruleData.forEach(g => {
+        g.rows.forEach(r => {
+          html += buildDataRow(r);
+          totalCount++;
+        });
+        totalWeight += g.catWeight;
+      });
+      titleText = '办公室（党委办公室） - 全部细则（' + totalCount + '项）';
+      // 全部细则时显示权重合计行
+      html += `<tr style="background:#e6f7f9;font-weight:600;"><td colspan="3" style="text-align:right;color:#00838c;">权重合计</td><td style="color:#00838c;">${totalWeight}</td><td colspan="5"></td></tr>`;
+    } else {
+      // 选中某个分类：只显示该分类下的细则，不显示分类行，不显示权重合计
+      const group = ruleData.find(g => g.cat === cat);
+      if(group) {
+        group.rows.forEach(r => {
+          html += buildDataRow(r);
+          totalCount++;
+        });
+        titleText = group.catName + '（' + totalCount + '项）';
+      }
+    }
+    
+    document.getElementById('ruleTableBody').innerHTML = html;
+    document.getElementById('currentCatTitle').textContent = titleText;
+  }
+  
+  function buildDataRow(r) {
+    return `<tr>
+      <td class="col-seq">${r.seq}</td>
+      <td>${r.name}</td>
+      <td style="font-size:12px;line-height:1.5;">${r.std}</td>
+      <td>${r.w}</td>
+      <td>${r.s}</td>
+      <td><div class="dept-tags"><span class="dept-tag all">${r.dept}</span></div></td>
+      <td>${r.remark}</td>
+      <td class="col-status"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+      <td class="col-action"><a class="btn link" onclick="showEditRuleModal()">编辑</a></td>
+    </tr>`;
+  }
+
+  // ========== 视图切换 ==========
+  function switchView(view) {
+    document.getElementById('viewTree').classList.toggle('active', view === 'tree');
+    document.getElementById('viewFull').classList.toggle('active', view === 'full');
+    document.getElementById('treeView').style.display = view === 'tree' ? 'block' : 'none';
+    document.getElementById('fullView').style.display = view === 'full' ? 'block' : 'none';
+    if(view === 'full') renderFullViewTable();
+  }
+
+  // ========== 全貌视图表格数据 ==========
+  function renderFullViewTable(){
+    const data = [
+      {cat:'一 文书管理',catWeight:10,rows:[{seq:1,name:'公文收、发、行文规定、执行情况；OA阅办件、批办件办理的时效和质量',std:'1.提交OA公文内容更改、流程重置申请，1次扣1分；2.OA公文无故中止发文流程，1次扣1分；3.行文格式不规范，文种混用、错别字等，1次扣0.5分；4.24小时内未启动收文流程，1次扣1分；5.传阅件未查收超5个工作日，1次扣1分...',w:10,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'二 印章管理',catWeight:5,rows:[{seq:2,name:'规范印章保管和交接',std:'1.未指定专人管理，交接无记录，使用无登记，一次扣2分；2.印章滥用、误用和丢失的，该项分全扣；3.任何单位和个人不得随意刻制、更换印章，该项分全扣。',w:2,s:100,dept:'各部室',remark:'—'},{seq:3,name:'严格履行印章使用审批手续',std:'1.印章使用、审批流程不规范，一次扣1分；2.公文、便签、介绍信等出现空白印章，1次扣2分；3.模仿领导签名，一次扣5分。',w:3,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'三 会议管理',catWeight:10,rows:[{seq:4,name:'严格会议审批管理',std:'召开发生会议费的会议不事前申请，发现一次扣2分。会议费用超标准的，一次扣2分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:5,name:'会议准备充分',std:'1.因会议准备不充分，造成较大不良影响的，视情节轻重扣主办单位一次1-5分；2.会议途中手机铃响影响会议秩序一次扣1分；3.会后3个工作日内完成纪要发送，超时扣1分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'四 督办工作管理',catWeight:15,rows:[{seq:6,name:'准时、高质量完成各项督办工作',std:'1.未按要求完成督办事项，一次扣3分；2.督办事项未按时间节点推进和反馈的，一次扣2分；3.按时报送单位工作总结等各类材料，未按时报送或敷衍了事、完成质量较差的，一次扣3分；4.按要求提前完成工作，奖励1-3分。',w:15,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'五 保密管理',catWeight:5,rows:[{seq:7,name:'按相关要求开展保密日常管理工作',std:'1.未及时按保密办通知集中销毁涉密资料的，一次扣2分；2.保密管理不规范、保密审核流程不规范、涉密资料管理不规范，私自建立微信等工作群传输内部资料的，发现一次扣2分。',w:5,s:100,dept:'各部室',remark:'调减比例由10%到5%'}]},
+      {cat:'六 应急协调管理',catWeight:5,rows:[{seq:8,name:'及时报送突发事件信息',std:'1.未及时上报，一次扣2分；2.及时上报，避免事态恶化，奖励1-3分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'七 车辆管理',catWeight:10,rows:[{seq:9,name:'严格执行车辆申请、审批手续，服从车辆调度安排，认真履行相关监护人职责',std:'1.以公事为名，公车私用的，发现一次扣5分；2.擅自延长车辆使用时间，扰乱车辆安排的，一次扣1分；3.安全监护人不履行安全监督职能，乘车人员不系安全带的，一次扣5分；4.擅自涂改用车申请单，一次扣1分。',w:10,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'八 平安企业建设',catWeight:20,rows:[{seq:10,name:'及时化解各类矛盾，无群体上访事件、无矛盾激化',std:'积极开展不稳定因素排查，及时处理解决信访案件。不积极主动处理本单位接访、协调工作，导致矛盾上交到公司，每出现一次扣1分，问题反映到分公司扣2分，问题反映到集团公司扣5分，涉及群体性事件的加倍扣分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:11,name:'按要求开展反恐重点项目达标建设和管理',std:'因整改不力未完成达标验收，收到属地公安机关整改通知单的，一次扣2分。限定期间未完成达标整改，收到书面警告的，一次扣3分。因管理问题未通过属地公安机关专项检查的，一项问题扣1分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:12,name:'无违法违纪事件、无邪教人员',std:'1.出现内部矛盾激化、社会治安、上访事件，一件一次扣2分；2.帮教措施或监控人不落实扣2分；3.发生邪教组织活动扣2分；4.发生一起有责治安案件扣5分；5.发生"黄、赌、毒"案件扣5分；6.被上级或公安机关查处的涉油涉气案件，扣5分；7.及时上报信息，阻止事态恶化并把损失降到最小加1-3分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:13,name:'其他四川油气田平安建设事项',std:'按照四川省、四川油气田平安建设考核规定，发现相关问题涉及部门，一次一件扣3分。不配合检查考核，造成影响，一次一件扣5分。获得相应表彰，奖励5-20分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'九 机关事务管理',catWeight:15,rows:[{seq:14,name:'规范办公用品和低值易耗品申请和发放程序',std:'1.无发放台账，每次扣2分；2.办公用品超预算计划使用，每次扣1分；3.擅自安排办公用品供应商提供办公物品和耗材的，发现一次扣3分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:15,name:'内务整洁、无安全隐患',std:'1.存在用电等隐患，每次扣1分；2.内务差，在办公场所大量存放私人物品，每次扣0.5分；3.员工衣着不合体，每人次扣0.5分。',w:5,s:100,dept:'各部室',remark:'—'},{seq:16,name:'严格执行业务招待管理办法',std:'1.超标准、超范围接待，一次扣5分；2.食堂招待未提前报备，一次扣1分。',w:5,s:100,dept:'各部室',remark:'—'}]},
+      {cat:'十 档案管理',catWeight:5,rows:[{seq:17,name:'按相关要求完成资料归档工作',std:'1.各类资料未及时完成归档工作，一次扣2分；2.归档资料不齐全、不规范，未按要求整改，一次扣2分。',w:5,s:100,dept:'各部室',remark:'—'}]}
+    ];
+    let html = '';
+    data.forEach(g => {
+      g.rows.forEach((r,i) => {
+        html += '<tr>';
+        if(i===0) html += `<td rowspan="${g.rows.length}" style="background:#f8fafc;font-weight:600;vertical-align:middle;color:#00838c;">${g.cat}</td>`;
+        html += `<td>${r.seq}</td><td>${r.name}</td><td style="font-size:12px;line-height:1.5;">${r.std}</td><td>${r.w}</td><td>${r.s}</td><td><span class="dept-tag all">${r.dept}</span></td><td>${r.remark}</td></tr>`;
+      });
+    });
+    document.getElementById('fullViewBody').innerHTML = html;
+  }
+
+  // ========== 弹框函数 ==========
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+  function showPublishConfirm() { 
+    // 获取当前权重值
+    const m = parseInt(document.getElementById('mutualWeight').value) || 0;
+    const l = parseInt(document.getElementById('leaderWeight').value) || 0;
+    const r1 = parseInt(document.getElementById('roleWeight1').value) || 0;
+    const r2 = parseInt(document.getElementById('roleWeight2').value) || 0;
+    const r3 = parseInt(document.getElementById('roleWeight3').value) || 0;
+    
+    // 更新弹框中的显示值
+    document.getElementById('publishMutualWeight').textContent = m + '%';
+    document.getElementById('publishLeaderWeight').textContent = l + '%';
+    document.getElementById('publishRole1').textContent = r1 + '%';
+    document.getElementById('publishRole2').textContent = r2 + '%';
+    document.getElementById('publishRole3').textContent = r3 + '%';
+    
+    // 校验权重
+    const totalValid = (m + l) === 100;
+    const roleValid = (r1 + r2 + r3) === l;
+    const errorNotice = document.getElementById('publishErrorNotice');
+    const publishBtn = document.getElementById('publishBtn');
+    
+    if (totalValid && roleValid) {
+      errorNotice.style.display = 'none';
+      publishBtn.disabled = false;
+      publishBtn.classList.remove('disabled');
+    } else {
+      errorNotice.style.display = 'block';
+      publishBtn.disabled = true;
+      publishBtn.classList.add('disabled');
+    }
+    
+    document.getElementById('publishConfirmModal').classList.add('show'); 
+  }
+  
+  function confirmPublish() {
+    // 原型演示：关闭弹框并提示成功
+    closeModal('publishConfirmModal');
+    alert('发布成功！\n\n2026年度过程考核方案已正式生效。\n\n（原型演示，实际将保存配置并更新状态）');
+  }
+  function showAddCatModal() { document.getElementById('addCatDrawer').classList.add('open'); }
+  function showAddSubCatModal(cat) { 
+    document.getElementById('addSubCatParent').value = cat;
+    document.getElementById('addSubCatName').value = '';
+    document.getElementById('addSubCatSort').value = '';
+    document.getElementById('addSubCatDrawer').classList.add('open'); 
+  }
+  function showAddRuleModal() { openDrawer('ruleDrawer', 'add'); }
+  function showEditRuleModal() { openDrawer('ruleDrawer', 'edit'); }
+  function showDeptSelectModal() { document.getElementById('deptSelectModal').classList.add('show'); }
+  function showAddDimensionModal() { 
+    // 清空表单
+    document.getElementById('addDimName').value = '';
+    document.getElementById('addDimStd').value = '';
+    document.getElementById('addDimWeight').value = '';
+    document.getElementById('addDimensionDrawer').classList.add('open'); 
+  }
+  function showEditDimensionModal(name, std, weight) { 
+    // 预填编辑数据（原型演示用默认值）
+    document.getElementById('editDimName').value = name || '领导团队管理';
+    document.getElementById('editDimStd').value = std || '团队建设、人员培养、凝聚力';
+    document.getElementById('editDimWeight').value = weight || '20';
+    document.getElementById('editDimensionDrawer').classList.add('open'); 
+  }
+  
+  var currentHistoryYear = 2025; // 当前查看的历史年度
+  
+  function showHistoryDetail(year) { 
+    currentHistoryYear = year;
+    
+    // 更新弹框标题和基本信息（原型演示用静态数据）
+    const historyData = {
+      2025: { date: '2025-01-01', mutual: '30%', leader: '70%' },
+      2024: { date: '2024-01-01', mutual: '30%', leader: '70%' },
+      2023: { date: '2023-01-01', mutual: '25%', leader: '75%' }
+    };
+    const data = historyData[year] || historyData[2025];
+    
+    document.getElementById('historyDetailTitle').textContent = year + '年度过程考核方案（只读）';
+    document.getElementById('historyDetailDate').textContent = data.date;
+    document.getElementById('historyDetailMutual').textContent = data.mutual;
+    document.getElementById('historyDetailLeader').textContent = data.leader;
+    
+    document.getElementById('historyDetailModal').classList.add('show'); 
+    // 重置为第一个tab
+    document.querySelectorAll('.history-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+    document.querySelectorAll('.history-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
+  }
+  
+  function copyFromHistoryYear(year) {
+    // 关闭详情弹框（如果打开）
+    closeModal('historyDetailModal');
+    
+    // 检查当前是否已有配置数据
+    const hasData = document.querySelectorAll('#ruleTableBody tr').length > 0;
+    
+    if (hasData) {
+      if (!confirm('当前年度已配置方案数据，确认从 ' + year + ' 年度复制并覆盖现有内容？')) {
+        return;
+      }
+    }
+    
+    alert('已成功复制 ' + year + ' 年度过程考核方案到当前年度\n\n（原型演示，实际将复制方案配置并切换到本年方案配置Tab）');
+    
+    // 切换到本年方案配置Tab
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.main-tab[data-tab="current"]').classList.add('active');
+    document.getElementById('panel-current').classList.add('active');
+  }
+
+  // 历史详情弹框Tab切换
+  document.querySelectorAll('.history-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.history-panel').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.panel).classList.add('active');
+    });
+  });
+
+  // 历史详情弹框部门切换
+  document.querySelectorAll('.history-dept-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.history-dept-item').forEach(i => {
+        i.style.color = '#5f7080';
+        i.style.background = 'transparent';
+        i.classList.remove('active');
+      });
+      this.style.color = '#00AAB7';
+      this.style.background = '#e6f7f9';
+      this.classList.add('active');
+    });
+  });
+
+  // ========== 二级分类联动 ==========
+  const subCatData = {
+    doc: [{value:'doc-1',text:'公文收发'},{value:'doc-2',text:'档案归档'}],
+    seal: [{value:'seal-1',text:'印章保管'},{value:'seal-2',text:'审批手续'}],
+    meeting: [{value:'meeting-1',text:'会议审批'},{value:'meeting-2',text:'会议准备'}],
+    supervise: [{value:'supervise-1',text:'督办完成'}],
+    secret: [{value:'secret-1',text:'保密日常'}],
+    emergency: [{value:'emergency-1',text:'突发事件'}],
+    vehicle: [{value:'vehicle-1',text:'车辆使用'}],
+    peace: [{value:'peace-1',text:'矛盾化解'},{value:'peace-2',text:'反恐建设'},{value:'peace-3',text:'违法违纪'}]
+  };
+  function updateSubCatOptions(cat1Id, cat2Id) {
+    const cat1 = document.getElementById(cat1Id);
+    const cat2 = document.getElementById(cat2Id);
+    const opts = subCatData[cat1.value] || [];
+    cat2.innerHTML = opts.length ? '<option value="">请选择</option>' + opts.map(o => `<option value="${o.value}">${o.text}</option>`).join('') : '<option value="">请先选择一级分类</option>';
+  }
+
+  // ========== 权重计算 ==========
+  function calcTotalWeight() {
+    const m = parseInt(document.getElementById('mutualWeight').value) || 0;
+    const l = parseInt(document.getElementById('leaderWeight').value) || 0;
+    const sum = m + l;
+    const errorEl = document.getElementById('totalWeightError');
+    const mutualInput = document.getElementById('mutualWeight');
+    const leaderInput = document.getElementById('leaderWeight');
+    const totalValEl = document.getElementById('totalWeightVal');
+    const totalStatusEl = document.getElementById('totalWeightStatus');
+    
+    // 更新显示值
+    totalValEl.textContent = sum + '%';
+    document.getElementById('previewMutual').textContent = m + '%';
+    document.getElementById('previewLeader').textContent = l + '%';
+    document.getElementById('previewTotal').textContent = sum + '%';
+    document.getElementById('roleWeightTarget').textContent = l + '%';
+    
+    if (sum === 100) {
+      errorEl.style.display = 'none';
+      mutualInput.style.borderColor = '#dfe5ec';
+      leaderInput.style.borderColor = '#dfe5ec';
+      totalValEl.classList.remove('error');
+      totalStatusEl.textContent = '✓ 配置正确';
+      totalStatusEl.style.color = '#16a36a';
+    } else {
+      errorEl.style.display = 'block';
+      errorEl.textContent = '权重合计必须等于 100%，当前为 ' + sum + '%';
+      mutualInput.style.borderColor = '#d14343';
+      leaderInput.style.borderColor = '#d14343';
+      totalValEl.classList.add('error');
+      totalStatusEl.textContent = '✗ 需调整';
+      totalStatusEl.style.color = '#d14343';
+    }
+  }
+  
+  function calcRoleWeight() {
+    const r1 = parseInt(document.getElementById('roleWeight1').value) || 0;
+    const r2 = parseInt(document.getElementById('roleWeight2').value) || 0;
+    const r3 = parseInt(document.getElementById('roleWeight3').value) || 0;
+    const leaderW = parseInt(document.getElementById('leaderWeight').value) || 0;
+    const sum = r1 + r2 + r3;
+    const errorEl = document.getElementById('roleWeightError');
+    const input1 = document.getElementById('roleWeight1');
+    const input2 = document.getElementById('roleWeight2');
+    const input3 = document.getElementById('roleWeight3');
+    const roleValEl = document.getElementById('roleWeightVal');
+    const roleStatusEl = document.getElementById('roleWeightStatus');
+    
+    // 更新显示值
+    roleValEl.textContent = sum + '%';
+    document.getElementById('previewRole1').textContent = r1 + '%';
+    document.getElementById('previewRole2').textContent = r2 + '%';
+    document.getElementById('previewRole3').textContent = r3 + '%';
+    
+    if (sum === leaderW) {
+      errorEl.style.display = 'none';
+      input1.style.borderColor = '#dfe5ec';
+      input2.style.borderColor = '#dfe5ec';
+      input3.style.borderColor = '#dfe5ec';
+      roleValEl.classList.remove('error');
+      roleStatusEl.textContent = '✓ 配置正确';
+      roleStatusEl.style.color = '#16a36a';
+    } else {
+      errorEl.style.display = 'block';
+      errorEl.textContent = '角色权重合计必须等于 ' + leaderW + '%，当前为 ' + sum + '%';
+      input1.style.borderColor = '#d14343';
+      input2.style.borderColor = '#d14343';
+      input3.style.borderColor = '#d14343';
+      roleValEl.classList.add('error');
+      roleStatusEl.textContent = '✗ 需调整';
+      roleStatusEl.style.color = '#d14343';
+    }
+  }
+
+  function saveDraft() { alert('草稿已保存'); }
+
+  // ========== 领导评价考核内容管理 ==========
+  function validateDimWeight(mode) {
+    const inputId = mode === 'add' ? 'addDimWeight' : 'editDimWeight';
+    const hintId = mode === 'add' ? 'addDimWeightHint' : 'editDimWeightHint';
+    const val = parseInt(document.getElementById(inputId).value) || 0;
+    const hintEl = document.getElementById(hintId);
+    
+    if (val < 0 || val > 100) {
+      hintEl.style.color = '#d14343';
+      hintEl.textContent = '权重必须在 0~100 之间';
+    } else if (mode === 'add' && val > 0) {
+      hintEl.style.color = '#d97706';
+      hintEl.textContent = '当前已配置权重合计 100%，新增后需调整其他项权重';
+    } else {
+      hintEl.style.color = '#8fa3b0';
+      hintEl.textContent = '所有考核内容权重之和应为 100%';
+    }
+  }
+  
+  function saveDimension(mode) {
+    const nameId = mode === 'add' ? 'addDimName' : 'editDimName';
+    const stdId = mode === 'add' ? 'addDimStd' : 'editDimStd';
+    const weightId = mode === 'add' ? 'addDimWeight' : 'editDimWeight';
+    
+    const name = document.getElementById(nameId).value.trim();
+    const std = document.getElementById(stdId).value.trim();
+    const weight = document.getElementById(weightId).value.trim();
+    
+    if (!name) {
+      alert('请输入考核内容名称');
+      return;
+    }
+    if (!std) {
+      alert('请输入考核标准及要求');
+      return;
+    }
+    if (!weight || isNaN(weight) || parseInt(weight) < 0 || parseInt(weight) > 100) {
+      alert('请输入有效的权重（0~100）');
+      return;
+    }
+    
+    // 原型演示：直接关闭抽屉
+    const drawerId = mode === 'add' ? 'addDimensionDrawer' : 'editDimensionDrawer';
+    closeDrawer(drawerId);
+    alert((mode === 'add' ? '新增' : '修改') + '成功\n\n（原型演示，实际将更新表格数据）');
+  }
+
+  // 历史方案筛选
+  function filterHistorySchemes() {
+    const yearFilter = document.getElementById('historySchemeYearFilter').value;
+    const cards = document.querySelectorAll('#historySchemeList .scheme-card');
+    const emptyTip = document.getElementById('historySchemeEmpty');
+    let visibleCount = 0;
+    cards.forEach(card => {
+      if (!yearFilter || card.dataset.year === yearFilter) {
+        card.style.display = '';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    emptyTip.style.display = visibleCount === 0 ? 'block' : 'none';
+    document.getElementById('historySchemeList').style.display = visibleCount === 0 ? 'none' : 'block';
+  }
+
+  function resetHistorySchemeFilter() {
+    document.getElementById('historySchemeYearFilter').value = '';
+    filterHistorySchemes();
+  }
+
+  function exportHistoryScheme(year) {
+    alert('正在导出 ' + year + ' 年度过程考核方案...\n\n（原型演示，实际将生成Excel文件）');
+  }
+
+  // 点击遮罩关闭弹框
+  document.querySelectorAll('.modal-mask').forEach(mask => {
+    mask.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+  });
+
+  // 全选联动
+  document.querySelectorAll('.dept-checkbox-group .check-all input').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const grid = this.closest('.dept-checkbox-group').querySelector('.dept-checkbox-grid');
+      grid.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = this.checked);
+    });
+  });
+
+  // 页面初始化：渲染结构视图表格
+  renderTreeViewTable('all');
+
+  // ========== 抽屉操作 ==========
+  var currentDrawerMode = 'add'; // 'add' or 'edit'
+  
+  function openDrawer(id, mode) {
+    currentDrawerMode = mode || 'add';
+    var drawer = document.getElementById(id);
+    var titleEl = document.getElementById('ruleDrawerTitle');
+    
+    if (mode === 'edit') {
+      titleEl.textContent = '编辑考核细则';
+      // 预填编辑数据（原型演示）
+      document.getElementById('drawerRuleCat1').value = 'doc';
+      updateSubCatOptions('drawerRuleCat1', 'drawerRuleCat2');
+      setTimeout(function() {
+        document.getElementById('drawerRuleCat2').value = 'doc-1';
+      }, 10);
+      document.getElementById('drawerRuleName').value = '公文收、发、行文规定、执行情况';
+      document.getElementById('drawerRuleStd').value = '1.提交OA公文内容更改扣1分；2.OA公文无故中止扣1分；3.行文格式不规范扣0.5分...';
+      document.getElementById('drawerRuleWeight').value = '10';
+      document.getElementById('drawerRuleScore').value = '100';
+      document.getElementById('drawerRuleRemark').value = '';
+    } else {
+      titleEl.textContent = '新增考核细则';
+      // 清空表单
+      document.getElementById('drawerRuleCat1').value = '';
+      document.getElementById('drawerRuleCat2').innerHTML = '<option value="">请先选择一级分类</option>';
+      document.getElementById('drawerRuleName').value = '';
+      document.getElementById('drawerRuleStd').value = '';
+      document.getElementById('drawerRuleWeight').value = '';
+      document.getElementById('drawerRuleScore').value = '100';
+      document.getElementById('drawerRuleRemark').value = '';
+      // 重置部门勾选
+      document.querySelectorAll('#drawerDeptGrid input[type="checkbox"]').forEach(function(cb) {
+        cb.checked = true;
+      });
+      document.getElementById('drawerDeptAll').checked = true;
+    }
+    
+    drawer.classList.add('open');
+  }
+  
+  function closeDrawer(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+  
+  function saveRuleFromDrawer() {
+    // 原型演示：直接关闭抽屉
+    closeDrawer('ruleDrawer');
+    // 可以在这里添加刷新表格的逻辑
+  }
+  
+  // 抽屉内部门全选联动
+  document.getElementById('drawerDeptAll').addEventListener('change', function() {
+    var grid = document.getElementById('drawerDeptGrid');
+    grid.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      cb.checked = this.checked;
+    }.bind(this));
+  });
+
+  // ========== 弹框显示函数 ==========
+  function openModal(id) {
+    document.getElementById(id).classList.add('show');
+  }
+
+  // ========== 复制往年方案 ==========
+  function showCopyFromHistoryModal() {
+    // 检查当前是否已有配置数据（原型演示：根据细则行数判断）
+    const hasData = document.querySelectorAll('#ruleTableBody tr').length > 0;
+    const warningEl = document.getElementById('copyOverwriteWarning');
+    if (warningEl) {
+      warningEl.style.display = hasData ? 'block' : 'none';
+    }
+    // 重置下拉选择
+    document.getElementById('copyYearSelect').value = '';
+    openModal('copyFromHistoryModal');
+  }
+
+  function confirmCopyFromHistory() {
+    const yearSelect = document.getElementById('copyYearSelect');
+    const selectedYear = yearSelect.value;
+    if (!selectedYear) {
+      alert('请选择要复制的历史年度');
+      return;
+    }
+    
+    // 检查是否有现有数据需要覆盖
+    const hasData = document.querySelectorAll('#ruleTableBody tr').length > 0;
+    if (hasData) {
+      if (!confirm('当前年度已配置方案数据，确认覆盖现有内容？')) {
+        return;
+      }
+    }
+    
+    alert('已成功复制 ' + selectedYear + ' 年度过程考核方案\n\n（原型演示，实际将从历史数据复制方案配置）');
+    closeModal('copyFromHistoryModal');
+  }
+
+  // ========== 部门特殊配置 ==========
+  var currentEditDept = null; // 当前编辑的部门名称
+
+  // Tab切换
+  function switchRoleWeightTab(panel) {
+    document.querySelectorAll('.role-weight-tab').forEach(function(tab) {
+      tab.classList.toggle('active', tab.dataset.panel === panel);
+    });
+    document.querySelectorAll('.role-weight-panel').forEach(function(p) {
+      p.classList.toggle('active', p.id === 'panel-' + panel);
+    });
+  }
+
+  function showAddDeptConfigModal() {
+    currentEditDept = null;
+    document.getElementById('deptConfigModalTitle').textContent = '新增部门领导角色权重配置';
+    document.getElementById('deptConfigDept').value = '';
+    document.getElementById('deptConfigDept').disabled = false;
+    
+    // 重置为默认值
+    document.getElementById('deptConfigRole2').value = '40';
+    document.getElementById('deptConfigRole1').value = '25';
+    document.getElementById('deptConfigRole3').value = '5';
+    document.getElementById('deptConfigRole1Enable').checked = true;
+    document.getElementById('deptConfigRole3Enable').checked = true;
+    toggleDeptConfigRole(1);
+    toggleDeptConfigRole(3);
+    
+    // 更新需要的权重值
+    var leaderW = parseInt(document.getElementById('leaderWeight').value) || 70;
+    document.getElementById('deptConfigRequiredWeight').textContent = leaderW;
+    document.getElementById('deptConfigWeightTarget').textContent = leaderW + '%';
+    document.getElementById('deptConfigLeaderWeight').textContent = leaderW;
+    
+    calcDeptConfigWeight();
+    document.getElementById('deptConfigDrawer').classList.add('open');
+  }
+
+  function showEditDeptConfigModal(deptName) {
+    currentEditDept = deptName;
+    document.getElementById('deptConfigModalTitle').textContent = '编辑部门领导角色权重配置';
+    document.getElementById('deptConfigDept').value = deptName;
+    document.getElementById('deptConfigDept').disabled = true;
+    
+    // 预填示例数据（计划经营部为例）
+    if (deptName === '计划经营部') {
+      document.getElementById('deptConfigRole2').value = '40';
+      document.getElementById('deptConfigRole1').value = '30';
+      document.getElementById('deptConfigRole3').value = '0';
+      document.getElementById('deptConfigRole1Enable').checked = true;
+      document.getElementById('deptConfigRole3Enable').checked = false;
+    }
+    toggleDeptConfigRole(1);
+    toggleDeptConfigRole(3);
+    
+    // 更新需要的权重值
+    var leaderW = parseInt(document.getElementById('leaderWeight').value) || 70;
+    document.getElementById('deptConfigRequiredWeight').textContent = leaderW;
+    document.getElementById('deptConfigWeightTarget').textContent = leaderW + '%';
+    document.getElementById('deptConfigLeaderWeight').textContent = leaderW;
+    
+    calcDeptConfigWeight();
+    document.getElementById('deptConfigDrawer').classList.add('open');
+  }
+
+  function toggleDeptConfigRole(roleNum) {
+    var enableCheckbox = document.getElementById('deptConfigRole' + roleNum + 'Enable');
+    var weightInput = document.getElementById('deptConfigRole' + roleNum);
+    var disabledTip = document.getElementById('deptConfigDisabledTip');
+    
+    if (enableCheckbox && weightInput) {
+      if (enableCheckbox.checked) {
+        weightInput.disabled = false;
+        weightInput.style.opacity = '1';
+      } else {
+        weightInput.disabled = true;
+        weightInput.value = '0';
+        weightInput.style.opacity = '0.5';
+      }
+    }
+    
+    // 检查是否有禁用的层级
+    var role1Enabled = document.getElementById('deptConfigRole1Enable').checked;
+    var role3Enabled = document.getElementById('deptConfigRole3Enable').checked;
+    if (disabledTip) {
+      disabledTip.style.display = (!role1Enabled || !role3Enabled) ? 'block' : 'none';
+    }
+    
+    calcDeptConfigWeight();
+  }
+
+  function calcDeptConfigWeight() {
+    var r1 = parseInt(document.getElementById('deptConfigRole1').value) || 0;
+    var r2 = parseInt(document.getElementById('deptConfigRole2').value) || 0;
+    var r3 = parseInt(document.getElementById('deptConfigRole3').value) || 0;
+    var leaderW = parseInt(document.getElementById('leaderWeight').value) || 70;
+    var sum = r1 + r2 + r3;
+    
+    var valEl = document.getElementById('deptConfigWeightVal');
+    var statusEl = document.getElementById('deptConfigWeightStatus');
+    var errorEl = document.getElementById('deptConfigWeightError');
+    var saveBtn = document.getElementById('deptConfigSaveBtn');
+    
+    valEl.textContent = sum + '%';
+    
+    if (sum === leaderW) {
+      valEl.style.color = '#00AAB7';
+      statusEl.textContent = '✓ 配置正确';
+      statusEl.style.color = '#16a36a';
+      errorEl.style.display = 'none';
+      saveBtn.disabled = false;
+      saveBtn.classList.remove('disabled');
+    } else {
+      valEl.style.color = '#d14343';
+      statusEl.textContent = '✗ 需调整';
+      statusEl.style.color = '#d14343';
+      errorEl.style.display = 'block';
+      errorEl.textContent = '权重合计必须等于 ' + leaderW + '%，当前为 ' + sum + '%';
+      saveBtn.disabled = true;
+      saveBtn.classList.add('disabled');
+    }
+  }
+
+  function saveDeptConfig() {
+    var dept = document.getElementById('deptConfigDept').value;
+    if (!dept) {
+      alert('请选择部门');
+      return;
+    }
+    
+    var r1 = parseInt(document.getElementById('deptConfigRole1').value) || 0;
+    var r2 = parseInt(document.getElementById('deptConfigRole2').value) || 0;
+    var r3 = parseInt(document.getElementById('deptConfigRole3').value) || 0;
+    var leaderW = parseInt(document.getElementById('leaderWeight').value) || 70;
+    
+    if (r1 + r2 + r3 !== leaderW) {
+      alert('权重合计必须等于 ' + leaderW + '%');
+      return;
+    }
+    
+    closeDrawer('deptConfigDrawer');
+    
+    var action = currentEditDept ? '修改' : '新增';
+    var role3Text = r3 === 0 ? '禁用' : r3 + '%';
+    alert(action + '成功！\n\n' + dept + ' 领导角色权重配置：\n· 主要领导：' + r2 + '%\n· 分管领导：' + r1 + '%\n· 其他领导：' + role3Text + '\n\n（原型演示，实际将保存配置并更新列表）');
+  }
+
+  function removeDeptConfig(deptName) {
+    if (confirm('确认删除「' + deptName + '」的特殊配置？\n\n删除后该部门将使用全局默认权重。')) {
+      alert('已删除「' + deptName + '」的特殊配置\n\n（原型演示，实际将移除配置并刷新列表）');
+    }
+  }
+
+  // 更新配置说明中的领导考核权重
+  function updateDeptConfigLeaderWeight() {
+    var leaderW = parseInt(document.getElementById('leaderWeight').value) || 70;
+    var el = document.getElementById('deptConfigLeaderWeight');
+    if (el) {
+      el.textContent = leaderW;
+    }
+  }
+  
+  // 在领导权重变化时更新部门配置说明
+  var originalCalcTotalWeight = calcTotalWeight;
+  calcTotalWeight = function() {
+    originalCalcTotalWeight();
+    updateDeptConfigLeaderWeight();
+  };
+</script>
+</body>
+</html>

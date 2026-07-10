@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>在编员工</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="长宁正式员工" data-desc="管理长宁正式员工基础信息，支持查询、新增、导入、导出、编辑、删除与独立详情页。" data-actions='<a class="btn primary" href="./employee-form.html">新增</a><button class="btn">导入</button><button class="btn">导出</button>'>
+    <section class="filter-bar">
+      <label class="field">搜索：<input placeholder="员工编号/姓名"></label>
+      <label class="field">组织单位：<select><option>全部</option><option>长宁公司</option><option>蜀南公司</option></select></label>
+      <label class="field">员工状态：<select><option>全部</option><option>在册在岗</option><option>在册不在岗</option><option>在岗不在册</option></select></label>
+      <button class="btn primary">查询</button>
+      <button class="btn">重置</button>
+    </section>
+    <section class="card table-card">
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th class="col-seq">序号</th><th>员工编号</th><th>姓名</th><th>组织单位</th><th>性别</th><th>婚姻状况</th><th>岗位</th><th>岗位类别</th><th>职务称谓</th><th>职称</th><th>参加工作时间</th><th>到本企业时间</th><th>员工状态</th><th>更新时间</th><th class="col-action">操作</th></tr></thead>
+        <tbody>
+          <tr><td class="col-seq">1</td><td>XT2025001</td><td>张三</td><td>人力资源部（党委组织部）</td><td>男</td><td>已婚</td><td>开发工程师</td><td>专业技术人员</td><td>一级主管</td><td>工程师</td><td>2012-07-01</td><td>2023-03-15</td><td><span class="status green">在册在岗</span></td><td>2026-06-09 10:30</td><td class="col-action"><a class="btn link" href="./employee-detail.html">查看详情</a><a class="btn link" href="./employee-edit.html">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+          <tr><td class="col-seq">2</td><td>XT2025002</td><td>李四</td><td>财务资产部</td><td>女</td><td>未婚</td><td>总账</td><td>一般管理人员</td><td>一般管理人员</td><td>经济师</td><td>2008-07-01</td><td>2021-07-20</td><td><span class="status amber">在册不在岗</span></td><td>2026-06-08 16:12</td><td class="col-action"><a class="btn link" href="./employee-detail.html">查看详情</a><a class="btn link" href="./employee-edit.html">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+          <tr><td class="col-seq">3</td><td>XT2025003</td><td>王五</td><td>开发管理部</td><td>男</td><td>已婚</td><td>采气场站管理</td><td>基层领导人员</td><td>部门副职</td><td>高级会计师</td><td>1995-09-01</td><td>2018-09-01</td><td><span class="status red">在岗不在册</span></td><td>2026-06-07 09:05</td><td class="col-action"><a class="btn link" href="./employee-detail.html">查看详情</a><a class="btn link" href="./employee-edit.html">编辑</a><a class="btn link danger" href="./confirm-delete.html">删除</a></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+</body>
+</html>

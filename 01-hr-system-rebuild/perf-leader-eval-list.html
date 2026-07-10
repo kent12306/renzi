@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>领导评价</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .quarter-tabs{display:flex;gap:8px;margin-bottom:16px;}
+    .quarter-tab{padding:8px 20px;font-size:14px;color:#5f7080;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:6px;cursor:pointer;transition:all .15s;}
+    .quarter-tab:hover{background:#e6f7f9;color:#00AAB7;}
+    .quarter-tab.active{background:#00AAB7;color:#fff;border-color:#00AAB7;}
+    .stats-row{display:flex;gap:16px;margin-bottom:16px;}
+    .stat-card{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;text-align:center;}
+    .stat-card .num{font-size:28px;font-weight:700;color:#00AAB7;}
+    .stat-card .label{font-size:13px;color:#8fa3b0;margin-top:4px;}
+    .progress-bar{height:6px;background:#eef3f6;border-radius:3px;overflow:hidden;margin-top:8px;}
+    .progress-bar .fill{height:100%;background:#00AAB7;border-radius:3px;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="领导评价"
+  data-desc="领导对各部门进行 6 维度评价，按季度进行，权重占过程考核的 70%。"
+  data-actions=''>
+
+  <!-- 年度和季度选择 -->
+  <div class="filter-bar" style="margin-bottom:16px;">
+    <div class="field"><span>年度</span>
+      <select id="yearSel" style="width:100px;"><option>2026</option><option>2025</option><option>2024</option></select>
+    </div>
+    <div class="quarter-tabs">
+      <div class="quarter-tab" data-q="Q1">2025年10-12月</div>
+      <div class="quarter-tab active" data-q="Q2">2026年1-3月</div>
+      <div class="quarter-tab" data-q="Q3">2026年4-6月</div>
+      <div class="quarter-tab" data-q="Q4">2026年7-9月</div>
+    </div>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">10</div>
+      <div class="label">待评价部门</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">7</div>
+      <div class="label">已完成评价</div>
+      <div class="progress-bar"><div class="fill" style="width:70%;"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="num">3</div>
+      <div class="label">待我评价</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#b7791f;">3</div>
+      <div class="label">未完成部门</div>
+    </div>
+  </div>
+
+  <!-- 筛选和列表 -->
+  <div class="filter-bar">
+    <div class="field"><span>部门</span>
+      <select style="width:180px;">
+        <option value="">全部部门</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+        <option>财务资产部</option>
+        <option>人力资源部（党委组织部）</option>
+        <option>质量安全环保部</option>
+        <option>开发管理部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+      </select>
+    </div>
+    <div class="field"><span>评价状态</span>
+      <select style="width:120px;">
+        <option value="">全部</option>
+        <option>待评价</option>
+        <option>已评价</option>
+      </select>
+    </div>
+    <button class="btn">查询</button>
+    <button class="btn">重置</button>
+  </div>
+
+  <section class="card table-card">
+    <table>
+      <thead><tr>
+        <th class="col-seq">序号</th>
+        <th>被评价部门</th>
+        <th>部门负责人</th>
+        <th>分管领导评价</th>
+        <th>主要领导评价</th>
+        <th>其他领导评价</th>
+        <th>综合得分</th>
+        <th class="col-status">状态</th>
+        <th class="col-action">操作</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td>
+          <td>办公室（党委办公室）</td>
+          <td>杨主任</td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.8</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.2</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><strong style="color:#00AAB7;">10.05</strong></td>
+          <td class="col-status"><span class="status green">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-leader-eval-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>计划经营部</td>
+          <td>马部长</td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.5</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.8</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.2</span></td>
+          <td><strong style="color:#00AAB7;">9.62</strong></td>
+          <td class="col-status"><span class="status green">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-leader-eval-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td>财务资产部</td>
+          <td>陈部长</td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.0</span></td>
+          <td><span style="color:#b7791f;">待评价</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="status amber">进行中</span></td>
+          <td class="col-action"><a class="btn link primary" href="./perf-leader-eval-score.html">去评价</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td>
+          <td>人力资源部（党委组织部）</td>
+          <td>刘主任</td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.5</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.8</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><strong style="color:#00AAB7;">10.70</strong></td>
+          <td class="col-status"><span class="status green">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-leader-eval-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td>
+          <td>质量安全环保部</td>
+          <td>郑部长</td>
+          <td><span style="color:#b7791f;">待评价</span></td>
+          <td><span style="color:#b7791f;">待评价</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="status amber">待评价</span></td>
+          <td class="col-action"><a class="btn link primary" href="./perf-leader-eval-score.html">去评价</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td>
+          <td>开发管理部</td>
+          <td>张主任</td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.6</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.9</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><strong style="color:#00AAB7;">9.78</strong></td>
+          <td class="col-status"><span class="status green">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-leader-eval-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">7</td>
+          <td>地质工程部</td>
+          <td>李总工</td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.2</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">10.5</span></td>
+          <td><span style="color:#00AAB7;font-weight:600;">9.8</span></td>
+          <td><strong style="color:#00AAB7;">10.35</strong></td>
+          <td class="col-status"><span class="status green">已完成</span></td>
+          <td class="col-action"><a class="btn link" href="./perf-leader-eval-score.html">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">8</td>
+          <td>地面建设工程部</td>
+          <td>沈部长</td>
+          <td><span style="color:#b7791f;">待评价</span></td>
+          <td><span style="color:#b7791f;">待评价</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td><span style="color:#8fa3b0;">—</span></td>
+          <td class="col-status"><span class="status amber">待评价</span></td>
+          <td class="col-action"><a class="btn link primary" href="./perf-leader-eval-score.html">去评价</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+document.querySelectorAll('.quarter-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.quarter-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>过程考核汇总</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    /* 主Tab样式 */
+    .main-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:0;}
+    .main-tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .main-tab:hover{color:#00AAB7;}
+    .main-tab.active{color:#00AAB7;border-bottom-color:#00AAB7;font-weight:600;}
+    .tab-panel{display:none;padding-top:16px;}
+    .tab-panel.active{display:block;}
+
+    /* 方案状态条 */
+    .scheme-status-bar{
+      display:flex;align-items:center;gap:16px;padding:16px 20px;
+      background:#fff;border:1px solid #dfe5ec;border-radius:8px;
+      margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    }
+    .scheme-status-bar .title{font-size:16px;font-weight:600;color:#1d2733;}
+    .scheme-status-bar .period{font-size:13px;color:#5f7080;margin-left:8px;}
+
+    /* 子Tab样式（季度切换） */
+    .sub-tabs{display:flex;gap:8px;margin-bottom:16px;}
+    .sub-tab{
+      padding:8px 20px;font-size:14px;color:#5f7080;
+      background:#f5f7fa;border:1px solid #dfe5ec;border-radius:6px;
+      cursor:pointer;transition:all .15s;
+    }
+    .sub-tab:hover{background:#E6F7F9;color:#00AAB7;}
+    .sub-tab.active{background:#00AAB7;color:#fff;border-color:#00AAB7;}
+
+    /* 二级视图Tab（本年评价汇总内：部门间互评/领导评价/年度汇总） */
+    .view-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:16px;}
+    .view-tab{padding:10px 20px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .view-tab:hover{color:#00AAB7;}
+    .view-tab.active{color:#00AAB7;border-bottom-color:#00AAB7;font-weight:600;}
+    .view-panel{display:none;}
+    .view-panel.active{display:block;}
+
+    /* 历史评价：年度卡片 */
+    .scheme-card{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
+    .scheme-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#00AAB7;}
+    .scheme-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+    .scheme-card-title{font-size:15px;font-weight:600;color:#1d2733;}
+    .scheme-card-meta{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:#5f7080;margin-top:8px;}
+    .scheme-card-meta span strong{color:#1d2733;font-weight:500;}
+    .scheme-card-summary{background:#f8fafc;border-radius:6px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:16px 24px;font-size:13px;}
+    .scheme-card-summary .summary-item{display:flex;align-items:baseline;gap:4px;}
+    .scheme-card-summary .summary-label{color:#5f7080;}
+    .scheme-card-summary .summary-value{color:#00AAB7;font-weight:600;}
+
+    /* 弹框 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 18px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="过程考核汇总"
+  data-desc="汇总各部门过程考核得分，支持部门间互评、领导评价、年度汇总三种视图查看。"
+  data-actions='<button class="btn" onclick="exportSummary()">导出汇总</button>'>
+
+  <style>
+    /* 权重信息条 */
+    .weight-info{
+      background:#fff;border:1px solid #dfe5ec;border-radius:8px;
+      padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:24px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    }
+    .weight-info .title{font-size:14px;color:#5f7080;}
+    .weight-item{display:flex;align-items:center;gap:8px;}
+    .weight-item .dot{width:10px;height:10px;border-radius:50%;}
+    .weight-item .dot.mutual{background:#3b82f6;}
+    .weight-item .dot.leader{background:#00AAB7;}
+    .weight-item span{font-size:13px;color:#1d2733;}
+    .weight-item strong{color:#00AAB7;font-weight:600;}
+
+    /* 统计卡片 */
+    .stats-row{display:flex;gap:16px;margin-bottom:16px;}
+    .stat-card{
+      flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;
+      padding:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    }
+    .stat-card .num{font-size:28px;font-weight:700;color:#00AAB7;}
+    .stat-card .label{font-size:13px;color:#8fa3b0;margin-top:4px;}
+
+    /* 得分样式 */
+    .score-highlight{background:#00AAB7;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+    .rank-badge{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:12px;font-weight:600;}
+    .rank-badge.gold{background:#fbbf24;color:#fff;}
+    .rank-badge.silver{background:#9ca3af;color:#fff;}
+    .rank-badge.bronze{background:#d97706;color:#fff;}
+    .rank-badge.normal{background:#eef3f6;color:#5f7080;}
+  </style>
+
+  <style>
+    /* 年度汇总表格样式 */
+    .annual-table-wrapper{
+      overflow-x:auto;background:#fff;border:1px solid #dfe5ec;border-radius:8px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    }
+    .annual-table{width:100%;min-width:1400px;border-collapse:collapse;font-size:13px;}
+    .annual-table th,.annual-table td{
+      padding:10px 12px;border:1px solid #eef3f6;text-align:center;
+      vertical-align:middle;word-wrap:break-word;
+    }
+    .annual-table th{
+      background:#f0f5f7;font-weight:600;color:#3d5266;
+      white-space:normal;line-height:1.4;
+    }
+    .annual-table td.row-header{
+      text-align:left;background:#f8fafc;font-weight:500;color:#5f7080;
+      white-space:nowrap;
+    }
+    .annual-table tr.section-header td{background:#E6F7F9;font-weight:600;color:#00838c;}
+    .annual-table tr.total-row td{background:#e8f7ef;font-weight:600;color:#137d52;}
+    .annual-table .num-cell{font-family:'SF Mono',Monaco,Consolas,monospace;color:#1d2733;}
+    /* 固定首列 */
+    .annual-table th:first-child,.annual-table td:first-child{
+      position:sticky;left:0;z-index:2;background:inherit;min-width:180px;
+    }
+    .annual-table th:nth-child(2),.annual-table td:nth-child(2){
+      position:sticky;left:180px;z-index:2;background:inherit;
+    }
+    .annual-table thead th:first-child,.annual-table thead th:nth-child(2){background:#f0f5f7;z-index:3;}
+  </style>
+
+  <!-- 主Tab切换：本年评价汇总 / 历史评价（一级） -->
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="current">本年评价汇总</div>
+    <div class="main-tab" data-tab="historyYear">历史评价</div>
+  </div>
+
+  <!-- ==================== 本年评价汇总 Tab ==================== -->
+  <div class="tab-panel active" id="panel-current">
+
+  <!-- 方案状态条 -->
+  <div class="scheme-status-bar">
+    <span class="title">2026年度过程考核汇总</span>
+    <span class="period">考核周期：2025年10月 - 2026年9月</span>
+    <a href="./perf-process-config.html" style="margin-left:auto;font-size:13px;color:#00AAB7;">查看考核配置 →</a>
+  </div>
+
+  <!-- 二级视图Tab：部门间互评 / 领导评价 / 年度汇总 -->
+  <div class="view-tabs">
+    <div class="view-tab active" data-view="mutual">部门间互评</div>
+    <div class="view-tab" data-view="leader">领导评价</div>
+    <div class="view-tab" data-view="annual">年度汇总</div>
+  </div>
+
+  <!-- ==================== 视图1: 部门间互评 ==================== -->
+  <div class="view-panel active" id="viewpanel-mutual">
+
+    <!-- 季度切换 -->
+    <div class="sub-tabs">
+      <div class="sub-tab" data-q="Q1">2025年10-12月</div>
+      <div class="sub-tab active" data-q="Q2">2026年1-3月</div>
+      <div class="sub-tab" data-q="Q3">2026年4-6月</div>
+      <div class="sub-tab" data-q="Q4">2026年7-9月</div>
+    </div>
+
+    <!-- 权重说明 -->
+    <div class="weight-info">
+      <span class="title">当前权重配置：</span>
+      <div class="weight-item">
+        <span class="dot mutual"></span>
+        <span>部门间互评</span>
+        <strong>30%</strong>
+      </div>
+      <span style="font-size:13px;color:#8fa3b0;margin-left:auto;">数据频次：每季度一次，共4次/年</span>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">10</div>
+        <div class="label">参与考核部门</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#16a36a;">10</div>
+        <div class="label">已完成互评</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">100.02</div>
+        <div class="label">平均得分（百分制）</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">30.01</div>
+        <div class="label">平均折算分（×30%）</div>
+      </div>
+    </div>
+
+    <!-- 部门间互评列表 -->
+    <section class="card table-card">
+      <table>
+        <thead><tr>
+          <th class="col-seq">排名</th>
+          <th>部门名称</th>
+          <th>互评得分<br><small style="font-weight:400;color:#8fa3b0;">（百分制）</small></th>
+          <th>折算分<br><small style="font-weight:400;color:#8fa3b0;">（×30%）</small></th>
+          <th class="col-action">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="col-seq"><span class="rank-badge gold">1</span></td>
+            <td>地质工程部</td>
+            <td>100.72</td>
+            <td><span class="score-highlight">30.22</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge silver">2</span></td>
+            <td>计划经营部</td>
+            <td>100.15</td>
+            <td><span class="score-highlight">30.05</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge bronze">3</span></td>
+            <td>地面建设工程部</td>
+            <td>100.03</td>
+            <td><span class="score-highlight">30.01</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">4</span></td>
+            <td>人力资源部（党委组织部）</td>
+            <td>100.02</td>
+            <td><span class="score-highlight">30.01</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">5</span></td>
+            <td>财务资产部</td>
+            <td>99.92</td>
+            <td><span class="score-highlight">29.98</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">6</span></td>
+            <td>党群工作部（纪委办公室）</td>
+            <td>99.84</td>
+            <td><span class="score-highlight">29.95</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">7</span></td>
+            <td>开发管理部</td>
+            <td>99.63</td>
+            <td><span class="score-highlight">29.89</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">8</span></td>
+            <td>生产指挥中心</td>
+            <td>99.62</td>
+            <td><span class="score-highlight">29.89</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">9</span></td>
+            <td>质量安全环保部</td>
+            <td>99.55</td>
+            <td><span class="score-highlight">29.87</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">10</span></td>
+            <td>办公室（党委办公室）</td>
+            <td>99.54</td>
+            <td><span class="score-highlight">29.86</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p class="hint" style="margin-top:16px;">
+      计算公式：部门互评得分 = 其他9个部门打分之和 ÷ 9；折算分 = 百分制得分 × 30%
+    </p>
+  </div>
+  <!-- ==================== 视图1: 部门间互评 结束 ==================== -->
+
+  <!-- ==================== 视图2: 领导评价 ==================== -->
+  <div class="view-panel" id="viewpanel-leader">
+
+    <!-- 评价批次切换 -->
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-batch="10-12">2025年10-12月</div>
+      <div class="sub-tab" data-batch="1-9">2026年1-9月</div>
+    </div>
+
+    <!-- 权重说明 -->
+    <div class="weight-info">
+      <span class="title">当前权重配置：</span>
+      <div class="weight-item">
+        <span class="dot leader"></span>
+        <span>领导评价</span>
+        <strong>70%</strong>
+      </div>
+      <span style="font-size:13px;color:#8fa3b0;margin-left:auto;">数据频次：一年2次（10-12月、1-9月）</span>
+    </div>
+
+    <!-- 评价频次说明 -->
+    <div class="notice" style="margin-bottom:16px;">
+      <strong>评价频次说明：</strong>领导评价一年进行2次，分别为上年10-12月（单独评价）和当年1-9月（合并评价）。领导角色权重：主要领导40% + 分管领导25% + 其他领导5%（部分部门可能禁用某层级）。
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">10</div>
+        <div class="label">参与考核部门</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#16a36a;">10</div>
+        <div class="label">已完成评价</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">104.50</div>
+        <div class="label">平均得分（百分制）</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">73.15</div>
+        <div class="label">平均折算分（×70%）</div>
+      </div>
+    </div>
+
+    <!-- 领导评价列表 -->
+    <section class="card table-card">
+      <table>
+        <thead><tr>
+          <th class="col-seq">排名</th>
+          <th>部门名称</th>
+          <th>主要领导<br><small style="font-weight:400;color:#8fa3b0;">（40%）</small></th>
+          <th>分管领导<br><small style="font-weight:400;color:#8fa3b0;">（25%）</small></th>
+          <th>其他领导<br><small style="font-weight:400;color:#8fa3b0;">（5%）</small></th>
+          <th>加权得分<br><small style="font-weight:400;color:#8fa3b0;">（百分制）</small></th>
+          <th>折算分<br><small style="font-weight:400;color:#8fa3b0;">（×70%）</small></th>
+          <th class="col-action">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="col-seq"><span class="rank-badge gold">1</span></td>
+            <td>生产指挥中心</td>
+            <td>110.00</td>
+            <td>108.00</td>
+            <td>105.00</td>
+            <td>107.50</td>
+            <td><span class="score-highlight">75.25</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge silver">2</span></td>
+            <td>办公室（党委办公室）</td>
+            <td>108.00</td>
+            <td>107.00</td>
+            <td>106.00</td>
+            <td>107.50</td>
+            <td><span class="score-highlight">75.25</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge bronze">3</span></td>
+            <td>开发管理部</td>
+            <td>108.00</td>
+            <td>106.00</td>
+            <td>108.00</td>
+            <td>107.33</td>
+            <td><span class="score-highlight">75.13</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">4</span></td>
+            <td>人力资源部（党委组织部）</td>
+            <td>107.00</td>
+            <td>106.00</td>
+            <td>105.00</td>
+            <td>106.33</td>
+            <td><span class="score-highlight">74.43</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">5</span></td>
+            <td>计划经营部</td>
+            <td>106.00</td>
+            <td>105.00</td>
+            <td style="color:#8fa3b0;">—</td>
+            <td>105.67</td>
+            <td><span class="score-highlight">73.97</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">6</span></td>
+            <td>质量安全环保部</td>
+            <td>105.00</td>
+            <td>104.00</td>
+            <td>104.00</td>
+            <td>104.50</td>
+            <td><span class="score-highlight">73.15</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">7</span></td>
+            <td>财务资产部</td>
+            <td>104.00</td>
+            <td>103.00</td>
+            <td>102.00</td>
+            <td>103.17</td>
+            <td><span class="score-highlight">72.22</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">8</span></td>
+            <td>党群工作部（纪委办公室）</td>
+            <td>103.00</td>
+            <td>102.50</td>
+            <td>103.00</td>
+            <td>102.83</td>
+            <td><span class="score-highlight">71.98</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">9</span></td>
+            <td>地质工程部</td>
+            <td>102.00</td>
+            <td>101.00</td>
+            <td>102.00</td>
+            <td>101.67</td>
+            <td><span class="score-highlight">71.17</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+          <tr>
+            <td class="col-seq"><span class="rank-badge normal">10</span></td>
+            <td>地面建设工程部</td>
+            <td>100.00</td>
+            <td>98.00</td>
+            <td>99.00</td>
+            <td>99.00</td>
+            <td><span class="score-highlight">69.30</span></td>
+            <td class="col-action"><a class="btn link">查看详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p class="hint" style="margin-top:16px;">
+      计算公式：加权得分 = 主要领导得分×(40/70) + 分管领导平均分×(25/70) + 其他领导平均分×(5/70)；折算分 = 加权得分 × 70%。计划经营部禁用"其他领导"层级。
+    </p>
+  </div>
+
+  <!-- ==================== 视图3: 年度汇总 ==================== -->
+  <div class="view-panel" id="viewpanel-annual">
+
+    <div class="weight-info" style="margin-bottom:16px;">
+      <span class="title">考核周期：</span>
+      <span style="font-size:14px;color:#1d2733;font-weight:500;">2025年10月 - 2026年9月</span>
+      <span style="margin-left:24px;font-size:13px;color:#8fa3b0;">
+        过程考核权重：部门间互评 30% + 领导评价 70%
+      </span>
+    </div>
+
+    <!-- 评价频次说明 -->
+    <div class="notice" style="margin-bottom:16px;">
+      <strong>评价频次说明：</strong>部门间互评每季度一次（共4次）；领导评价一年两次（2025年10-12月单独评价，2026年1-9月合并评价）。年度过程考核得分 = (10-12月小计 + 1-9月小计) ÷ 2
+    </div>
+
+    <!-- 年度汇总表格 -->
+    <div class="annual-table-wrapper">
+      <table class="annual-table">
+        <thead>
+          <tr>
+            <th style="min-width:180px;text-align:left;">项目</th>
+            <th style="min-width:70px;">挂钩<br>权重</th>
+            <th style="min-width:90px;">办公室<br>（党委办公室）</th>
+            <th style="min-width:70px;">计划<br>经营部</th>
+            <th style="min-width:70px;">财务<br>资产部</th>
+            <th style="min-width:100px;">人力资源部<br>（党委组织部）</th>
+            <th style="min-width:80px;">质量安全<br>环保部</th>
+            <th style="min-width:70px;">开发<br>管理部</th>
+            <th style="min-width:70px;">地质<br>工程部</th>
+            <th style="min-width:80px;">地面建设<br>工程部</th>
+            <th style="min-width:90px;">党群工作部<br>（纪委办公室）</th>
+            <th style="min-width:70px;">生产<br>指挥中心</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ========== 2025年10-12月 过程考核 ========== -->
+          <tr class="section-header">
+            <td colspan="12" style="text-align:left;padding-left:12px;background:#f0f5f7;color:#3d5266;">2025年10-12月 过程考核</td>
+          </tr>
+          <tr>
+            <td class="row-header" rowspan="2">部门间互评</td>
+            <td>百分制</td>
+            <td class="num-cell">111.02</td>
+            <td class="num-cell">99.60</td>
+            <td class="num-cell">99.74</td>
+            <td class="num-cell">111.02</td>
+            <td class="num-cell">99.66</td>
+            <td class="num-cell">99.66</td>
+            <td class="num-cell">100.24</td>
+            <td class="num-cell">100.26</td>
+            <td class="num-cell">99.72</td>
+            <td class="num-cell">100.71</td>
+          </tr>
+          <tr>
+            <td>折算30%</td>
+            <td class="num-cell">33.31</td>
+            <td class="num-cell">29.88</td>
+            <td class="num-cell">29.92</td>
+            <td class="num-cell">33.31</td>
+            <td class="num-cell">29.90</td>
+            <td class="num-cell">29.90</td>
+            <td class="num-cell">30.07</td>
+            <td class="num-cell">30.08</td>
+            <td class="num-cell">29.92</td>
+            <td class="num-cell">30.21</td>
+          </tr>
+          <tr>
+            <td class="row-header" rowspan="2">公司领导评价</td>
+            <td>百分制</td>
+            <td class="num-cell">107.50</td>
+            <td class="num-cell">105.67</td>
+            <td class="num-cell">103.17</td>
+            <td class="num-cell">106.33</td>
+            <td class="num-cell">104.50</td>
+            <td class="num-cell">107.33</td>
+            <td class="num-cell">101.67</td>
+            <td class="num-cell">99.00</td>
+            <td class="num-cell">102.83</td>
+            <td class="num-cell">107.33</td>
+          </tr>
+          <tr>
+            <td>折算70%</td>
+            <td class="num-cell">75.25</td>
+            <td class="num-cell">73.97</td>
+            <td class="num-cell">72.22</td>
+            <td class="num-cell">74.43</td>
+            <td class="num-cell">73.15</td>
+            <td class="num-cell">75.13</td>
+            <td class="num-cell">71.17</td>
+            <td class="num-cell">69.30</td>
+            <td class="num-cell">71.98</td>
+            <td class="num-cell">75.13</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td class="row-header" style="font-weight:600;">小计</td>
+            <td>—</td>
+            <td class="num-cell" style="font-weight:600;">108.56</td>
+            <td class="num-cell" style="font-weight:600;">103.85</td>
+            <td class="num-cell" style="font-weight:600;">102.14</td>
+            <td class="num-cell" style="font-weight:600;">107.74</td>
+            <td class="num-cell" style="font-weight:600;">103.05</td>
+            <td class="num-cell" style="font-weight:600;">105.03</td>
+            <td class="num-cell" style="font-weight:600;">101.24</td>
+            <td class="num-cell" style="font-weight:600;">99.38</td>
+            <td class="num-cell" style="font-weight:600;">101.90</td>
+            <td class="num-cell" style="font-weight:600;">105.34</td>
+          </tr>
+
+          <!-- ========== 2026年1-9月 过程考核 ========== -->
+          <tr class="section-header">
+            <td colspan="12" style="text-align:left;padding-left:12px;background:#f0f5f7;color:#3d5266;">2026年1-9月 过程考核</td>
+          </tr>
+          <tr>
+            <td class="row-header" rowspan="2">部门间互评（1-3月）</td>
+            <td>百分制</td>
+            <td class="num-cell">99.54</td>
+            <td class="num-cell">100.15</td>
+            <td class="num-cell">99.92</td>
+            <td class="num-cell">100.02</td>
+            <td class="num-cell">99.55</td>
+            <td class="num-cell">99.63</td>
+            <td class="num-cell">100.72</td>
+            <td class="num-cell">100.03</td>
+            <td class="num-cell">99.84</td>
+            <td class="num-cell">99.62</td>
+          </tr>
+          <tr>
+            <td>折算30%</td>
+            <td class="num-cell">29.86</td>
+            <td class="num-cell">30.05</td>
+            <td class="num-cell">29.98</td>
+            <td class="num-cell">30.01</td>
+            <td class="num-cell">29.87</td>
+            <td class="num-cell">29.89</td>
+            <td class="num-cell">30.22</td>
+            <td class="num-cell">30.01</td>
+            <td class="num-cell">29.95</td>
+            <td class="num-cell">29.89</td>
+          </tr>
+          <tr>
+            <td class="row-header" rowspan="2">部门间互评（4-6月）</td>
+            <td>百分制</td>
+            <td class="num-cell">100.28</td>
+            <td class="num-cell">99.87</td>
+            <td class="num-cell">100.27</td>
+            <td class="num-cell">100.96</td>
+            <td class="num-cell">99.69</td>
+            <td class="num-cell">100.29</td>
+            <td class="num-cell">100.35</td>
+            <td class="num-cell">100.00</td>
+            <td class="num-cell">100.14</td>
+            <td class="num-cell">100.08</td>
+          </tr>
+          <tr>
+            <td>折算30%</td>
+            <td class="num-cell">30.08</td>
+            <td class="num-cell">29.96</td>
+            <td class="num-cell">30.08</td>
+            <td class="num-cell">30.29</td>
+            <td class="num-cell">29.91</td>
+            <td class="num-cell">30.09</td>
+            <td class="num-cell">30.11</td>
+            <td class="num-cell">30.00</td>
+            <td class="num-cell">30.04</td>
+            <td class="num-cell">30.02</td>
+          </tr>
+          <tr>
+            <td class="row-header" rowspan="2">部门间互评（7-9月）</td>
+            <td>百分制</td>
+            <td class="num-cell">111.74</td>
+            <td class="num-cell">99.93</td>
+            <td class="num-cell">100.25</td>
+            <td class="num-cell">111.10</td>
+            <td class="num-cell">100.08</td>
+            <td class="num-cell">99.43</td>
+            <td class="num-cell">100.76</td>
+            <td class="num-cell">100.55</td>
+            <td class="num-cell">99.81</td>
+            <td class="num-cell">100.14</td>
+          </tr>
+          <tr>
+            <td>折算30%</td>
+            <td class="num-cell">33.52</td>
+            <td class="num-cell">29.98</td>
+            <td class="num-cell">30.08</td>
+            <td class="num-cell">33.33</td>
+            <td class="num-cell">30.02</td>
+            <td class="num-cell">29.83</td>
+            <td class="num-cell">30.23</td>
+            <td class="num-cell">30.17</td>
+            <td class="num-cell">29.94</td>
+            <td class="num-cell">30.04</td>
+          </tr>
+
+          <tr>
+            <td class="row-header" rowspan="2">公司领导评价（1-9月）</td>
+            <td>百分制</td>
+            <td class="num-cell">106.50</td>
+            <td class="num-cell">103.33</td>
+            <td class="num-cell">103.00</td>
+            <td class="num-cell">105.50</td>
+            <td class="num-cell">104.83</td>
+            <td class="num-cell">106.33</td>
+            <td class="num-cell">101.17</td>
+            <td class="num-cell">98.50</td>
+            <td class="num-cell">101.83</td>
+            <td class="num-cell">108.17</td>
+          </tr>
+          <tr>
+            <td>折算70%</td>
+            <td class="num-cell">74.55</td>
+            <td class="num-cell">72.33</td>
+            <td class="num-cell">72.10</td>
+            <td class="num-cell">73.85</td>
+            <td class="num-cell">73.38</td>
+            <td class="num-cell">74.43</td>
+            <td class="num-cell">70.82</td>
+            <td class="num-cell">68.95</td>
+            <td class="num-cell">71.98</td>
+            <td class="num-cell">75.72</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td class="row-header" style="font-weight:600;">小计</td>
+            <td>—</td>
+            <td class="num-cell" style="font-weight:600;">105.44</td>
+            <td class="num-cell" style="font-weight:600;">101.99</td>
+            <td class="num-cell" style="font-weight:600;">101.86</td>
+            <td class="num-cell" style="font-weight:600;">104.91</td>
+            <td class="num-cell" style="font-weight:600;">102.81</td>
+            <td class="num-cell" style="font-weight:600;">103.71</td>
+            <td class="num-cell" style="font-weight:600;">100.94</td>
+            <td class="num-cell" style="font-weight:600;">99.18</td>
+            <td class="num-cell" style="font-weight:600;">101.07</td>
+            <td class="num-cell" style="font-weight:600;">104.88</td>
+          </tr>
+
+          <!-- ========== 年度汇总 ========== -->
+          <tr class="section-header">
+            <td colspan="12" style="text-align:left;padding-left:12px;background:#E6F7F9;color:#00838c;">年度过程考核汇总</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2" style="text-align:left;padding-left:12px;font-weight:700;">年度过程考核得分</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">107.00</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">102.92</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">102.00</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">106.33</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">102.93</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">104.37</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">101.09</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">99.28</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">101.49</td>
+            <td class="num-cell" style="font-weight:700;color:#137d52;">105.11</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="hint" style="margin-top:16px;">
+      计算说明：部门间互评得分 = 其他9个部门打分之和 ÷ 9；领导评价 = 主要领导(40%) + 分管领导(25%) + 其他领导(5%)，同层级多人取平均；年度得分 = (10-12月小计 + 1-9月小计) ÷ 2
+    </p>
+  </div>
+  <!-- ==================== 视图3: 年度汇总 结束 ==================== -->
+
+  </div>
+  <!-- ==================== 本年评价汇总 Tab 结束 ==================== -->
+
+  <!-- ==================== 历史评价 Tab（一级，与本年评价汇总并列） ==================== -->
+  <div class="tab-panel" id="panel-historyYear">
+
+    <div class="notice" style="margin-bottom:14px;">
+      历史评价归档往年过程考核结果，展示口径与本年度一致（部门间互评/领导评价/年度汇总三视图），仅供查阅溯源，不可编辑。
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar" style="margin-bottom:14px;">
+      <label class="field"><span>考核年度</span>
+        <select id="historyYearFilter" style="width:120px;">
+          <option value="">全部</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </label>
+      <button class="btn sm primary" onclick="filterHistoryYears()">查询</button>
+      <button class="btn sm" onclick="resetHistoryYearFilter()">重置</button>
+    </div>
+
+    <div id="historyYearList">
+      <div class="scheme-card" data-year="2025">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2025年度 过程考核汇总历史</div>
+            <div class="scheme-card-meta">
+              <span>考核周期：<strong>2024年10月 - 2025年9月</strong></span>
+              <span>权重配置：<strong>部门间互评30% + 领导评价70%</strong></span>
+            </div>
+          </div>
+          <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">参与部门：</span><span class="summary-value">10个</span></div>
+          <div class="summary-item"><span class="summary-label">年度平均得分：</span><span class="summary-value">102.35分</span></div>
+          <div class="summary-item"><span class="summary-label">排名第一：</span><span class="summary-value">生产指挥中心</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn sm" onclick="showHistoryYearDetail('2025')">查看详情</button>
+          <button class="btn sm" onclick="exportHistoryYear('2025')">导出</button>
+        </div>
+      </div>
+
+      <div class="scheme-card" data-year="2024">
+        <div class="scheme-card-header">
+          <div>
+            <div class="scheme-card-title">2024年度 过程考核汇总历史</div>
+            <div class="scheme-card-meta">
+              <span>考核周期：<strong>2023年10月 - 2024年9月</strong></span>
+              <span>权重配置：<strong>部门间互评25% + 领导评价75%</strong></span>
+            </div>
+          </div>
+          <span class="status" style="background:#f1f5f9;color:#64748b;">已归档</span>
+        </div>
+        <div class="scheme-card-summary">
+          <div class="summary-item"><span class="summary-label">参与部门：</span><span class="summary-value">10个</span></div>
+          <div class="summary-item"><span class="summary-label">年度平均得分：</span><span class="summary-value">101.68分</span></div>
+          <div class="summary-item"><span class="summary-label">排名第一：</span><span class="summary-value">办公室（党委办公室）</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn sm" onclick="showHistoryYearDetail('2024')">查看详情</button>
+          <button class="btn sm" onclick="exportHistoryYear('2024')">导出</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="historyYearEmpty" style="display:none;text-align:center;padding:60px 20px;color:#5f7080;">
+      <div style="font-size:48px;margin-bottom:16px;">📋</div>
+      <div style="font-size:14px;">暂无符合条件的历史评价记录</div>
+    </div>
+  </div>
+
+  <!-- ==================== 历史年度详情弹框（只读三视图） ==================== -->
+  <div class="modal-mask" id="historyYearDetailModal">
+    <div class="modal-box" style="width:94vw;max-width:1400px;max-height:92vh;overflow-y:auto;">
+      <h3 id="historyYearDetailTitle">2025年度 过程考核汇总历史（只读）</h3>
+
+      <!-- 历史详情内的三视图子Tab -->
+      <div class="main-tabs" style="margin-bottom:0;">
+        <div class="main-tab active" data-htab="mutual">部门间互评</div>
+        <div class="main-tab" data-htab="leader">领导评价</div>
+        <div class="main-tab" data-htab="annual">年度汇总</div>
+      </div>
+
+      <!-- 只读-部门间互评 -->
+      <div class="tab-panel active" id="hpanel-mutual" style="padding-top:16px;">
+        <div class="sub-tabs">
+          <div class="sub-tab active" data-hq="Q1">2024年10-12月</div>
+          <div class="sub-tab" data-hq="Q2">2025年1-3月</div>
+          <div class="sub-tab" data-hq="Q3">2025年4-6月</div>
+          <div class="sub-tab" data-hq="Q4">2025年7-9月</div>
+        </div>
+        <section class="card table-card">
+          <table>
+            <thead><tr>
+              <th class="col-seq">排名</th>
+              <th>部门名称</th>
+              <th>互评得分<br><small style="font-weight:400;color:#8fa3b0;">（百分制）</small></th>
+              <th>折算分<br><small style="font-weight:400;color:#8fa3b0;">（×30%）</small></th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="col-seq"><span class="rank-badge gold">1</span></td><td>生产指挥中心</td><td>101.02</td><td><span class="score-highlight">30.31</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge silver">2</span></td><td>地质工程部</td><td>100.72</td><td><span class="score-highlight">30.22</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge bronze">3</span></td><td>计划经营部</td><td>100.15</td><td><span class="score-highlight">30.05</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">4</span></td><td>人力资源部（党委组织部）</td><td>100.02</td><td><span class="score-highlight">30.01</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">5</span></td><td>财务资产部</td><td>99.92</td><td><span class="score-highlight">29.98</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">6</span></td><td>党群工作部（纪委办公室）</td><td>99.84</td><td><span class="score-highlight">29.95</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">7</span></td><td>地面建设工程部</td><td>99.72</td><td><span class="score-highlight">29.92</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">8</span></td><td>开发管理部</td><td>99.66</td><td><span class="score-highlight">29.90</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">9</span></td><td>质量安全环保部</td><td>99.55</td><td><span class="score-highlight">29.87</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">10</span></td><td>办公室（党委办公室）</td><td>99.54</td><td><span class="score-highlight">29.86</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- 只读-领导评价 -->
+      <div class="tab-panel" id="hpanel-leader" style="padding-top:16px;">
+        <div class="sub-tabs">
+          <div class="sub-tab active" data-hb="10-12">2024年10-12月</div>
+          <div class="sub-tab" data-hb="1-9">2025年1-9月</div>
+        </div>
+        <section class="card table-card">
+          <table>
+            <thead><tr>
+              <th class="col-seq">排名</th>
+              <th>部门名称</th>
+              <th>主要领导<br><small style="font-weight:400;color:#8fa3b0;">（40%）</small></th>
+              <th>分管领导<br><small style="font-weight:400;color:#8fa3b0;">（25%）</small></th>
+              <th>其他领导<br><small style="font-weight:400;color:#8fa3b0;">（5%）</small></th>
+              <th>加权得分<br><small style="font-weight:400;color:#8fa3b0;">（百分制）</small></th>
+              <th>折算分<br><small style="font-weight:400;color:#8fa3b0;">（×70%）</small></th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="col-seq"><span class="rank-badge gold">1</span></td><td>生产指挥中心</td><td>110.00</td><td>108.00</td><td>105.00</td><td>107.50</td><td><span class="score-highlight">75.25</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge silver">2</span></td><td>办公室（党委办公室）</td><td>108.00</td><td>107.00</td><td>106.00</td><td>107.50</td><td><span class="score-highlight">75.25</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge bronze">3</span></td><td>开发管理部</td><td>108.00</td><td>106.00</td><td>108.00</td><td>107.33</td><td><span class="score-highlight">75.13</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">4</span></td><td>人力资源部（党委组织部）</td><td>107.00</td><td>106.00</td><td>105.00</td><td>106.33</td><td><span class="score-highlight">74.43</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">5</span></td><td>计划经营部</td><td>106.00</td><td>105.00</td><td style="color:#8fa3b0;">—</td><td>105.67</td><td><span class="score-highlight">73.97</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">6</span></td><td>质量安全环保部</td><td>105.00</td><td>104.00</td><td>104.00</td><td>104.50</td><td><span class="score-highlight">73.15</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">7</span></td><td>财务资产部</td><td>104.00</td><td>103.00</td><td>102.00</td><td>103.17</td><td><span class="score-highlight">72.22</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">8</span></td><td>党群工作部（纪委办公室）</td><td>103.00</td><td>102.50</td><td>103.00</td><td>102.83</td><td><span class="score-highlight">71.98</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">9</span></td><td>地质工程部</td><td>102.00</td><td>101.00</td><td>102.00</td><td>101.67</td><td><span class="score-highlight">71.17</span></td></tr>
+              <tr><td class="col-seq"><span class="rank-badge normal">10</span></td><td>地面建设工程部</td><td>100.00</td><td>98.00</td><td>99.00</td><td>99.00</td><td><span class="score-highlight">69.30</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- 只读-年度汇总 -->
+      <div class="tab-panel" id="hpanel-annual" style="padding-top:16px;">
+        <div class="annual-table-wrapper">
+          <table class="annual-table">
+            <thead>
+              <tr>
+                <th style="min-width:180px;text-align:left;">项目</th>
+                <th style="min-width:70px;">挂钩<br>权重</th>
+                <th style="min-width:90px;">办公室<br>（党委办公室）</th>
+                <th style="min-width:70px;">计划<br>经营部</th>
+                <th style="min-width:70px;">财务<br>资产部</th>
+                <th style="min-width:100px;">人力资源部<br>（党委组织部）</th>
+                <th style="min-width:80px;">质量安全<br>环保部</th>
+                <th style="min-width:70px;">开发<br>管理部</th>
+                <th style="min-width:70px;">地质<br>工程部</th>
+                <th style="min-width:80px;">地面建设<br>工程部</th>
+                <th style="min-width:90px;">党群工作部<br>（纪委办公室）</th>
+                <th style="min-width:70px;">生产<br>指挥中心</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="section-header">
+                <td colspan="12" style="text-align:left;padding-left:12px;background:#E6F7F9;color:#00838c;">年度过程考核汇总</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="2" style="text-align:left;padding-left:12px;font-weight:700;">年度过程考核得分</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">104.10</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">101.50</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">100.80</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">105.20</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">100.60</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">102.90</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">99.50</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">97.80</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">100.10</td>
+                <td class="num-cell" style="font-weight:700;color:#137d52;">106.60</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:16px;">
+          该年度详细季度/批次计算过程可切换「部门间互评」「领导评价」Tab查看百分制原始得分与折算分；年度得分 = (10-12月小计 + 1-9月小计) ÷ 2
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('historyYearDetailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// 一级主Tab切换：本年评价汇总 / 历史评价
+document.querySelectorAll('.main-tabs').forEach(function(tabBar){
+  // 仅绑定页面顶层一级Tab（不含历史详情弹框内的三视图Tab，其 data-htab 属性不同，单独处理）
+  if(tabBar.closest('#historyYearDetailModal')) return;
+  tabBar.querySelectorAll('.main-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var targetId = 'panel-' + this.dataset.tab;
+      tabBar.querySelectorAll('.main-tab').forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      document.querySelectorAll('#panel-current, #panel-historyYear').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById(targetId).classList.add('active');
+    });
+  });
+});
+
+// 二级视图Tab切换（本年评价汇总内：部门间互评/领导评价/年度汇总）
+document.querySelectorAll('.view-tabs').forEach(function(tabBar){
+  tabBar.querySelectorAll('.view-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var targetId = 'viewpanel-' + this.dataset.view;
+      tabBar.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      document.querySelectorAll('#viewpanel-mutual, #viewpanel-leader, #viewpanel-annual').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById(targetId).classList.add('active');
+    });
+  });
+});
+
+// 季度/批次子Tab切换（包含历史详情弹框内的子Tab）
+document.querySelectorAll('.sub-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var parent = this.closest('.sub-tabs');
+    parent.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.remove('active'); });
+    this.classList.add('active');
+    // 原型演示用，实际数据切换需要刷新表格
+  });
+});
+
+// 导出功能占位
+function exportSummary() {
+  alert('导出功能：将汇总数据导出为Excel文件');
+}
+
+// 弹框关闭
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target === m) m.classList.remove('show'); });
+});
+
+// ========== 历史评价：年度筛选 ==========
+function filterHistoryYears(){
+  var year = document.getElementById('historyYearFilter').value;
+  var cards = document.querySelectorAll('#historyYearList .scheme-card');
+  var visibleCount = 0;
+  cards.forEach(function(card){
+    var show = !year || card.dataset.year === year;
+    card.style.display = show ? '' : 'none';
+    if(show) visibleCount++;
+  });
+  document.getElementById('historyYearEmpty').style.display = visibleCount === 0 ? 'block' : 'none';
+}
+function resetHistoryYearFilter(){
+  document.getElementById('historyYearFilter').value = '';
+  filterHistoryYears();
+}
+function exportHistoryYear(year){
+  alert('导出功能：将' + year + '年度过程考核汇总数据导出为Excel文件');
+}
+
+// ========== 历史评价：年度详情弹框（只读三视图） ==========
+function showHistoryYearDetail(year){
+  document.getElementById('historyYearDetailTitle').textContent = year + '年度 过程考核汇总历史（只读）';
+  // 重置内部三视图Tab为默认第一个
+  var modal = document.getElementById('historyYearDetailModal');
+  modal.querySelectorAll('.main-tab').forEach(function(t,i){ t.classList.toggle('active', i===0); });
+  modal.querySelectorAll('.tab-panel').forEach(function(p,i){ p.classList.toggle('active', i===0); });
+  modal.classList.add('show');
+}
+
+// 历史详情弹框内的三视图Tab切换（部门间互评/领导评价/年度汇总）
+(function(){
+  var modal = document.getElementById('historyYearDetailModal');
+  if(!modal) return;
+  modal.querySelectorAll('.main-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var targetId = 'hpanel-' + this.dataset.htab;
+      modal.querySelectorAll('.main-tab').forEach(function(t){ t.classList.remove('active'); });
+      this.classList.add('active');
+      modal.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById(targetId).classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

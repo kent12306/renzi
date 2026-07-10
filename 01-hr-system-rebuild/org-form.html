@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新增部门</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="org">
+  <main class="page-content" data-title="新增部门" data-desc="填写部门基本信息，保存后可在部门管理页维护该部门下的岗位。"
+    data-actions='<a class="btn" href="./org-manage.html">返回</a>'>
+    <section class="card form-page">
+      <div class="form-grid">
+        <label><span class="label-text"><span class="required">*</span> 上级部门</span>
+          <select>
+            <option>请选择</option>
+            <option>西南油气田</option>
+            <option>长宁</option>
+            <option>研发部</option>
+            <option>设计部</option>
+            <option>外包</option>
+          </select>
+        </label>
+        <label><span class="label-text"><span class="required">*</span> 部门名称</span>
+          <input placeholder="请输入">
+        </label>
+        <label class="wide">描述
+          <textarea placeholder="请输入部门描述"></textarea>
+        </label>
+      </div>
+      <div class="page-actions">
+        <a class="btn" href="./org-manage.html">取消</a>
+        <a class="btn primary" href="./org-manage.html">保存</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>员工绩效考核结果统计表</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .notice-tip{padding:12px 14px;border:1px solid #f4d898;background:#fff9e8;color:#75540d;border-radius:8px;margin-bottom:16px;font-size:13px;line-height:1.6;}
+
+    .quota-bar{display:flex;align-items:center;justify-content:space-between;background:#e6f7f9;border:1px solid #b3e6ea;border-radius:8px;padding:12px 18px;margin-bottom:16px;}
+    .quota-bar .txt{font-size:13px;color:#00838c;}
+    .quota-bar .txt strong{font-size:16px;color:#00AAB7;}
+
+    .score-bar{display:flex;align-items:center;gap:8px;}
+    .score-bar .bar{flex:1;height:8px;background:#eef3f6;border-radius:4px;overflow:hidden;min-width:60px;}
+    .score-bar .bar .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#00AAB7,#38bec9);}
+    .score-bar .value{width:40px;text-align:right;font-weight:600;color:#1e2b3a;font-variant-numeric:tabular-nums;}
+
+    .rank-badge{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;font-size:11px;font-weight:600;background:#eef3f6;color:#5f7080;}
+    .rank-badge.top{background:#fbbf24;color:#fff;}
+
+    .grade-select{height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 8px;font:inherit;background:#fff;width:80px;}
+    .grade-select:focus{outline:none;border-color:#00AAB7;box-shadow:0 0 0 2px rgba(0,170,183,.15);}
+    .grade-select.grade-A{color:#137d52;font-weight:600;}
+    .grade-select.grade-B{color:#00838c;font-weight:600;}
+    .grade-select.grade-C{color:#b7791f;font-weight:600;}
+    .grade-select.grade-D{color:#d14343;font-weight:600;}
+
+    .status-locked{color:#8fa3b0;font-size:12px;}
+
+    .remark-input{width:100%;height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 8px;font:inherit;box-sizing:border-box;}
+    .remark-input:focus{outline:none;border-color:#00AAB7;box-shadow:0 0 0 2px rgba(0,170,183,.15);}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="员工绩效考核结果统计表"
+  data-desc="部门负责人为本部门员工评定业绩档次（ABCD），综合绩效分只读引用个人业绩合同打分结果，一年评定一次。"
+  data-actions='<button class="btn primary" onclick="publishAssessment()">发布本部门评定结果</button>'>
+
+  <div class="notice-tip">
+    评定说明：<strong>综合绩效</strong>（分值）只读引用「个人业绩合同」领导打分产出的综合绩效分；<strong>绩效等级（ABCD）</strong>由部门负责人参考综合绩效分排名人工评定，系统不自动派生。评定时机为该部门全员个人业绩合同均进入"结果确认"阶段之后，一年一次。发布后锁定，不可再修改。
+  </div>
+
+  <div class="filter-bar">
+    <div class="field"><span>年度</span>
+      <select style="width:100px;"><option>2025</option><option>2024</option></select>
+    </div>
+    <div class="field"><span>部门</span>
+      <select style="width:200px;">
+        <option selected>人力资源部（党委组织部）</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+        <option>财务资产部</option>
+        <option>质量安全环保部</option>
+        <option>开发管理部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+      </select>
+    </div>
+    <button class="btn">查询</button>
+    <button class="btn">重置</button>
+  </div>
+
+  <!-- A档参考配额提示 -->
+  <div class="quota-bar">
+    <span class="txt">本部门人数：<strong>6</strong> 人　　A档参考人数（部门人数 × 0.25）：<strong>1.500</strong> 人</span>
+    <span class="txt" style="color:#75540d;">提示：仅作参考，不强制拦截，配额允许为小数</span>
+  </div>
+
+  <section class="card table-card">
+    <table>
+      <thead><tr>
+        <th class="col-seq">序号</th>
+        <th>姓名</th>
+        <th>岗位</th>
+        <th>员工类别</th>
+        <th>综合绩效（分值）<br><small style="font-weight:400;color:#8fa3b0;">只读引用个人业绩合同</small></th>
+        <th>排名</th>
+        <th>绩效等级（ABCD）</th>
+        <th>备注</th>
+      </tr></thead>
+      <tbody id="ratingTableBody">
+        <tr>
+          <td class="col-seq">1</td>
+          <td>张明</td>
+          <td>劳动组织、社保公积金管理</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:98%;"></div></div><span class="value">9.80</span></div></td>
+          <td><span class="rank-badge top">1</span></td>
+          <td><select class="grade-select grade-A"><option value="A" selected>A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td>
+          <td>李芳</td>
+          <td>培训、员工管理</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:95%;"></div></div><span class="value">9.50</span></div></td>
+          <td><span class="rank-badge">2</span></td>
+          <td><select class="grade-select grade-B"><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td>
+          <td>王强</td>
+          <td>党组织建设</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:93%;"></div></div><span class="value">9.30</span></div></td>
+          <td><span class="rank-badge">3</span></td>
+          <td><select class="grade-select grade-B"><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td>
+          <td>赵敏</td>
+          <td>劳动组织、社保公积金管理</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:90%;"></div></div><span class="value">9.00</span></div></td>
+          <td><span class="rank-badge">4</span></td>
+          <td><select class="grade-select grade-B"><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td>
+          <td>陈刚</td>
+          <td>培训、员工管理</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:88%;"></div></div><span class="value">8.80</span></div></td>
+          <td><span class="rank-badge">5</span></td>
+          <td><select class="grade-select grade-C"><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td>
+          <td>周晓</td>
+          <td>党组织建设</td>
+          <td>一般管理人员</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:85%;"></div></div><span class="value">8.50</span></div></td>
+          <td><span class="rank-badge">6</span></td>
+          <td><select class="grade-select grade-C"><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option></select></td>
+          <td><input class="remark-input" placeholder="选填"></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="hint" style="margin-top:12px;color:#8fa3b0;font-size:13px;">
+    说明：本表按综合绩效分从高到低排序，辅助部门负责人参考评定绩效等级。发布后评定结果只读，供绩效兑现表引用。
+  </p>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script>
+document.querySelectorAll('.grade-select').forEach(function(sel){
+  sel.addEventListener('change', function(){
+    this.className = 'grade-select grade-' + this.value;
+  });
+});
+
+function publishAssessment(){
+  if (confirm('确认发布「人力资源部（党委组织部）」2025年度的绩效等级评定结果？发布后锁定，不可再修改，且将作为绩效兑现表的业绩档次数据来源。')) {
+    alert('发布成功，本部门2025年度绩效等级评定结果已锁定。');
+  }
+}
+</script>
+</body>
+</html>

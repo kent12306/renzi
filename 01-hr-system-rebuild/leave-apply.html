@@ -1,0 +1,1725 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>请假申请</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .balance-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .bal-card { background:#fff; border:1px solid #eef3f6; border-radius:8px; padding:12px 18px; min-width:130px; }
+    .bal-card .val { font-size:20px; font-weight:700; color:#1d2733; }
+    .bal-card .lbl { font-size:12px; color:#aab5be; margin-top:2px; }
+    .modal-mask { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:2000; align-items:center; justify-content:center; }
+    .modal-mask.show { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:24px 28px; width:520px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .modal-box h3 { font-size:15px; font-weight:600; color:#1d2733; margin-bottom:16px; }
+    .mrow { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; font-size:14px; color:#5f7080; }
+    .mrow input, .mrow select, .mrow textarea { border:1px solid #dfe5ec; border-radius:6px; padding:8px 10px; font:inherit; box-sizing:border-box; width:100%; }
+    .mrow input[type=date], .mrow select { height:34px; padding:0 10px; }
+    .mrow input:disabled { height:34px; background:#f5f7fa; color:#64748b; }
+    .mrow textarea { min-height:80px; resize:vertical; }
+    /* checkbox/number 类输入不套用 width:100%，避免被拉伸铺满整行 */
+    .mrow input[type=checkbox] { width:16px; height:16px; flex-shrink:0; padding:0; border-radius:4px; accent-color:#00AAB7; }
+    .mrow input[type=number] { width:auto; }
+    .mrow-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    /* 发起申请弹框：加宽 + 左右两栏布局 */
+    .modal-box.apply-wide { width:1040px; max-width:96vw; }
+    .apply-body { display:flex; gap:32px; align-items:flex-start; }
+    .apply-left { flex:1.6; min-width:0; }
+    .apply-right { flex:1; min-width:0; border-left:1px solid #eef3f6; padding-left:32px; }
+    @media (max-width:1100px){
+      .modal-box.apply-wide { width:96vw; }
+      .apply-body { flex-direction:column; }
+      .apply-right { border-left:none; padding-left:0; border-top:1px solid #eef3f6; padding-top:16px; }
+    }
+    /* 统一 focus 态：主题色边框 + 浅色光晕（DESIGN.md 规范，替代浏览器默认蓝色描边） */
+    .mrow input:focus, .mrow select:focus, .mrow textarea:focus,
+    .seg-table input:focus, .seg-table select:focus {
+      border-color:#00AAB7; outline:none; box-shadow:0 0 0 2px rgba(0,170,183,.15);
+    }
+    .modal-emp { background:#e6f7f9; border:1px solid #b3e6ea; border-radius:8px; padding:11px 14px; margin-bottom:16px; font-size:13px; color:#5f7080; display:flex; gap:20px; flex-wrap:wrap; }
+    .modal-emp strong { color:#1a2533; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+    .approval-flow { display:flex; align-items:center; gap:6px; font-size:12px; color:#5f7080; flex-wrap:wrap; margin-top:6px; }
+    .flow-step { background:#f5f7fa; border:1px solid #dfe5ec; border-radius:999px; padding:3px 12px; }
+    .flow-step.active { background:#e6f7f9; border-color:#b3e6ea; color:#007a84; }
+    .flow-step.done { background:#e8f7ef; border-color:#b7e4cb; color:#137d52; }
+    .flow-arrow { color:#8fa3b0; }
+    /* 竖向审批流程节点 */
+    .approval-flow-vertical { display:flex; flex-direction:column; gap:0; margin-top:8px; }
+    .flow-node { display:flex; align-items:flex-start; gap:12px; position:relative; padding-bottom:16px; }
+    .flow-node:last-child { padding-bottom:0; }
+    .flow-node::before { content:''; position:absolute; left:11px; top:24px; bottom:0; width:2px; background:#dfe5ec; }
+    .flow-node:last-child::before { display:none; }
+    .flow-node-icon { width:24px; height:24px; border-radius:50%; background:#f5f7fa; border:2px solid #dfe5ec; display:flex; align-items:center; justify-content:center; font-size:12px; color:#8fa3b0; flex-shrink:0; z-index:1; }
+    .flow-node.active .flow-node-icon { background:#e6f7f9; border-color:#00AAB7; color:#00AAB7; }
+    .flow-node.done .flow-node-icon { background:#e8f7ef; border-color:#16a36a; color:#16a36a; }
+    .flow-node.cc .flow-node-icon { background:#fff9e8; border-color:#f4d898; color:#b7791f; }
+    .flow-node-content { flex:1; }
+    .flow-node-title { font-size:14px; font-weight:500; color:#1d2733; margin-bottom:4px; }
+    .flow-node-select { margin-top:4px; }
+    .flow-node-select select { height:32px; font-size:13px; padding:0 8px; min-width:160px; }
+    .flow-node-hint { font-size:12px; color:#8fa3b0; margin-top:2px; }
+    .char-count { font-size:11px; color:#aab5be; text-align:right; margin-top:2px; }
+    /* 校验错误提示 */
+    .field-error { color:#d14343; font-size:12px; margin-top:4px; display:none; }
+    .field-error.show { display:block; }
+    .input-error { border-color:#d14343 !important; }
+    /* 类型余额提示 */
+    .type-balance-hint { font-size:13px; padding:4px 10px; border-radius:4px; white-space:nowrap; }
+    .type-balance-hint.has-limit { background:#e6f7f9; color:#007a84; }
+    .type-balance-hint.no-limit { background:#f5f7fa; color:#8fa3b0; }
+    .type-balance-hint.low { background:#fff7e6; color:#b7791f; }
+    .type-balance-hint.empty { background:#fef2f2; color:#d14343; }
+    /* 确认弹框 */
+    .confirm-box { background:#fff; border-radius:12px; padding:24px 28px; width:400px; max-width:96vw; box-shadow:0 8px 32px rgba(0,0,0,.18); text-align:center; }
+    .confirm-box h3 { font-size:16px; font-weight:600; color:#1d2733; margin-bottom:12px; }
+    .confirm-box p { font-size:14px; color:#5f7080; margin-bottom:20px; line-height:1.6; }
+    .confirm-box .modal-footer { justify-content:center; }
+    /* 证明材料提示 */
+    .material-hint { background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:10px 12px; margin-top:8px; font-size:13px; color:#c2410c; display:none; }
+    .material-hint.show { display:block; }
+    .material-hint .hint-title { font-weight:600; margin-bottom:4px; }
+    .material-hint .hint-list { margin:0; padding-left:18px; }
+    .material-hint .hint-list li { margin-bottom:2px; }
+    /* 计假方式提示 */
+    .calc-hint { font-size:12px; color:#8fa3b0; margin-top:4px; }
+    /* 制度要求提示（依据请假类型-薪酬待遇明细表G列提炼） */
+    .institution-hint { background:#fff9e8; border:1px solid #f4d898; color:#75540d; border-radius:6px; padding:8px 10px; font-size:12px; line-height:1.6; margin-top:8px; display:none; }
+    .institution-hint.show { display:block; }
+    /* 动态套餐计算区（婚假/丧假等） */
+    .package-calc-box { margin-top:10px; padding:12px 14px; background:#f8fafc; border-radius:8px; border:1px solid #eef3f6; }
+    .package-calc-box label { display:flex; align-items:center; gap:6px; font-size:13px; color:#1d2733; cursor:pointer; }
+    .package-calc-box .package-total { margin-top:8px; padding-top:8px; border-top:1px dashed #dfe5ec; font-size:13px; color:#5f7080; }
+    /* 子选项缩进 */
+    .sub-option { padding-left:1em; color:#5f7080; }
+    /* 分段请假表格 */
+    .seg-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; table-layout:fixed; }
+    .seg-table th, .seg-table td { border:1px solid #eef3f6; padding:6px 8px; }
+    .seg-table th { background:#f0f5f7; font-weight:600; color:#3d5266; font-size:12px; }
+    .seg-table th:nth-child(1), .seg-table th:nth-child(3) { width:32%; }
+    .seg-table th:nth-child(2), .seg-table th:nth-child(4) { width:14%; }
+    .seg-table th:nth-child(5) { width:12%; }
+    .seg-table th:nth-child(6) { width:56px; }
+    .seg-table select { height:34px; border:1px solid #dfe5ec; border-radius:6px; padding:0 6px; font:inherit; width:100%; box-sizing:border-box; }
+    .seg-table input[type=date] { height:34px; border:1px solid #dfe5ec; border-radius:6px; padding:0 4px; font:inherit; width:100%; box-sizing:border-box; }
+    .seg-table td.seg-days { text-align:center; font-weight:600; color:#00AAB7; white-space:nowrap; }
+    .seg-table .btn.link.danger { padding:0 2px; white-space:nowrap; }
+    .seg-total { font-size:13px; color:#5f7080; }
+    /* 附件上传区域 */
+    .upload-area { border:2px dashed #dfe5ec; border-radius:8px; padding:16px; text-align:center; background:#fafbfc; cursor:pointer; transition:all .2s; margin-top:8px; display:none; }
+    .upload-area:hover { border-color:#00AAB7; background:#f0fbfc; }
+    .upload-area.show { display:block; }
+    .upload-area.dragover { border-color:#00AAB7; background:#e6f7f9; }
+    .upload-icon { font-size:28px; margin-bottom:6px; color:#8fa3b0; }
+    .upload-text { font-size:13px; color:#5f7080; }
+    .upload-text span { color:#00AAB7; }
+    .upload-hint { font-size:12px; color:#aab5be; margin-top:4px; }
+    .file-list { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+    .file-item { display:flex; align-items:center; gap:8px; padding:8px 10px; background:#fff; border:1px solid #eef3f6; border-radius:6px; font-size:13px; }
+    .file-item .file-icon { font-size:16px; color:#5f7080; }
+    .file-item .file-name { flex:1; color:#1d2733; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-item .file-size { color:#8fa3b0; font-size:12px; }
+    .file-item .file-remove { color:#d14343; cursor:pointer; padding:2px 6px; border-radius:4px; }
+    .file-item .file-remove:hover { background:#fef2f2; }
+  </style>
+</head>
+<body data-module="attendance">
+<main class="page-content" data-title="请假申请"
+  data-desc="发起请假申请，经班组→部门→人力资源部三级审批，始终抄送人力资源部。"
+  data-actions='<a class="btn primary" id="newLeaveBtn" href="#">发起申请</a>'>
+
+  <!-- 筛选栏 -->
+  <section class="filter-bar">
+    <div class="field"><span>休假类别</span>
+      <select style="width:140px;">
+        <option>全部类型</option>
+        <option>年假</option>
+        <option>婚假</option>
+        <option>产假</option>
+        <option>产假（小产假）</option>
+        <option>护理假</option>
+        <option>育儿假</option>
+        <option>探亲假</option>
+        <option>事假</option>
+        <option>病假</option>
+        <option>护理照料假</option>
+        <option>丧假</option>
+        <option>疗养假</option>
+        <option>工伤假</option>
+        <option>哺乳假</option>
+        <option>补休假</option>
+      </select>
+    </div>
+    <div class="field"><span>审批状态</span>
+      <select>
+        <option>全部状态</option>
+        <option>审批中</option><option>已批准</option><option>已驳回</option><option>已撤销</option><option>批准后撤销</option>
+      </select>
+    </div>
+    <div class="field"><span>申请人</span>
+      <input placeholder="请输入" style="width:120px;">
+    </div>
+    <div class="field"><span>单位/部门</span>
+      <select>
+        <option>全部部门</option>
+        <option>办公室（党委办公室）</option>
+        <option>计划经营部</option>
+        <option>财务资产部</option>
+        <option>人力资源部（党委组织部）</option>
+        <option>质量安全环保部</option>
+        <option>开发管理部</option>
+        <option>地质工程部</option>
+        <option>地面建设工程部</option>
+        <option>党群工作部（纪委办公室）</option>
+        <option>生产指挥中心</option>
+      </select>
+    </div>
+    <div class="field"><span>申请时间</span>
+      <input type="date" style="width:130px;"> <span style="color:#8fa3b0;">至</span> <input type="date" style="width:130px;">
+    </div>
+    <button class="btn primary">查询</button>
+    <button class="btn">重置</button>
+  </section>
+
+  <!-- 申请记录 -->
+  <section class="card table-card">
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-seq">序号</th>
+          <th>休假类别</th>
+          <th>申请人</th>
+          <th>单位/部门</th>
+          <th>开始时间</th>
+          <th>结束时间</th>
+          <th>时长</th>
+          <th>申请时间</th>
+          <th>审批状态</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-seq">1</td><td>年假</td><td>张三</td><td>人力资源部（党委组织部）</td><td>2026-07-01</td><td>2026-07-05</td><td>5天</td>
+          <td>2026-06-15 10:32</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewRecord(0);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="cancelApproved(0);return false;">撤销</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">2</td><td>事假</td><td>李四</td><td>财务资产部</td><td>2026-06-18</td><td>2026-06-18</td><td>1天</td>
+          <td>2026-06-17 09:10</td>
+          <td><span class="status amber">审批中</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewRecord(1);return false;">查看详情</a>
+            <a class="btn link danger" href="#" onclick="cancelPending(1);return false;">撤销</a>
+            <a class="btn link" href="#" onclick="reapplyPending(1);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">3</td><td>病假</td><td>王五</td><td>开发管理部</td><td>2026-05-20</td><td>2026-05-21</td><td>2天</td>
+          <td>2026-05-19 14:22</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action"><a class="btn link" href="#" onclick="viewRecord(2);return false;">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">4</td><td>婚假</td><td>赵六</td><td>地质工程部</td><td>2026-04-10</td><td>2026-04-12</td><td>3天</td>
+          <td>2026-04-05 11:00</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action"><a class="btn link" href="#" onclick="viewRecord(3);return false;">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">5</td><td>补休假</td><td>孙七</td><td>质量安全环保部</td><td>2026-03-15</td><td>2026-03-15</td><td>4小时</td>
+          <td>2026-03-14 16:30</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action"><a class="btn link" href="#" onclick="viewRecord(4);return false;">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">6</td><td>年假</td><td>周八</td><td>办公室（党委办公室）</td><td>2026-02-08</td><td>2026-02-10</td><td>3天</td>
+          <td>2026-02-01 09:45</td>
+          <td><span class="status red">已驳回</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewRecord(5);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(5);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">7</td><td>事假</td><td>吴九</td><td>计划经营部</td><td>2026-01-20</td><td>2026-01-20</td><td>1天</td>
+          <td>2026-01-18 10:15</td>
+          <td><span class="status">已撤销</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewRecord(6);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(6);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">8</td><td>护理假</td><td>郑十</td><td>党群工作部（纪委办公室）</td><td>2026-06-01</td><td>2026-06-15</td><td>15天</td>
+          <td>2026-05-28 14:00</td>
+          <td><span class="status red">批准后撤销</span></td>
+          <td class="col-action">
+            <a class="btn link" href="#" onclick="viewRecord(7);return false;">查看详情</a>
+            <a class="btn link" href="#" onclick="reapplyDirect(7);return false;">重新申请</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-seq">9</td><td>丧假</td><td>陈明</td><td>生产指挥中心</td><td>2026-05-10</td><td>2026-05-12</td><td>3天</td>
+          <td>2026-05-09 08:30</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action"><a class="btn link" href="#" onclick="viewRecord(8);return false;">查看详情</a></td>
+        </tr>
+        <tr>
+          <td class="col-seq">10</td><td>产假</td><td>林华</td><td>地面建设工程部</td><td>2026-03-01</td><td>2026-08-05</td><td>158天</td>
+          <td>2026-02-20 11:00</td>
+          <td><span class="status green">已批准</span></td>
+          <td class="col-action"><a class="btn link" href="#" onclick="viewRecord(9);return false;">查看详情</a></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- 发起申请弹框 -->
+  <div class="modal-mask" id="applyModal">
+    <div class="modal-box apply-wide">
+      <h3>发起请假申请</h3>
+      <div class="modal-emp">
+        <span>姓名：<strong>张三</strong></span>
+        <span>单位/部门：<strong>人力资源部（党委组织部）</strong></span>
+        <span>岗位：<strong>培训、员工管理</strong></span>
+        <span>参加工作时间：<strong>2012-07-01</strong></span>
+      </div>
+      <div class="apply-body">
+      <div class="apply-left">
+      <div class="mrow">
+        <span><span class="label-text"><span class="required">*</span> 休假类别</span></span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <select id="leaveType" style="flex:1;" onchange="onLeaveTypeChange()">
+            <option value="">请选择</option>
+            <option value="年假" data-label="年假">年假</option>
+            <option value="婚假" data-label="婚假">婚假</option>
+            <option value="产假" data-label="产假">产假</option>
+            <option value="护理假" data-label="护理假">护理假</option>
+            <option value="育儿假" data-label="育儿假">育儿假</option>
+            <option value="探亲假" data-label="探亲假">探亲假</option>
+            <option value="事假" data-label="事假">事假</option>
+            <option value="病假" data-label="病假">病假</option>
+            <option value="护理照料假" data-label="护理照料假">护理照料假</option>
+            <option value="丧假" data-label="丧假">丧假</option>
+            <option value="疗养假" data-label="疗养假">疗养假</option>
+            <option value="工伤假" data-label="工伤假">工伤假</option>
+            <option value="哺乳假" data-label="哺乳假">哺乳假</option>
+            <option value="补休假" data-label="补休假">补休假</option>
+          </select>
+          <span id="typeBalanceHint" class="type-balance-hint" style="display:none;"></span>
+        </div>
+
+        <!-- 婚假：婚前医学检查勾选累加区（选择婚假时显示） -->
+        <div id="marriageCheckboxRow" class="package-calc-box" style="display:none;">
+          <label>
+            <input type="checkbox" id="mPremaritalExam" onchange="calcMarriageDays()"> 结婚登记前已参加婚前医学检查 <span style="color:#8fa3b0;">+5天</span>
+          </label>
+          <div class="package-total">婚假总天数 = 20 + <span id="marriageExtraDays" style="color:#00AAB7;font-weight:600;">0</span> 天 = <span id="marriageTotalDays" style="color:#00AAB7;font-weight:700;font-size:15px;">20</span> 天</div>
+        </div>
+
+        <!-- 探亲假：婚姻状况 + 探望对象子类型选择（选择探亲假时显示） -->
+        <div id="homeVisitRow" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <select id="homeVisitType" style="flex:1;" onchange="onHomeVisitTypeChange()">
+              <option value="未婚-父母">未婚员工探望父母（每年1次，20天；经批准可两年1次，45天）</option>
+              <option value="已婚-配偶">已婚员工探望配偶（每年1次，30天）</option>
+              <option value="已婚-父母">已婚员工探望父母（每四年1次，20天；父母与配偶同城不享受）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 丧假：路程假勾选累加区（选择丧假时显示） -->
+        <div id="funeralCheckboxRow" class="package-calc-box" style="display:none;">
+          <label>
+            <input type="checkbox" id="fTravelLeave" onchange="calcFuneralDays()"> 需到外地料理丧事，申请路程假 <span style="color:#8fa3b0;">+3天（总封顶8天）</span>
+          </label>
+          <div class="package-total">丧假总天数 = 5 + <span id="funeralExtraDays" style="color:#00AAB7;font-weight:600;">0</span> 天 = <span id="funeralTotalDays" style="color:#00AAB7;font-weight:700;font-size:15px;">5</span> 天</div>
+        </div>
+
+        <!-- 护理照料假：独生子女/非独生子女子类型选择（选择护理照料假时显示） -->
+        <div id="careTypeRow" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <select id="careType" style="flex:1;" onchange="onCareTypeChange()">
+              <option value="独生子女">独生子女员工（每年累计不超过15天）</option>
+              <option value="非独生子女">非独生子女员工（每年累计不超过7天）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 通用制度要求提示（依据请假类型-薪酬待遇明细表G列，无专属交互字段的假期类型在此展示） -->
+        <div id="institutionHint" class="institution-hint"></div>
+
+        <!-- 产假子类型选择（选择产假时显示） -->
+        <div id="maternitySubTypeRow" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <select id="maternitySubType" style="flex:1;" onchange="onMaternitySubTypeChange()">
+              <option value="正常产假">正常产假（基础98天 + 勾选累加）</option>
+              <option value="小产假">小产假（未满4个月15天，满4个月42天）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 正常产假勾选累加区（仅正常产假子类型显示） -->
+        <div id="maternityCheckboxRow" style="display:none;margin-top:10px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #eef3f6;">
+          <div style="font-size:13px;color:#5f7080;margin-bottom:8px;">在98天基础产假上勾选累加以下情形（可多选）：</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1d2733;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="mDystocia" onchange="calcMaternityDays()"> 难产 <span style="color:#8fa3b0;">+15天</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1d2733;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="mMultiple" onchange="onMultipleToggle()"> 生育多胞胎 <span style="color:#8fa3b0;">每多生育一个婴儿+15天</span>
+          </label>
+          <div id="mMultipleCountRow" style="display:none;margin:0 0 8px 22px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5f7080;">
+              多生育婴儿数
+              <input type="number" id="mMultipleCount" min="1" value="1" style="width:70px;height:28px;border:1px solid #dfe5ec;border-radius:6px;padding:0 8px;" onchange="calcMaternityDays()">
+              个
+            </label>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1d2733;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="mBreastfeed" onchange="calcMaternityDays()"> 实行纯母乳喂养 <span style="color:#8fa3b0;">+30天</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1d2733;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="mExtended" onchange="onExtendedToggle()"> 符合四川省人口与计划生育条例延长生育假 <span style="color:#8fa3b0;">+90天，须与产假连休、一次性休完</span>
+          </label>
+          <label id="mThirdChildRow" style="display:none;align-items:center;gap:6px;font-size:13px;color:#1d2733;margin:0 0 4px 22px;cursor:pointer;">
+            <input type="checkbox" id="mThirdChild" onchange="calcMaternityDays()"> 生育第三个子女（需本人申请及单位同意） <span style="color:#8fa3b0;">再+30天</span>
+          </label>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #dfe5ec;font-size:13px;color:#5f7080;">
+            产假总天数 = 98 + <span id="mExtraDays" style="color:#00AAB7;font-weight:600;">0</span> 天 = <span id="mTotalDays" style="color:#00AAB7;font-weight:700;font-size:15px;">98</span> 天
+          </div>
+        </div>
+
+        <!-- 工伤假住院天数（选择工伤假时显示，可选字段） -->
+        <div id="workInjuryHospitalRow" style="display:none;margin-top:10px;">
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#5f7080;">
+            工伤住院治疗天数（如有住院才填，选填）
+            <input type="number" id="workInjuryHospitalDays" min="0" placeholder="无住院可不填" style="height:34px;border:1px solid #dfe5ec;border-radius:6px;padding:0 10px;width:200px;">
+          </label>
+        </div>
+
+        <!-- 病假子类型选择（选择病假时显示） -->
+        <div id="sickSubTypeRow" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <select id="sickSubType" style="flex:1;" onchange="onSickSubTypeChange()">
+              <option value="">请选择病假子类型</option>
+              <option value="短期病假">短期病假</option>
+              <option value="长期病假">长期病假</option>
+              <option value="特殊疾病停工治疗医疗期内">特殊疾病停工治疗医疗期内</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="material-hint" id="materialHint">
+          <div class="hint-title">所需证明材料：</div>
+          <ul class="hint-list" id="materialList"></ul>
+        </div>
+        <div class="calc-hint" id="calcHint"></div>
+      </div>
+      <div class="mrow">
+        <span><span class="required">*</span> 休假时间
+          <span id="segLimitHint" style="color:#8fa3b0;font-size:12px;font-weight:400;"></span>
+        </span>
+        <table class="seg-table" id="leaveSegTable">
+          <thead><tr><th>开始日期</th><th>时段</th><th>结束日期</th><th>时段</th><th>天数</th><th></th></tr></thead>
+          <tbody id="leaveSegBody">
+            <tr>
+              <td><input type="date" class="seg-start" oninput="calcLeaveSegDays(this)"></td>
+              <td>
+                <select class="seg-start-period" onchange="calcLeaveSegDays(this)">
+                  <option value="am">上午</option>
+                  <option value="pm">下午</option>
+                </select>
+              </td>
+              <td><input type="date" class="seg-end" oninput="calcLeaveSegDays(this)"></td>
+              <td>
+                <select class="seg-end-period" onchange="calcLeaveSegDays(this)">
+                  <option value="am">上午</option>
+                  <option value="pm" selected>下午</option>
+                </select>
+              </td>
+              <td class="seg-days">—</td>
+              <td><button type="button" class="btn link danger" onclick="removeLeaveSeg(this)" style="display:none;">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn" style="margin-top:6px;font-size:13px;display:none;" id="addLeaveSegBtn" onclick="addLeaveSeg()">+ 添加时间段</button>
+        <div class="calc-hint" id="halfDayHint" style="display:none;">最小请假单位为半天（0.5天），可选择"上午/下午"精确到半天</div>
+        <div class="seg-total" style="margin-top:6px;">合计时长 <strong id="leaveDaysTotal" style="color:#00AAB7;">—</strong></div>
+        <input type="hidden" id="leaveDays">
+        <div class="field-error" id="daysError"></div>
+      </div>
+      <div class="mrow">
+        <span><span class="required">*</span> 休假事由</span>
+        <textarea id="leaveReason" placeholder="请输入休假事由"></textarea>
+      </div>
+      <div class="mrow">
+        <span>备注</span>
+        <textarea id="leaveRemark" maxlength="200" placeholder="可选，至多200字" oninput="updateRemarkCount()" style="min-height:60px;"></textarea>
+        <div class="char-count"><span id="remarkCount">0</span>/200</div>
+      </div>
+      </div><!-- /.apply-left -->
+
+      <div class="apply-right">
+      <!-- 附件上传区域 -->
+      <div class="mrow" id="attachmentSection" style="display:none;">
+        <span>附件上传</span>
+        <div class="upload-area show" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">点击或拖拽文件到此处上传</div>
+          <div class="upload-hint">支持 jpg、jpeg、png、pdf、doc、docx 格式，单个文件不超过10MB</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(event)">
+        <div class="file-list" id="fileList"></div>
+      </div>
+      <div class="mrow">
+        <span>审批流程</span>
+        <div class="approval-flow-vertical">
+          <div class="flow-node active">
+            <div class="flow-node-icon">1</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">班组审批</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择审批人</option>
+                  <option>李明（班组长）</option>
+                  <option>王刚（副班长）</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-icon">2</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">单位（部门）审批</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择审批人</option>
+                  <option>刘主任（部门负责人）</option>
+                  <option>陈副主任（部门副职）</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="flow-node cc">
+            <div class="flow-node-icon">抄</div>
+            <div class="flow-node-content">
+              <div class="flow-node-title">人力资源部抄送</div>
+              <div class="flow-node-select">
+                <select>
+                  <option value="">请选择抄送人</option>
+                  <option>赵敏（HR专员）</option>
+                  <option>周婷（HR主管）</option>
+                </select>
+              </div>
+              <div class="flow-node-hint">审批结果将同步抄送至人力资源部</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div><!-- /.apply-right -->
+      </div><!-- /.apply-body -->
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('applyModal')">取消</button>
+        <button class="btn primary" onclick="submitLeave()">提交申请</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看详情弹框 -->
+  <div class="modal-mask" id="detailModal">
+    <div class="modal-box" style="width:640px;">
+      <h3>申请详情</h3>
+      <div class="modal-emp">
+        <span>姓名：<strong id="detailName">张三</strong></span>
+        <span>单位/部门：<strong id="detailDept">人力资源部（党委组织部）</strong></span>
+        <span>岗位：<strong id="detailPost">培训、员工管理</strong></span>
+        <span>参加工作时间：<strong id="detailWorkDate">2012-07-01</strong></span>
+      </div>
+      <div class="mrow">
+        <span>休假类别</span>
+        <input id="detailType" disabled>
+      </div>
+      <!-- 证明材料（只读，有材料时显示） -->
+      <div class="mrow" id="detailMaterialSection" style="display:none;">
+        <span>所需证明材料</span>
+        <div class="material-hint show" style="margin-top:0;">
+          <ul class="hint-list" id="detailMaterialList" style="margin:0;padding-left:18px;"></ul>
+        </div>
+      </div>
+      <!-- 计假方式（只读） -->
+      <div class="mrow">
+        <span>计假方式</span>
+        <input id="detailCalcMethod" disabled>
+      </div>
+      <!-- 已上传附件（只读，有附件时显示） -->
+      <div class="mrow" id="detailAttachmentSection" style="display:none;">
+        <span>附件</span>
+        <div class="file-list" id="detailFileList"></div>
+      </div>
+      <div class="mrow-2col">
+        <div class="mrow" style="margin:0;"><span>开始时间</span><input id="detailStart" disabled></div>
+        <div class="mrow" style="margin:0;"><span>结束时间</span><input id="detailEnd" disabled></div>
+      </div>
+      <div class="mrow">
+        <span>时长</span>
+        <input id="detailDays" disabled>
+      </div>
+      <div class="mrow">
+        <span>休假事由</span>
+        <textarea id="detailReason" disabled style="min-height:60px;background:#f5f7fa;"></textarea>
+      </div>
+      <div class="mrow">
+        <span>备注</span>
+        <textarea id="detailRemark" disabled style="min-height:40px;background:#f5f7fa;"></textarea>
+      </div>
+      <div class="mrow">
+        <span>审批流程</span>
+        <div id="detailApprovalFlow" class="approval-flow-vertical"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('detailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 撤销确认弹框（审批中状态） -->
+  <div class="modal-mask" id="cancelPendingModal">
+    <div class="confirm-box">
+      <h3>撤销申请</h3>
+      <p>确定撤销该请假申请？撤销后可重新提交。</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('cancelPendingModal')">取消</button>
+        <button class="btn primary" onclick="doCancelPending()">确认撤销</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 撤销确认弹框（已批准状态） -->
+  <div class="modal-mask" id="cancelApprovedModal">
+    <div class="confirm-box">
+      <h3>撤销已批准的申请</h3>
+      <p id="cancelApprovedMsg">确定撤销该请假申请？该请假尚未开始，撤销后状态将变为「批准后撤销」。</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('cancelApprovedModal')">取消</button>
+        <button class="btn primary" onclick="doCancelApproved()">确认撤销</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重新申请确认弹框（审批中状态） -->
+  <div class="modal-mask" id="reapplyConfirmModal">
+    <div class="confirm-box">
+      <h3>重新申请</h3>
+      <p>重新提交后，当前审批将自动撤销，确定继续？</p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('reapplyConfirmModal')">取消</button>
+        <button class="btn primary" onclick="doReapplyConfirm()">确定继续</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="../shared/nav.js"></script>
+<script src="../shared/leave-config.js"></script>
+<script>
+var records = [
+  { name:'张三', dept:'人力资源部（党委组织部）', post:'培训、员工管理', workDate:'2012-07-01', type:'年假', from:'2026-07-01', to:'2026-07-05', days:'5天', reason:'夏季年休', remark:'', status:'已批准', approvals:[
+    {step:'班组审批', approver:'李明（班组长）', result:'同意', time:'2026-06-15 11:00'},
+    {step:'单位（部门）审批', approver:'刘主任（部门负责人）', result:'同意', time:'2026-06-15 14:30'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-06-16 09:00'}
+  ]},
+  { name:'李四', dept:'财务资产部', post:'总账', workDate:'2008-07-01', type:'事假', from:'2026-06-18', to:'2026-06-18', days:'1天', reason:'家庭事务', remark:'需处理紧急家事', status:'审批中', approvals:[
+    {step:'班组审批', approver:'王刚（班组长）', result:'同意', time:'2026-06-17 10:00'},
+    {step:'单位（部门）审批', approver:'陈部长（部门负责人）', result:'审批中', time:''},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'待抄送', time:''}
+  ]},
+  { name:'王五', dept:'开发管理部', post:'采气场站管理', workDate:'1995-09-01', type:'病假', from:'2026-05-20', to:'2026-05-21', days:'2天', reason:'身体不适，需要休息', remark:'已附医院证明', status:'已批准', attachments:[
+    {name:'诊断证明.pdf', size:'1.2 MB'},
+    {name:'病历.jpg', size:'856 KB'},
+    {name:'缴费单.pdf', size:'320 KB'}
+  ], approvals:[
+    {step:'班组审批', approver:'孙强（班组长）', result:'同意', time:'2026-05-19 15:00'},
+    {step:'单位（部门）审批', approver:'张主任（部门负责人）', result:'同意', time:'2026-05-19 17:30'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-05-20 09:00'}
+  ]},
+  { name:'赵六', dept:'地质工程部', post:'科技管理', workDate:'2015-07-01', type:'婚假', from:'2026-04-10', to:'2026-04-12', days:'3天', reason:'本人结婚', remark:'', status:'已批准', attachments:[
+    {name:'结婚证.jpg', size:'1.5 MB'},
+    {name:'婚前医学检查证明.pdf', size:'680 KB'}
+  ], approvals:[
+    {step:'班组审批', approver:'钱伟（班组长）', result:'同意', time:'2026-04-06 09:30'},
+    {step:'单位（部门）审批', approver:'李总工（部门负责人）', result:'同意', time:'2026-04-06 14:00'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-04-07 10:00'}
+  ]},
+  { name:'孙七', dept:'质量安全环保部', post:'工业安全管理', workDate:'2018-03-01', type:'补休假', from:'2026-03-15', to:'2026-03-15', days:'4小时', reason:'使用加班换算补休', remark:'3月初加班换算', status:'已批准', approvals:[
+    {step:'班组审批', approver:'吴磊（班组长）', result:'同意', time:'2026-03-14 17:00'},
+    {step:'单位（部门）审批', approver:'郑部长（部门负责人）', result:'同意', time:'2026-03-15 09:00'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-03-15 10:00'}
+  ]},
+  { name:'周八', dept:'办公室（党委办公室）', post:'综合管理', workDate:'2010-07-01', type:'年假', from:'2026-02-08', to:'2026-02-10', days:'3天', reason:'春节后休假', remark:'', status:'已驳回', approvals:[
+    {step:'班组审批', approver:'冯涛（班组长）', result:'同意', time:'2026-02-01 11:00'},
+    {step:'单位（部门）审批', approver:'杨主任（部门负责人）', result:'驳回', time:'2026-02-02 10:00', rejectReason:'当前时段人员紧张'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-02-02 10:30'}
+  ]},
+  { name:'吴九', dept:'计划经营部', post:'合同管理', workDate:'2016-07-01', type:'事假', from:'2026-01-20', to:'2026-01-20', days:'1天', reason:'个人事务', remark:'', status:'已撤销', approvals:[
+    {step:'班组审批', approver:'韩超（班组长）', result:'—', time:''},
+    {step:'单位（部门）审批', approver:'马部长（部门负责人）', result:'—', time:''},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'—', time:''}
+  ]},
+  { name:'郑十', dept:'党群工作部（纪委办公室）', post:'纪检管理', workDate:'2014-07-01', type:'护理假', from:'2026-06-01', to:'2026-06-15', days:'15天', reason:'配偶生产', remark:'', status:'批准后撤销', attachments:[
+    {name:'出生医学证明.jpg', size:'1.8 MB'}
+  ], approvals:[
+    {step:'班组审批', approver:'秦刚（班组长）', result:'同意', time:'2026-05-28 15:00'},
+    {step:'单位（部门）审批', approver:'何书记（部门负责人）', result:'同意', time:'2026-05-28 17:00'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-05-29 09:00'},
+    {step:'撤销说明', approver:'郑十（本人）', result:'本人申请撤销', time:'2026-06-02 10:00'}
+  ]},
+  { name:'陈明', dept:'生产指挥中心', post:'综合管理', workDate:'2005-07-01', type:'丧假', from:'2026-05-10', to:'2026-05-12', days:'3天', reason:'家中长辈去世', remark:'', status:'已批准', approvals:[
+    {step:'班组审批', approver:'尤勇（班组长）', result:'同意', time:'2026-05-09 09:00'},
+    {step:'单位（部门）审批', approver:'许主任（部门负责人）', result:'同意', time:'2026-05-09 10:30'},
+    {step:'人力资源部抄送', approver:'赵敏（HR专员）', result:'已抄送', time:'2026-05-09 11:00'}
+  ]},
+  { name:'林华', dept:'地面建设工程部', post:'综合管理', workDate:'2017-07-01', type:'产假', from:'2026-03-01', to:'2026-08-05', days:'158天', reason:'本人生产', remark:'预产期2026年3月', status:'已批准', attachments:[
+    {name:'出生医学证明.pdf', size:'2.1 MB'},
+    {name:'出院证.jpg', size:'1.3 MB'}
+  ], approvals:[
+    {step:'班组审批', approver:'蒋平（班组长）', result:'同意', time:'2026-02-20 14:00'},
+    {step:'单位（部门）审批', approver:'沈部长（部门负责人）', result:'同意', time:'2026-02-21 09:00'},
+    {step:'人力资源部抄送', approver:'周婷（HR主管）', result:'已抄送', time:'2026-02-21 10:00'}
+  ]}
+];
+
+// 假期余额数据（产假/婚假/丧假 remain 会根据勾选累加区实时更新；探亲假/护理照料假 remain 随子类型选择切换）
+var leaveBalance = {
+  '年假': { total:10, used:5, remain:5 },
+  '婚假': { total:20, used:0, remain:20 },  // 基础20天，勾选婚前医学检查后累加，见 calcMarriageDays
+  '产假': { total:98, used:0, remain:98 },  // 基础98天，勾选累加后动态更新
+  '产假（小产假）': { total:-2, used:0, remain:-2 },  // 未满4个月15天，满4个月42天
+  '护理假': { total:30, used:0, remain:30 },
+  '育儿假': { total:-2, used:0, remain:-2 },
+  '探亲假': { total:20, used:0, remain:20 },  // 默认"未婚-探望父母/每年"20天，随子类型选择切换，见 onHomeVisitTypeChange
+  '事假': { total:60, used:1, remain:59 },   // 一年内累计不得超过60天（依据制度要求G列）
+  '病假': { total:-1, used:0, remain:-1 },   // -1 表示不限（制度要求G列为空，暂无封顶依据）
+  '护理照料假': { total:15, used:0, remain:15 },  // 默认"独生子女"15天，随子类型选择切换，见 onCareTypeChange
+  '丧假': { total:5, used:0, remain:5 },  // 基础5天，勾选路程假后累加，见 calcFuneralDays
+  '疗养假': { total:-2, used:0, remain:-2 },
+  '工伤假': { total:-2, used:0, remain:-2 },
+  '哺乳假': { total:180, used:0, remain:180 },
+  '补休假': { total:-1, used:8, remain:8, unit:'小时' }  // 与 overtime-apply.html 顶部余额条幅保持一致
+};
+
+// 假期证明材料/计假方式/附件/分段规则/探亲假天数映射/护理照料假天数映射/制度要求提示文案
+// 均已抽取到共享配置文件 ../shared/leave-config.js（leaveMaterials, leaveCalcNatural, leaveNeedsAttachment,
+// sickSubTypes, leaveSegConfig, homeVisitDaysMap, careTypeDaysMap, leaveInstitutionHints, getCalcMethodText）
+// 该文件同时被 attendance-ledger.html、approval-center.html 引用，修改假期规则只需改这一处。
+
+// 已上传的文件列表
+var uploadedFiles = [];
+
+document.getElementById('newLeaveBtn').addEventListener('click', function(e){ e.preventDefault(); openModal('applyModal'); });
+
+// 在"休假类别"下拉的每个选项后面附加余额文案，如"年假（剩余5天）"
+function formatBalanceText(type){
+  var balance = leaveBalance[type];
+  if(!balance) return '';
+  var unit = balance.unit || '天';
+  if(balance.remain === -1) return '不限';
+  if(balance.remain === -2) return '按规定';
+  return '剩余' + balance.remain + unit;
+}
+
+function refreshLeaveTypeOptions(){
+  var options = document.querySelectorAll('#leaveType option[data-label]');
+  options.forEach(function(opt){
+    var label = opt.getAttribute('data-label');
+    var balanceText = formatBalanceText(label);
+    opt.textContent = balanceText ? (label + '（' + balanceText + '）') : label;
+  });
+}
+refreshLeaveTypeOptions();
+
+// 休假类别变化时显示剩余余额 + 证明材料 + 计假方式 + 附件上传 + 重新校验
+function onLeaveTypeChange(){
+  var typeSelect = document.getElementById('leaveType');
+  var hintEl = document.getElementById('typeBalanceHint');
+  var materialHintEl = document.getElementById('materialHint');
+  var materialListEl = document.getElementById('materialList');
+  var calcHintEl = document.getElementById('calcHint');
+  var attachmentSection = document.getElementById('attachmentSection');
+  var maternitySubTypeRow = document.getElementById('maternitySubTypeRow');
+  var maternityCheckboxRow = document.getElementById('maternityCheckboxRow');
+  var workInjuryHospitalRow = document.getElementById('workInjuryHospitalRow');
+  var sickSubTypeRow = document.getElementById('sickSubTypeRow');
+  var leaveType = typeSelect.value;
+  
+  // 0. 处理产假子类型选择显示/隐藏
+  if(leaveType === '产假'){
+    maternitySubTypeRow.style.display = '';
+    onMaternitySubTypeChangeInner();
+  } else {
+    maternitySubTypeRow.style.display = 'none';
+    maternityCheckboxRow.style.display = 'none';
+    // 重置子类型选择
+    document.getElementById('maternitySubType').value = '正常产假';
+  }
+
+  // 0.1 处理工伤假住院天数字段显示/隐藏
+  workInjuryHospitalRow.style.display = (leaveType === '工伤假') ? '' : 'none';
+  if(leaveType !== '工伤假'){ document.getElementById('workInjuryHospitalDays').value = ''; }
+
+  // 0.2 处理病假子类型选择显示/隐藏
+  sickSubTypeRow.style.display = (leaveType === '病假') ? '' : 'none';
+  if(leaveType !== '病假'){ document.getElementById('sickSubType').value = ''; }
+
+  // 0.3 处理婚假：婚前医学检查勾选累加区显示/隐藏
+  var marriageCheckboxRow = document.getElementById('marriageCheckboxRow');
+  if(leaveType === '婚假'){
+    marriageCheckboxRow.style.display = '';
+    calcMarriageDays();
+  } else {
+    marriageCheckboxRow.style.display = 'none';
+    document.getElementById('mPremaritalExam').checked = false;
+  }
+
+  // 0.4 处理探亲假：婚姻状况+探望对象子类型选择显示/隐藏
+  var homeVisitRow = document.getElementById('homeVisitRow');
+  if(leaveType === '探亲假'){
+    homeVisitRow.style.display = '';
+    onHomeVisitTypeChange();
+  } else {
+    homeVisitRow.style.display = 'none';
+  }
+
+  // 0.5 处理丧假：路程假勾选累加区显示/隐藏
+  var funeralCheckboxRow = document.getElementById('funeralCheckboxRow');
+  if(leaveType === '丧假'){
+    funeralCheckboxRow.style.display = '';
+    calcFuneralDays();
+  } else {
+    funeralCheckboxRow.style.display = 'none';
+    document.getElementById('fTravelLeave').checked = false;
+  }
+
+  // 0.6 处理护理照料假：独生子女/非独生子女子类型选择显示/隐藏
+  var careTypeRow = document.getElementById('careTypeRow');
+  if(leaveType === '护理照料假'){
+    careTypeRow.style.display = '';
+    onCareTypeChange();
+  } else {
+    careTypeRow.style.display = 'none';
+  }
+
+  // 0.7 无专属交互字段的假期类型：展示制度要求提示（年假/护理假/育儿假/疗养假/哺乳假）
+  var institutionHint = document.getElementById('institutionHint');
+  if(leaveInstitutionHints[leaveType]){
+    institutionHint.textContent = leaveInstitutionHints[leaveType];
+    institutionHint.classList.add('show');
+  } else {
+    institutionHint.classList.remove('show');
+  }
+
+  // 获取实际的假期类型（产假时需要考虑子类型）
+  var actualType = getActualLeaveType();
+  
+  // 1. 显示余额提示
+  if(!actualType){
+    hintEl.style.display = 'none';
+  } else {
+    var balance = leaveBalance[actualType];
+    if(balance){
+      hintEl.style.display = '';
+      var unit = balance.unit || '天';
+      if(balance.remain === -1){
+        // 不限
+        hintEl.textContent = '不限额度';
+        hintEl.className = 'type-balance-hint no-limit';
+      } else if(balance.remain === -2){
+        // 按规定
+        hintEl.textContent = '按规定';
+        hintEl.className = 'type-balance-hint no-limit';
+      } else {
+        var unit = balance.unit || '天';
+        if(balance.remain === 0){
+          // 余额为0
+          hintEl.textContent = '剩余 0' + unit;
+          hintEl.className = 'type-balance-hint empty';
+        } else if(balance.remain <= 2 && unit === '天'){
+          // 余额较少（≤2天）
+          hintEl.textContent = '剩余 ' + balance.remain + unit;
+          hintEl.className = 'type-balance-hint low';
+        } else {
+          // 正常余额
+          hintEl.textContent = '剩余 ' + balance.remain + unit;
+          hintEl.className = 'type-balance-hint has-limit';
+        }
+      }
+    } else {
+      hintEl.style.display = 'none';
+    }
+  }
+  
+  // 2. 显示证明材料提示
+  var materials = leaveMaterials[actualType];
+  if(materials && materials.length > 0){
+    materialListEl.innerHTML = materials.map(function(m){ return '<li>' + m + '</li>'; }).join('');
+    materialHintEl.classList.add('show');
+  } else {
+    materialHintEl.classList.remove('show');
+  }
+  
+  // 3. 显示计假方式提示（使用共享配置文件 leave-config.js 的 getCalcMethodText）
+  calcHintEl.textContent = actualType ? ('计假方式：' + getCalcMethodText(actualType)) : '';
+  
+  // 4. 显示/隐藏附件上传区域
+  if(actualType && leaveNeedsAttachment[actualType]){
+    attachmentSection.style.display = '';
+  } else {
+    attachmentSection.style.display = 'none';
+    // 清空已上传文件
+    uploadedFiles = [];
+    renderFileList();
+  }
+  
+  // 5. 重新计算天数（因为计假方式可能变了）
+  updateSegLimitUI();
+  calcAllLeaveSegDays();
+}
+
+// 根据当前假期类型的分段规则，更新"添加时间段"按钮显示/隐藏、限制提示文案、清理多余行
+function updateSegLimitUI(){
+  var leaveType = getActualLeaveType();
+  var addBtn = document.getElementById('addLeaveSegBtn');
+  var limitHint = document.getElementById('segLimitHint');
+  var body = document.getElementById('leaveSegBody');
+  var cfg = leaveType ? leaveSegConfig[leaveType] : null;
+
+  if(!cfg || !cfg.support){
+    // 不支持分段：只保留第一行，隐藏删除按钮和新增按钮
+    while(body.children.length > 1){ body.removeChild(body.lastChild); }
+    body.querySelectorAll('.seg-days').forEach(function(td){});
+    body.querySelectorAll('tr').forEach(function(tr){
+      tr.querySelector('button').style.display = 'none';
+    });
+    addBtn.style.display = 'none';
+    limitHint.textContent = leaveType ? '（该假期类型不支持分段申请，仅可填写一段连续时间）' : '';
+  } else {
+    addBtn.style.display = '';
+    limitHint.textContent = cfg.maxSegs ? ('（支持分段申请，最多 ' + cfg.maxSegs + ' 段）') : '（支持分段申请，不限段数）';
+    // 段数超限时截断
+    if(cfg.maxSegs){
+      while(body.children.length > cfg.maxSegs){ body.removeChild(body.lastChild); }
+      addBtn.style.display = (body.children.length >= cfg.maxSegs) ? 'none' : '';
+    }
+    // 多行时才显示删除按钮
+    body.querySelectorAll('tr').forEach(function(tr){
+      tr.querySelector('button').style.display = (body.children.length > 1) ? '' : 'none';
+    });
+  }
+}
+
+// 新增一段休假时间
+function addLeaveSeg(){
+  var leaveType = getActualLeaveType();
+  var cfg = leaveType ? leaveSegConfig[leaveType] : null;
+  var body = document.getElementById('leaveSegBody');
+  if(cfg && cfg.maxSegs && body.children.length >= cfg.maxSegs){
+    alert('该假期类型最多支持分 ' + cfg.maxSegs + ' 段申请');
+    return;
+  }
+  var row = document.createElement('tr');
+  row.innerHTML =
+    '<td><input type="date" class="seg-start" oninput="calcLeaveSegDays(this)"></td>' +
+    '<td><select class="seg-start-period" onchange="calcLeaveSegDays(this)"><option value="am">上午</option><option value="pm">下午</option></select></td>' +
+    '<td><input type="date" class="seg-end" oninput="calcLeaveSegDays(this)"></td>' +
+    '<td><select class="seg-end-period" onchange="calcLeaveSegDays(this)"><option value="am">上午</option><option value="pm" selected>下午</option></select></td>' +
+    '<td class="seg-days">—</td>' +
+    '<td><button type="button" class="btn link danger" onclick="removeLeaveSeg(this)">删除</button></td>';
+  body.appendChild(row);
+  updateSegLimitUI();
+}
+
+function removeLeaveSeg(btn){
+  btn.closest('tr').remove();
+  updateSegLimitUI();
+  calcAllLeaveSegDays();
+}
+
+// 计算单段天数（半天颗粒度逻辑与之前一致）
+function calcLeaveSegDays(el){
+  var row = el.closest('tr');
+  var s = row.querySelector('.seg-start').value;
+  var e = row.querySelector('.seg-end').value;
+  var startPeriod = row.querySelector('.seg-start-period').value;
+  var endPeriod = row.querySelector('.seg-end-period').value;
+  var leaveType = getActualLeaveType();
+  var daysCell = row.querySelector('.seg-days');
+
+  if(leaveType === '补休假'){
+    daysCell.textContent = (s && e) ? '0.5天(4h)' : '—';
+    calcAllLeaveSegDays();
+    return;
+  }
+
+  if(s && e && e >= s){
+    var startDate = new Date(s);
+    var endDate = new Date(e);
+    var days = 0;
+    var isNatural = leaveCalcNatural[leaveType];
+
+    if(isNatural === false){
+      var current = new Date(startDate);
+      while(current <= endDate){
+        var dow = current.getDay();
+        if(dow !== 0 && dow !== 6){ days++; }
+        current.setDate(current.getDate() + 1);
+      }
+    } else {
+      days = Math.round((endDate - startDate) / 86400000) + 1;
+    }
+
+    var sameDay = (s === e);
+    if(sameDay){
+      days = (startPeriod === endPeriod) ? 0.5 : 1;
+    } else {
+      if(startPeriod === 'pm') days -= 0.5;
+      if(endPeriod === 'am') days -= 0.5;
+    }
+    if(days < 0.5) days = 0.5;
+    daysCell.textContent = days + '天';
+  } else {
+    daysCell.textContent = '—';
+  }
+  calcAllLeaveSegDays();
+}
+
+// 汇总所有分段天数，写入隐藏字段 leaveDays 供余额校验/提交使用
+function calcAllLeaveSegDays(){
+  var leaveType = getActualLeaveType();
+  var totalEl = document.getElementById('leaveDaysTotal');
+  var daysInput = document.getElementById('leaveDays');
+  var errorEl = document.getElementById('daysError');
+  var halfDayHint = document.getElementById('halfDayHint');
+
+  if(leaveType === '补休假'){
+    // 补休假：申请环节仍需0.5天起请（半天=4小时，按8小时工作制），来源（加班转换）环节按小时累计不受此限制
+    halfDayHint.style.display = '';
+    halfDayHint.textContent = '补休假申请最小单位为半天（4小时），余额不足0.5天时无法申请';
+    var totalHours = 0;
+    document.querySelectorAll('#leaveSegBody tr').forEach(function(tr){
+      var s = tr.querySelector('.seg-start').value, e = tr.querySelector('.seg-end').value;
+      if(s && e){ totalHours += 4; } // 原型演示：每段固定按半天（4小时）计
+    });
+    if(totalHours > 0){
+      totalEl.textContent = totalHours + ' 小时';
+      daysInput.value = totalHours;
+      var balance = leaveBalance['补休假'];
+      if(balance && totalHours > balance.remain){
+        errorEl.textContent = '休假时长超出「补休假」剩余余额（剩余' + balance.remain + '小时），余额不足0.5天（4小时）时无法申请';
+        errorEl.classList.add('show');
+      } else {
+        errorEl.classList.remove('show');
+      }
+    } else {
+      totalEl.textContent = '—';
+      daysInput.value = '';
+      errorEl.classList.remove('show');
+    }
+    return;
+  }
+
+  halfDayHint.style.display = leaveType ? '' : 'none';
+
+  var total = 0;
+  var hasValid = false;
+  document.querySelectorAll('#leaveSegBody .seg-days').forEach(function(td){
+    var v = parseFloat(td.textContent);
+    if(!isNaN(v)){ total += v; hasValid = true; }
+  });
+
+  if(hasValid){
+    var isNatural = leaveCalcNatural[leaveType];
+    totalEl.textContent = total + (isNatural === false ? ' 天（工作日）' : ' 天');
+    daysInput.value = total;
+    validateBalance(total);
+  } else {
+    totalEl.textContent = '—';
+    daysInput.value = '';
+    errorEl.classList.remove('show');
+    document.getElementById('leaveDays').classList.remove('input-error');
+  }
+}
+
+// 产假子类型变化时更新相关提示
+function onMaternitySubTypeChange(){
+  onMaternitySubTypeChangeInner();
+  // 重新触发类型变化处理（余额/材料/计假方式提示）
+  var actualType = getActualLeaveType();
+  var hintEl = document.getElementById('typeBalanceHint');
+  var materialHintEl = document.getElementById('materialHint');
+  var materialListEl = document.getElementById('materialList');
+  refreshTypeHints(actualType, hintEl, materialHintEl, materialListEl);
+  calcDays();
+}
+
+// 根据产假子类型显示/隐藏勾选累加区
+function onMaternitySubTypeChangeInner(){
+  var subType = document.getElementById('maternitySubType').value;
+  var maternityCheckboxRow = document.getElementById('maternityCheckboxRow');
+  if(subType === '正常产假'){
+    maternityCheckboxRow.style.display = '';
+    calcMaternityDays();
+  } else {
+    maternityCheckboxRow.style.display = 'none';
+  }
+}
+
+// "生育多胞胎"勾选切换时显示/隐藏多生育婴儿数输入
+function onMultipleToggle(){
+  var checked = document.getElementById('mMultiple').checked;
+  document.getElementById('mMultipleCountRow').style.display = checked ? '' : 'none';
+  calcMaternityDays();
+}
+
+// "延长生育假"勾选切换时显示/隐藏"生育第三个子女"选项
+function onExtendedToggle(){
+  var checked = document.getElementById('mExtended').checked;
+  document.getElementById('mThirdChildRow').style.display = checked ? 'flex' : 'none';
+  if(!checked){ document.getElementById('mThirdChild').checked = false; }
+  calcMaternityDays();
+}
+
+// 计算正常产假总天数 = 98 + 勾选累加，并同步到假期余额与天数字段
+function calcMaternityDays(){
+  var extra = 0;
+  if(document.getElementById('mDystocia').checked) extra += 15;
+  if(document.getElementById('mMultiple').checked){
+    var count = parseInt(document.getElementById('mMultipleCount').value) || 1;
+    extra += 15 * count;
+  }
+  if(document.getElementById('mBreastfeed').checked) extra += 30;
+  if(document.getElementById('mExtended').checked){
+    extra += 90;
+    if(document.getElementById('mThirdChild').checked) extra += 30;
+  }
+  var total = 98 + extra;
+  document.getElementById('mExtraDays').textContent = extra;
+  document.getElementById('mTotalDays').textContent = total;
+
+  // 同步到假期余额（正常产假的应休/剩余天数随勾选变化）
+  leaveBalance['产假'].total = total;
+  leaveBalance['产假'].remain = total - leaveBalance['产假'].used;
+  refreshLeaveTypeOptions();
+
+  // 刷新余额提示、附件上传区域显示、天数校验（不能调用 onLeaveTypeChange，会重新触发
+  // onMaternitySubTypeChangeInner → calcMaternityDays，形成无限递归导致附件区域等后续逻辑永远执行不到）
+  if(document.getElementById('leaveType').value === '产假' && document.getElementById('maternitySubType').value === '正常产假'){
+    refreshLeaveBalanceUI();
+  }
+}
+
+// 各类"套餐天数勾选/子类型切换"变化后的轻量刷新：只更新余额提示 + 附件区域 + 天数校验，
+// 不重新执行 onLeaveTypeChange 的完整流程，避免与 calcMaternityDays/calcMarriageDays 等函数相互递归
+function refreshLeaveBalanceUI(){
+  var hintEl = document.getElementById('typeBalanceHint');
+  var materialHintEl = document.getElementById('materialHint');
+  var materialListEl = document.getElementById('materialList');
+  var attachmentSection = document.getElementById('attachmentSection');
+  var actualType = getActualLeaveType();
+
+  refreshTypeHints(actualType, hintEl, materialHintEl, materialListEl);
+
+  if(actualType && leaveNeedsAttachment[actualType]){
+    attachmentSection.style.display = '';
+  } else {
+    attachmentSection.style.display = 'none';
+  }
+
+  calcAllLeaveSegDays();
+}
+
+// 病假子类型变化时的提示（子类型仅用于数据采集，不改变材料/计假方式）
+function onSickSubTypeChange(){
+  // 无需额外处理，子类型值随表单提交
+}
+
+// 计算婚假总天数 = 20 + 婚前医学检查（可选+5天），并同步到假期余额
+function calcMarriageDays(){
+  var extra = document.getElementById('mPremaritalExam').checked ? 5 : 0;
+  var total = 20 + extra;
+  document.getElementById('marriageExtraDays').textContent = extra;
+  document.getElementById('marriageTotalDays').textContent = total;
+
+  leaveBalance['婚假'].total = total;
+  leaveBalance['婚假'].remain = total - leaveBalance['婚假'].used;
+  refreshLeaveTypeOptions();
+
+  if(document.getElementById('leaveType').value === '婚假'){
+    refreshLeaveBalanceUI();
+  }
+}
+
+// 探亲假子类型变化：按婚姻状况+探望对象切换天数/频次提示
+function onHomeVisitTypeChange(){
+  var visitType = document.getElementById('homeVisitType').value;
+  var days, freqHint;
+  if(visitType === '未婚-父母'){
+    days = homeVisitDaysMap['未婚-父母-每年'];
+    freqHint = '每年给假一次；如因工作原因或本人自愿申请，可改为两年给假一次（45天，需经批准）';
+  } else if(visitType === '已婚-配偶'){
+    days = homeVisitDaysMap['已婚-配偶'];
+    freqHint = '每年给予探亲假一次';
+  } else {
+    days = homeVisitDaysMap['已婚-父母'];
+    freqHint = '每四年给假一次；父母与配偶在同一地的，不再享受此待遇';
+  }
+  leaveBalance['探亲假'].total = days;
+  leaveBalance['探亲假'].remain = days - leaveBalance['探亲假'].used;
+  refreshLeaveTypeOptions();
+
+  var institutionHint = document.getElementById('institutionHint');
+  institutionHint.textContent = freqHint;
+  institutionHint.classList.add('show');
+
+  if(document.getElementById('leaveType').value === '探亲假'){
+    refreshLeaveBalanceUI();
+  }
+}
+
+// 计算丧假总天数 = 5 + 路程假（可选+3天，总封顶8天），并同步到假期余额
+function calcFuneralDays(){
+  var extra = document.getElementById('fTravelLeave').checked ? 3 : 0;
+  var total = 5 + extra;
+  document.getElementById('funeralExtraDays').textContent = extra;
+  document.getElementById('funeralTotalDays').textContent = total;
+
+  leaveBalance['丧假'].total = total;
+  leaveBalance['丧假'].remain = total - leaveBalance['丧假'].used;
+  refreshLeaveTypeOptions();
+
+  if(document.getElementById('leaveType').value === '丧假'){
+    refreshLeaveBalanceUI();
+  }
+}
+
+// 护理照料假子类型变化：独生子女15天 / 非独生子女7天
+function onCareTypeChange(){
+  var careType = document.getElementById('careType').value;
+  var days = careTypeDaysMap[careType];
+  leaveBalance['护理照料假'].total = days;
+  leaveBalance['护理照料假'].remain = days - leaveBalance['护理照料假'].used;
+  refreshLeaveTypeOptions();
+
+  if(document.getElementById('leaveType').value === '护理照料假'){
+    refreshLeaveBalanceUI();
+  }
+}
+
+// 获取实际的假期类型（产假时需要考虑子类型）
+function getActualLeaveType(){
+  var leaveType = document.getElementById('leaveType').value;
+  if(leaveType === '产假'){
+    var subType = document.getElementById('maternitySubType').value;
+    if(subType === '小产假'){
+      return '产假（小产假）';
+    }
+  }
+  return leaveType;
+}
+
+// 提取"刷新余额/材料提示"逻辑供多处复用
+function refreshTypeHints(actualType, hintEl, materialHintEl, materialListEl){
+  if(!actualType){
+    hintEl.style.display = 'none';
+  } else {
+    var balance = leaveBalance[actualType];
+    if(balance){
+      hintEl.style.display = '';
+      var unit = balance.unit || '天';
+      if(balance.remain === -1){
+        hintEl.textContent = '不限额度';
+        hintEl.className = 'type-balance-hint no-limit';
+      } else if(balance.remain === -2){
+        hintEl.textContent = '按规定';
+        hintEl.className = 'type-balance-hint no-limit';
+      } else if(balance.remain === 0){
+        hintEl.textContent = '剩余 0' + unit;
+        hintEl.className = 'type-balance-hint empty';
+      } else if(balance.remain <= 2 && unit === '天'){
+        hintEl.textContent = '剩余 ' + balance.remain + unit;
+        hintEl.className = 'type-balance-hint low';
+      } else {
+        hintEl.textContent = '剩余 ' + balance.remain + unit;
+        hintEl.className = 'type-balance-hint has-limit';
+      }
+    } else {
+      hintEl.style.display = 'none';
+    }
+  }
+
+  var materials = leaveMaterials[actualType];
+  if(materials && materials.length > 0){
+    materialListEl.innerHTML = materials.map(function(m){ return '<li>' + m + '</li>'; }).join('');
+    materialHintEl.classList.add('show');
+  } else {
+    materialHintEl.classList.remove('show');
+  }
+}
+
+// 兼容旧调用：改为分段汇总计算（原单区间 calcDays 逻辑已拆分为 calcLeaveSegDays / calcAllLeaveSegDays）
+function calcDays(){
+  calcAllLeaveSegDays();
+}
+
+function validateBalance(days){
+  var daysInput = document.getElementById('leaveDays');
+  var errorEl = document.getElementById('daysError');
+  var leaveType = getActualLeaveType();
+  
+  // 清除之前的错误状态
+  errorEl.classList.remove('show');
+  daysInput.classList.remove('input-error');
+  
+  if(!leaveType || !days) return true;
+  
+  var balance = leaveBalance[leaveType];
+  if(!balance) return true;
+  
+  // remain 为 -1 表示不限（病假：制度要求G列为空，暂无封顶依据）；事假已改为60天封顶，走下方常规余额校验
+  if(balance.remain === -1) return true;
+  
+  // remain 为 -2 表示按规定（小产假、育儿假、疗养假、工伤假）
+  // 这些假期制度要求未给出可校验的固定天数，不做余额校验，由人资审批时判断
+  if(balance.remain === -2) return true;
+  
+  var unit = balance.unit || '天';
+  if(days > balance.remain){
+    errorEl.textContent = '休假天数超出「' + leaveType + '」剩余额度（剩余' + balance.remain + unit + '）';
+    errorEl.classList.add('show');
+    daysInput.classList.add('input-error');
+    return false;
+  }
+  
+  return true;
+}
+
+function submitLeave(){
+  var typeSelect = document.getElementById('leaveType');
+  var reasonInput = document.getElementById('leaveReason');
+  var daysInput = document.getElementById('leaveDays');
+  var actualType = getActualLeaveType();
+
+  // 必填校验
+  if(!typeSelect.value){
+    alert('请选择休假类别');
+    typeSelect.focus();
+    return;
+  }
+  // 病假必须选择子类型
+  if(typeSelect.value === '病假'){
+    var sickSubType = document.getElementById('sickSubType').value;
+    if(!sickSubType){
+      alert('请选择病假子类型');
+      document.getElementById('sickSubType').focus();
+      return;
+    }
+  }
+  // 至少填写一个完整时间段
+  var hasValidSeg = false;
+  document.querySelectorAll('#leaveSegBody tr').forEach(function(tr){
+    if(tr.querySelector('.seg-start').value && tr.querySelector('.seg-end').value){ hasValidSeg = true; }
+  });
+  if(!hasValidSeg){
+    alert('请至少填写一个完整的休假时间段');
+    return;
+  }
+  if(!reasonInput.value.trim()){
+    alert('请填写休假事由');
+    reasonInput.focus();
+    return;
+  }
+
+  // 余额校验（半天颗粒度需用 parseFloat，parseInt 会把 0.5 截断成 0）
+  var days = parseFloat(daysInput.value);
+  if(!validateBalance(days)){
+    return;
+  }
+  
+  // 组装提交信息（原型演示）
+  var summary = '休假类别：' + actualType;
+  if(typeSelect.value === '病假'){
+    summary += '（' + document.getElementById('sickSubType').value + '）';
+  }
+  if(typeSelect.value === '工伤假'){
+    var hospitalDays = document.getElementById('workInjuryHospitalDays').value;
+    if(hospitalDays){ summary += '\n工伤住院治疗天数：' + hospitalDays + '天'; }
+  }
+  if(typeSelect.value === '产假' && document.getElementById('maternitySubType').value === '正常产假'){
+    summary += '\n产假总天数：' + document.getElementById('mTotalDays').textContent + '天';
+  }
+  
+  alert('申请已提交，等待审批\n\n' + summary);
+  closeModal('applyModal');
+}
+
+function updateRemarkCount(){
+  var len = document.getElementById('leaveRemark').value.length;
+  document.getElementById('remarkCount').textContent = len;
+}
+
+function viewRecord(idx){
+  var r = records[idx];
+  document.getElementById('detailName').textContent = r.name;
+  document.getElementById('detailDept').textContent = r.dept;
+  document.getElementById('detailPost').textContent = r.post;
+  document.getElementById('detailWorkDate').textContent = r.workDate;
+  document.getElementById('detailType').value = r.type;
+  document.getElementById('detailStart').value = r.from;
+  document.getElementById('detailEnd').value = r.to;
+  document.getElementById('detailDays').value = r.days;
+  document.getElementById('detailReason').value = r.reason;
+  document.getElementById('detailRemark').value = r.remark || '无';
+  
+  // 证明材料（根据假期类型显示）
+  var materials = leaveMaterials[r.type];
+  var materialSection = document.getElementById('detailMaterialSection');
+  var materialList = document.getElementById('detailMaterialList');
+  if(materials && materials.length > 0){
+    materialList.innerHTML = materials.map(function(m){ return '<li>' + m + '</li>'; }).join('');
+    materialSection.style.display = '';
+  } else {
+    materialSection.style.display = 'none';
+  }
+  
+  // 计假方式
+  var calcMethodInput = document.getElementById('detailCalcMethod');
+  var leaveType = r.type;
+  if(leaveType === '补休假'){
+    calcMethodInput.value = '按小时计算';
+  } else if(leaveType === '疗养假'){
+    calcMethodInput.value = '按分公司相关制度执行';
+  } else if(leaveType === '产假（小产假）'){
+    calcMethodInput.value = '按自然日计算（未满4个月流产15天，满4个月流产42天）';
+  } else {
+    var isNatural = leaveCalcNatural[leaveType];
+    calcMethodInput.value = '按' + (isNatural ? '自然日' : '工作日') + '计算';
+  }
+  
+  // 已上传附件（根据记录数据显示）
+  var attachmentSection = document.getElementById('detailAttachmentSection');
+  var detailFileList = document.getElementById('detailFileList');
+  if(r.attachments && r.attachments.length > 0){
+    var filesHtml = '';
+    r.attachments.forEach(function(f){
+      var icon = getFileIconByName(f.name);
+      filesHtml += '<div class="file-item" style="cursor:default;">';
+      filesHtml += '<span class="file-icon">' + icon + '</span>';
+      filesHtml += '<span class="file-name" title="' + f.name + '">' + f.name + '</span>';
+      filesHtml += '<span class="file-size">' + f.size + '</span>';
+      filesHtml += '</div>';
+    });
+    detailFileList.innerHTML = filesHtml;
+    attachmentSection.style.display = '';
+  } else {
+    attachmentSection.style.display = 'none';
+  }
+  
+  // 审批流程（竖向节点样式）
+  var flowHtml = '';
+  var icons = ['1', '2', '抄'];
+  r.approvals.forEach(function(a, i){
+    var nodeClass = 'flow-node';
+    var iconNum = i < 3 ? icons[i] : (i + 1);
+    if(a.step === '人力资源部抄送'){
+      nodeClass += ' cc';
+      iconNum = '抄';
+    }
+    if(a.result === '同意' || a.result === '已抄送'){
+      nodeClass += ' done';
+    } else if(a.result === '审批中'){
+      nodeClass += ' active';
+    } else if(a.result === '驳回' || a.result === '本人申请撤销'){
+      nodeClass += ' active';
+    }
+    
+    var resultText = '';
+    if(a.result === '同意' || a.result === '已抄送'){
+      resultText = '<span style="color:#15803d;">✓ ' + a.result + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else if(a.result === '驳回'){
+      resultText = '<span style="color:#d14343;">✗ ' + a.result + (a.rejectReason ? '（' + a.rejectReason + '）' : '') + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else if(a.result === '审批中'){
+      resultText = '<span style="color:#b7791f;">⏳ ' + a.result + '</span>';
+    } else if(a.result === '本人申请撤销'){
+      resultText = '<span style="color:#d14343;">' + a.result + (a.time ? ' · ' + a.time : '') + '</span>';
+    } else if(a.result === '—' || a.result === '待审批' || a.result === '待抄送'){
+      resultText = '<span style="color:#8fa3b0;">' + a.result + '</span>';
+    } else {
+      resultText = '<span style="color:#8fa3b0;">' + a.result + '</span>';
+    }
+    
+    flowHtml += '<div class="' + nodeClass + '">';
+    flowHtml += '<div class="flow-node-icon">' + iconNum + '</div>';
+    flowHtml += '<div class="flow-node-content">';
+    flowHtml += '<div class="flow-node-title">' + a.step + '</div>';
+    flowHtml += '<div class="flow-node-hint" style="color:#1d2733;font-weight:500;">' + a.approver + '</div>';
+    flowHtml += '<div class="flow-node-hint">' + resultText + '</div>';
+    flowHtml += '</div></div>';
+  });
+  document.getElementById('detailApprovalFlow').innerHTML = flowHtml;
+  
+  openModal('detailModal');
+}
+
+// 根据文件名获取图标（用于详情展示）
+function getFileIconByName(filename) {
+  var ext = filename.split('.').pop().toLowerCase();
+  switch(ext){
+    case 'pdf': return '📄';
+    case 'doc':
+    case 'docx': return '📝';
+    case 'jpg':
+    case 'jpeg':
+    case 'png': return '🖼️';
+    default: return '📎';
+  }
+}
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
+});
+
+// 当前操作的记录索引
+var currentActionIdx = -1;
+
+// 审批中状态 - 撤销
+function cancelPending(idx) {
+  currentActionIdx = idx;
+  openModal('cancelPendingModal');
+}
+
+function doCancelPending() {
+  alert('申请已撤销');
+  closeModal('cancelPendingModal');
+  // 实际项目中这里会刷新列表
+}
+
+// 已批准状态 - 撤销（仅开始前可操作）
+function cancelApproved(idx) {
+  var r = records[idx];
+  var startDate = new Date(r.from);
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  
+  if(startDate <= today) {
+    alert('请假已开始，无法撤销');
+    return;
+  }
+  
+  currentActionIdx = idx;
+  var msg = '确定撤销「' + r.name + '」的' + r.type + '申请（' + r.from + ' 至 ' + r.to + '）？该请假尚未开始，撤销后状态将变为「批准后撤销」。';
+  document.getElementById('cancelApprovedMsg').textContent = msg;
+  openModal('cancelApprovedModal');
+}
+
+function doCancelApproved() {
+  alert('申请已撤销，状态变为「批准后撤销」');
+  closeModal('cancelApprovedModal');
+}
+
+// 审批中状态 - 重新申请（需确认当前审批将自动撤销）
+function reapplyPending(idx) {
+  currentActionIdx = idx;
+  openModal('reapplyConfirmModal');
+}
+
+function doReapplyConfirm() {
+  closeModal('reapplyConfirmModal');
+  prefillAndOpenApply(currentActionIdx);
+}
+
+// 已驳回/已撤销/批准后撤销 - 重新申请（直接打开预填表单）
+function reapplyDirect(idx) {
+  prefillAndOpenApply(idx);
+}
+
+// 预填表单并打开申请弹框
+function prefillAndOpenApply(idx) {
+  var r = records[idx];
+  var leaveType = r.type;
+  var maternitySubTypeRow = document.getElementById('maternitySubTypeRow');
+  var maternitySubType = document.getElementById('maternitySubType');
+  
+  // 处理产假/小产假的预填
+  if(leaveType === '产假（小产假）'){
+    document.getElementById('leaveType').value = '产假';
+    maternitySubTypeRow.style.display = '';
+    maternitySubType.value = '小产假';
+  } else if(leaveType === '产假'){
+    document.getElementById('leaveType').value = '产假';
+    maternitySubTypeRow.style.display = '';
+    maternitySubType.value = '正常产假';
+  } else {
+    document.getElementById('leaveType').value = leaveType;
+    maternitySubTypeRow.style.display = 'none';
+    maternitySubType.value = '正常产假';
+  }
+  
+  // 重置分段表格为单行，再填入历史记录的时间段（重新申请场景下按单段预填，用户可自行追加分段）
+  var segBody = document.getElementById('leaveSegBody');
+  segBody.innerHTML =
+    '<tr>' +
+      '<td><input type="date" class="seg-start" value="' + r.from + '" oninput="calcLeaveSegDays(this)"></td>' +
+      '<td><select class="seg-start-period" onchange="calcLeaveSegDays(this)"><option value="am">上午</option><option value="pm">下午</option></select></td>' +
+      '<td><input type="date" class="seg-end" value="' + r.to + '" oninput="calcLeaveSegDays(this)"></td>' +
+      '<td><select class="seg-end-period" onchange="calcLeaveSegDays(this)"><option value="am">上午</option><option value="pm" selected>下午</option></select></td>' +
+      '<td class="seg-days">—</td>' +
+      '<td><button type="button" class="btn link danger" onclick="removeLeaveSeg(this)" style="display:none;">删除</button></td>' +
+    '</tr>';
+  document.getElementById('leaveReason').value = r.reason;
+  document.getElementById('leaveRemark').value = r.remark || '';
+  onLeaveTypeChange(); // 触发余额提示显示 + 分段规则UI + 天数计算
+  segBody.querySelectorAll('.seg-start, .seg-end').forEach(function(inp){ calcLeaveSegDays(inp); });
+  updateRemarkCount();
+  openModal('applyModal');
+}
+
+// ========== 文件上传相关函数 ==========
+
+// 支持的文件类型
+var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+var allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx'];
+var maxFileSize = 10 * 1024 * 1024; // 10MB
+
+// 处理文件选择
+function handleFileSelect(event) {
+  var files = event.target.files;
+  for(var i = 0; i < files.length; i++){
+    addFile(files[i]);
+  }
+  // 清空input，允许重复选择同名文件
+  event.target.value = '';
+}
+
+// 添加单个文件
+function addFile(file) {
+  // 检查文件类型
+  var ext = '.' + file.name.split('.').pop().toLowerCase();
+  if(allowedExtensions.indexOf(ext) === -1){
+    alert('不支持的文件格式：' + file.name + '\n\n支持的格式：jpg、jpeg、png、pdf、doc、docx');
+    return;
+  }
+  
+  // 检查文件大小
+  if(file.size > maxFileSize){
+    alert('文件过大：' + file.name + '\n\n单个文件不能超过10MB');
+    return;
+  }
+  
+  // 检查是否已存在同名文件
+  for(var i = 0; i < uploadedFiles.length; i++){
+    if(uploadedFiles[i].name === file.name){
+      alert('文件已存在：' + file.name);
+      return;
+    }
+  }
+  
+  // 添加到列表
+  uploadedFiles.push({
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    file: file
+  });
+  
+  renderFileList();
+}
+
+// 移除文件
+function removeFile(idx) {
+  uploadedFiles.splice(idx, 1);
+  renderFileList();
+}
+
+// 渲染文件列表
+function renderFileList() {
+  var listEl = document.getElementById('fileList');
+  if(uploadedFiles.length === 0){
+    listEl.innerHTML = '';
+    return;
+  }
+  
+  var html = '';
+  uploadedFiles.forEach(function(f, idx){
+    var icon = getFileIcon(f.name);
+    var size = formatFileSize(f.size);
+    html += '<div class="file-item">';
+    html += '<span class="file-icon">' + icon + '</span>';
+    html += '<span class="file-name" title="' + f.name + '">' + f.name + '</span>';
+    html += '<span class="file-size">' + size + '</span>';
+    html += '<span class="file-remove" onclick="removeFile(' + idx + ')">✕</span>';
+    html += '</div>';
+  });
+  listEl.innerHTML = html;
+}
+
+// 获取文件图标
+function getFileIcon(filename) {
+  var ext = filename.split('.').pop().toLowerCase();
+  switch(ext){
+    case 'pdf': return '📄';
+    case 'doc':
+    case 'docx': return '📝';
+    case 'jpg':
+    case 'jpeg':
+    case 'png': return '🖼️';
+    default: return '📎';
+  }
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// 拖拽上传支持
+(function(){
+  var uploadArea = document.getElementById('uploadArea');
+  if(!uploadArea) return;
+  
+  uploadArea.addEventListener('dragover', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    this.classList.add('dragover');
+  });
+  
+  uploadArea.addEventListener('dragleave', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    this.classList.remove('dragover');
+  });
+  
+  uploadArea.addEventListener('drop', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    this.classList.remove('dragover');
+    
+    var files = e.dataTransfer.files;
+    for(var i = 0; i < files.length; i++){
+      addFile(files[i]);
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新增长宁正式员工</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .custom-inline { display:flex; gap:8px; align-items:center; }
+    .custom-inline select { flex:1; }
+    .custom-inline input { flex:1; }
+  </style>
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="新增长宁正式员工" data-desc="录入长宁正式员工基础信息，字段与台账一致。"
+    data-actions='<a class="btn" href="./regular-employees.html">返回列表</a>'>
+    <section class="card form-page">
+
+      <h3 class="form-section-title">基本信息</h3>
+      <div class="form-grid employee-grid">
+
+        <label><span class="label-text"><span class="required">*</span> 组织单位</span>
+          <select id="orgUnit"><option value="">请选择组织单位</option></select>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 姓名</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 岗位</span>
+          <select id="position"><option value="">请先选择组织单位</option></select>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 性别</span>
+          <select><option value="">请选择</option><option>男</option><option>女</option></select>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 婚姻状况</span>
+          <select><option value="">请选择</option><option>未婚</option><option>已婚</option><option>离异</option><option>丧偶</option></select>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 民族</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label>籍贯 <input placeholder="请输入"></label>
+
+        <label><span class="label-text"><span class="required">*</span> 出生日期</span>
+          <input type="date">
+        </label>
+
+        <label>年龄 <input placeholder="自动计算" disabled></label>
+
+        <label><span class="label-text"><span class="required">*</span> 参加工作时间</span>
+          <input type="date">
+        </label>
+
+        <label>工作年限 <input placeholder="自动计算" disabled></label>
+
+        <label><span class="label-text"><span class="required">*</span> 岗位序列</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 岗位类别</span>
+          <div class="custom-inline">
+            <select id="postCategory" onchange="toggleCustom(this,'postCategoryCustom')">
+              <option value="">请选择</option>
+              <option>一般管理人员</option>
+              <option>专业技术人员</option>
+              <option>基层领导人员</option>
+              <option>中层领导人员</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="postCategoryCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 职务称谓</span>
+          <div class="custom-inline">
+            <select id="jobTitle" onchange="toggleCustom(this,'jobTitleCustom')">
+              <option value="">请选择</option>
+              <option>一般管理人员</option>
+              <option>一级主管</option>
+              <option>部门副职</option>
+              <option>中级管理人员</option>
+              <option>专业技术人员</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="jobTitleCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 岗位层级</span>
+          <select id="positionLevel" onchange="fillDutyTitle()">
+            <option value="">请选择</option>
+            <option data-duty="一般管理人员">二级高级主管</option>
+            <option data-duty="一般管理人员">主办</option>
+            <option data-duty="一般管理人员">助理主办</option>
+            <option data-duty="一般管理人员">二级主管</option>
+            <option data-duty="副主任">三级正</option>
+            <option data-duty="一级主管">三级副</option>
+            <option data-duty="专业技术序列">三级工程师</option>
+            <option data-duty="专业技术序列">二级工程师</option>
+            <option data-duty="专业技术序列">一级工程师</option>
+            <option data-duty="专业技术序列">企业高级专家</option>
+            <option data-duty="退二">退出领导岗位（三级副）</option>
+          </select>
+          <small style="color:#8fa3b0;">选项与对应系数来自「岗位层级与系数维护」，异动次月自动切换生效系数</small>
+        </label>
+
+        <label>对应职务名称
+          <input id="positionLevelDuty" placeholder="根据岗位层级自动带入" disabled>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 级别</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label>政治面貌
+          <select><option value="">请选择</option><option>群众</option><option>共青团员</option><option>中共党员</option></select>
+        </label>
+
+        <label>任现职级时间/聘任时间 <input type="date"></label>
+
+        <label><span class="label-text"><span class="required">*</span> 所属支部</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 入党时间</span>
+          <input type="date">
+        </label>
+
+      </div>
+
+      <h3 class="form-section-title">学历信息</h3>
+      <div class="form-grid employee-grid">
+
+        <label>学习形式 <input placeholder="请输入"></label>
+
+        <label><span class="label-text"><span class="required">*</span> 文化程度</span>
+          <select>
+            <option value="">请选择</option>
+            <option>大学专科</option>
+            <option>大学本科</option>
+            <option>研究生</option>
+            <option>硕士研究生</option>
+            <option>博士研究生</option>
+          </select>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 现学位</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 毕业时间</span>
+          <input type="date">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 毕业学校</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 所学专业</span>
+          <input placeholder="请输入">
+        </label>
+
+        <label>所学专业类别 <input placeholder="请输入"></label>
+
+      </div>
+
+      <h3 class="form-section-title">原学历信息</h3>
+      <div class="form-grid employee-grid">
+        <label>原学位 <input placeholder="请输入"></label>
+        <label>原学历 <input placeholder="请输入"></label>
+        <label>原毕业时间 <input type="date"></label>
+        <label>原所学专业 <input placeholder="请输入"></label>
+        <label>原毕业院校 <input placeholder="请输入"></label>
+      </div>
+
+      <h3 class="form-section-title">职称信息</h3>
+      <div class="form-grid employee-grid">
+
+        <label>资格专业 <input placeholder="请输入"></label>
+
+        <label><span class="label-text"><span class="required">*</span> 职称</span>
+          <div class="custom-inline">
+            <select id="titleRank" onchange="toggleCustom(this,'titleRankCustom')">
+              <option value="">请选择</option>
+              <option>助理会计师</option>
+              <option>助理工程师</option>
+              <option>工程师</option>
+              <option>政工师</option>
+              <option>经济师</option>
+              <option>会计师</option>
+              <option>主管</option>
+              <option>主办</option>
+              <option>高级工程师</option>
+              <option>高级会计师</option>
+              <option>高级政工师</option>
+              <option>高级经济师</option>
+              <option>中学一级教师</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="titleRankCustom" placeholder="请输入" style="display:none;">
+          </div>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 资格取得时间</span>
+          <input type="date">
+        </label>
+
+        <label>取得途径 <input placeholder="请输入"></label>
+        <label>发证机构 <input placeholder="请输入"></label>
+        <label>签发时间 <input type="date"></label>
+        <label>聘现岗时间 <input type="date"></label>
+        <label>任现职级时间 <input type="date"></label>
+        <label>现从事专业 <input placeholder="请输入"></label>
+        <label>从事时间 <input type="date"></label>
+
+      </div>
+
+      <h3 class="form-section-title">入职信息</h3>
+      <div class="form-grid employee-grid">
+
+        <label>到本企业时间 <input type="date"></label>
+        <label>来本单位时间 <input type="date"></label>
+        <label>首次加入中石油日期 <input type="date"></label>
+        <label>员工编号 <input placeholder="请输入"></label>
+        <label>身份证号 <input placeholder="请输入"></label>
+        <label>任干形式 <input placeholder="请输入"></label>
+        <label>任干时间 <input type="date"></label>
+
+        <label>员工状态
+          <div class="custom-inline">
+            <select id="empStatus" onchange="toggleCustom(this,'empStatusCustom')" style="flex:1;">
+              <option value="">请选择</option>
+              <option>在册在岗</option>
+              <option>在册不在岗</option>
+              <option>在岗不在册</option>
+              <option value="__custom__">自定义</option>
+            </select>
+            <input id="empStatusCustom" placeholder="请输入" style="display:none;flex:1;">
+          </div>
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 聘任时间</span>
+          <input type="date">
+        </label>
+
+        <label><span class="label-text"><span class="required">*</span> 聘任岗位</span>
+          <select id="appointPosition"><option value="">请先选择组织单位</option></select>
+        </label>
+
+      </div>
+
+      <h3 class="form-section-title">合同信息</h3>
+      <div class="form-grid employee-grid">
+
+        <label><span class="label-text"><span class="required">*</span> 是否已签署合同</span>
+          <select id="hasContract">
+            <option value="">请选择</option>
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </label>
+
+        <label id="contractTypeLabel"><span class="label-text"><span class="required">*</span> 合同类型</span>
+          <select id="contractType">
+            <option value="">请选择</option>
+            <option value="3">3年</option>
+            <option value="5">5年</option>
+            <option value="infinite">无固定期限</option>
+          </select>
+        </label>
+
+        <label id="contractStartLabel"><span class="label-text"><span class="required">*</span> 合同开始时间</span>
+          <input type="date" id="contractStart">
+        </label>
+
+        <label id="contractEndLabel"><span class="label-text"><span class="required">*</span> 合同结束时间</span>
+          <input type="date" id="contractEnd">
+        </label>
+
+      </div>
+
+      <h3 class="form-section-title">其他</h3>
+      <div class="form-grid employee-grid">
+        <label class="wide">备注 <textarea placeholder="请输入备注"></textarea></label>
+      </div>
+
+      <div class="page-actions">
+        <a class="btn" href="./regular-employees.html">取消</a>
+        <a class="btn primary" href="./regular-employees.html">保存</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+  <script>
+    var deptPositions = {
+      '办公室（党委办公室）': ['机关事务','机要文书','党务秘书','档案管理','综合管理'],
+      '计划经营部': ['统计与销售管理','法律事务管理','规划、计划管理','市场及招投标管理','物资供应管理','井工程物资管理及市场管理','合同管理','股权与三基管理','规划、计划管理'],
+      '财务资产部': ['项目核算','总账','材料核算、报销审核','成本核算','出纳'],
+      '人力资源部（党委组织部）': ['劳动组织、社保公积金管理','培训、员工管理','党组织建设'],
+      '质量安全环保部': ['职业健康、HSE体系管理','质量计量管理','环保三同时管理','工业安全管理','节能、综合管理','工业安全管理'],
+      '开发管理部': ['油气水井措施管理','集输综合管理','综合管理','采气场站管理','采气工程管理','采气场站管理'],
+      '地质工程部': ['综合及投资结算管理','矿权资源管理','科技管理','钻完井工程管理','试修地质、交接井管理','井控及QHSE管理','钻井地质管理','井位部署管理','前期规划管理','压裂试油工程管理'],
+      '地面建设工程部': ['综合管理','钻前工程','合同、合规','地面工程','地面工程','设计、物资','结算、审计'],
+      '党群工作部（纪委办公室）': ['新闻宣传、综合管理','纪检管理','新闻宣传'],
+      '生产指挥中心': ['综合管理','公共关系协调','公共关系协调','党群及培训管理','集输工艺管理（场站）','自然灾害防治、合同结算管理','信息技术管理','土地管理','土地管理','试修管理']
+    };
+
+    var orgUnitSel = document.getElementById('orgUnit');
+    Object.keys(deptPositions).forEach(function(dept) {
+      var opt = document.createElement('option');
+      opt.value = dept; opt.textContent = dept;
+      orgUnitSel.appendChild(opt);
+    });
+
+    var positionSel = document.getElementById('position');
+    var appointPosSel = document.getElementById('appointPosition');
+
+    function fillPositions(sel, dept, placeholder) {
+      sel.innerHTML = '';
+      var ph = document.createElement('option');
+      ph.value = ''; ph.textContent = placeholder;
+      sel.appendChild(ph);
+      (deptPositions[dept] || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
+    }
+
+    orgUnitSel.addEventListener('change', function() {
+      var dept = this.value;
+      if (dept) {
+        fillPositions(positionSel, dept, '请选择岗位');
+        fillPositions(appointPosSel, dept, '请选择聘任岗位');
+      } else {
+        positionSel.innerHTML = '<option value="">请先选择组织单位</option>';
+        appointPosSel.innerHTML = '<option value="">请先选择组织单位</option>';
+      }
+    });
+
+    function fillDutyTitle() {
+      var sel = document.getElementById('positionLevel');
+      var dutyInput = document.getElementById('positionLevelDuty');
+      var opt = sel.options[sel.selectedIndex];
+      dutyInput.value = opt ? (opt.dataset.duty || '') : '';
+    }
+
+    function toggleCustom(sel, inputId) {
+      var input = document.getElementById(inputId);
+      if (sel.value === '__custom__') {
+        input.style.display = '';
+        input.focus();
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    var hasContract = document.getElementById('hasContract');
+    var contractType = document.getElementById('contractType');
+    var contractStart = document.getElementById('contractStart');
+    var contractEnd = document.getElementById('contractEnd');
+    var contractTypeLabel = document.getElementById('contractTypeLabel');
+    var contractStartLabel = document.getElementById('contractStartLabel');
+    var contractEndLabel = document.getElementById('contractEndLabel');
+
+    function toggleContractFields() {
+      var show = hasContract.value === 'yes';
+      contractTypeLabel.style.display = show ? '' : 'none';
+      contractStartLabel.style.display = show ? '' : 'none';
+      contractEndLabel.style.display = show ? '' : 'none';
+      if (!show) { contractType.value = ''; contractStart.value = ''; contractEnd.value = ''; }
+      toggleDateFields();
+    }
+
+    function toggleDateFields() {
+      var isInfinite = contractType.value === 'infinite';
+      contractStartLabel.style.display = (hasContract.value === 'yes' && !isInfinite) ? '' : 'none';
+      contractEndLabel.style.display = (hasContract.value === 'yes' && !isInfinite) ? '' : 'none';
+      if (isInfinite) { contractStart.value = ''; contractEnd.value = ''; }
+    }
+
+    function calcEndDate() {
+      if (!contractStart.value || !contractType.value || contractType.value === 'infinite') return;
+      var years = parseInt(contractType.value);
+      var d = new Date(contractStart.value);
+      d.setFullYear(d.getFullYear() + years);
+      d.setDate(d.getDate() - 1);
+      contractEnd.value = d.toISOString().slice(0, 10);
+    }
+
+    hasContract.addEventListener('change', toggleContractFields);
+    contractType.addEventListener('change', function() { toggleDateFields(); calcEndDate(); });
+    contractStart.addEventListener('change', calcEndDate);
+
+    toggleContractFields();
+  </script>
+</body>
+</html>

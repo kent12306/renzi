@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>民主测评</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+  <style>
+    .main-tabs{display:flex;gap:0;border-bottom:1px solid #dfe5ec;margin-bottom:16px;}
+    .main-tab{padding:12px 24px;font-size:14px;color:#5f7080;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+    .main-tab:hover{color:#00AAB7;}
+    .main-tab.active{color:#00AAB7;font-weight:600;border-bottom-color:#00AAB7;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+    .import-zone{border:2px dashed #dfe5ec;border-radius:8px;padding:32px;text-align:center;background:#fafbfc;margin-bottom:16px;}
+    .import-zone:hover{border-color:#00AAB7;background:#f0fbfc;}
+    .import-zone .icon{font-size:36px;color:#8fa3b0;margin-bottom:8px;}
+    .import-zone p{font-size:14px;color:#5f7080;margin:0 0 12px;}
+    .import-zone small{font-size:12px;color:#8fa3b0;}
+    .stats-row{display:flex;gap:16px;margin-bottom:16px;}
+    .stat-card{flex:1;background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;text-align:center;}
+    .stat-card .num{font-size:28px;font-weight:700;color:#00AAB7;}
+    .stat-card .label{font-size:13px;color:#8fa3b0;margin-top:4px;}
+    /* 弹框样式 */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:2000;align-items:center;justify-content:center;}
+    .modal-mask.show{display:flex;}
+    .modal-box{background:#fff;border-radius:12px;padding:24px 28px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .modal-box h3{font-size:16px;font-weight:600;color:#1d2733;margin:0 0 18px;}
+    .mrow{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;font-size:14px;color:#5f7080;}
+    .mrow input,.mrow select,.mrow textarea{border:1px solid #dfe5ec;border-radius:6px;padding:8px 10px;font:inherit;box-sizing:border-box;width:100%;}
+    .mrow input,.mrow select{height:36px;}
+    .mrow textarea{min-height:70px;resize:vertical;}
+    .label-text{font-size:14px;color:#5f7080;}
+    .required{color:#d14343;margin-right:2px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #eef3f6;}
+    .modal-emp{background:#e6f7f9;border:1px solid #b3e6ea;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#5f7080;display:flex;gap:20px;flex-wrap:wrap;}
+    .modal-emp strong{color:#1a2533;}
+  </style>
+</head>
+<body data-module="performance">
+<main class="page-content" data-title="民主测评"
+  data-desc="导入外部民主测评系统数据，查看测评结果。每年一次，数据来自独立测评系统。"
+  data-actions='<a class="btn" onclick="downloadTemplate()">下载模板</a> <a class="btn primary" onclick="showImportModal()">导入数据</a>'>
+
+  <div class="notice" style="margin-bottom:16px;">
+    民主测评数据来自外部独立测评系统，本系统仅支持导入/导出，不做接口对接。两类被测人员字段有所不同。
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">2026</div>
+      <div class="label">当前年度</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">12</div>
+      <div class="label">三级正副职人数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">86</div>
+      <div class="label">一般管理人员人数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">2026-05-20</div>
+      <div class="label" style="font-size:12px;">最近导入时间</div>
+    </div>
+  </div>
+
+  <!-- 主 Tab -->
+  <div class="main-tabs">
+    <div class="main-tab active" data-tab="manager">三级正副职管理人员</div>
+    <div class="main-tab" data-tab="general">一般管理人员</div>
+  </div>
+
+  <!-- 三级正副职管理人员 Tab -->
+  <div class="tab-panel active" id="panel-manager">
+    <div class="filter-bar">
+      <div class="field"><span>年度</span>
+        <select style="width:100px;"><option>2026</option><option>2025</option><option>2024</option></select>
+      </div>
+      <div class="field"><span>部门</span>
+        <select style="width:180px;">
+          <option value="">全部部门</option>
+          <option>办公室（党委办公室）</option>
+          <option>计划经营部</option>
+          <option>财务资产部</option>
+          <option>人力资源部（党委组织部）</option>
+          <option>质量安全环保部</option>
+          <option>开发管理部</option>
+          <option>地质工程部</option>
+          <option>地面建设工程部</option>
+          <option>党群工作部（纪委办公室）</option>
+          <option>生产指挥中心</option>
+        </select>
+      </div>
+      <div class="field"><span>考核等次</span>
+        <select style="width:100px;"><option value="">全部</option><option>优秀</option><option>称职</option></select>
+      </div>
+      <div class="field"><span>姓名</span>
+        <input placeholder="请输入" style="width:120px;">
+      </div>
+      <button class="btn">查询</button>
+      <button class="btn">重置</button>
+      <button class="btn" style="margin-left:auto;" onclick="exportData('manager')">导出</button>
+    </div>
+    <section class="card table-card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th class="col-seq">序号</th>
+            <th>单位（部门）</th>
+            <th>姓名</th>
+            <th>职务</th>
+            <th>民主测评分数</th>
+            <th>部门内部排名</th>
+            <th>等次评价优秀率(%)</th>
+            <th style="min-width:120px;">部门负责人考核意见</th>
+            <th>综合考核等次建议</th>
+            <th class="col-action">操作</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="col-seq">1</td><td>人力资源部（党委组织部）</td><td>刘主任</td><td>部门主任</td><td>92.5</td><td>1</td><td>85.0</td><td>工作表现突出</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">2</td><td>财务资产部</td><td>陈部长</td><td>部门部长</td><td>89.3</td><td>1</td><td>78.5</td><td>认真负责</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">3</td><td>开发管理部</td><td>张主任</td><td>部门副主任</td><td>86.8</td><td>2</td><td>72.0</td><td>履职尽责</td><td><span class="status">称职</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">4</td><td>地质工程部</td><td>李总工</td><td>总工程师</td><td>91.2</td><td>1</td><td>82.0</td><td>专业能力强</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- 一般管理人员 Tab -->
+  <div class="tab-panel" id="panel-general">
+    <div class="filter-bar">
+      <div class="field"><span>年度</span>
+        <select style="width:100px;"><option>2026</option><option>2025</option><option>2024</option></select>
+      </div>
+      <div class="field"><span>部门</span>
+        <select style="width:180px;">
+          <option value="">全部部门</option>
+          <option>办公室（党委办公室）</option>
+          <option>计划经营部</option>
+          <option>财务资产部</option>
+          <option>人力资源部（党委组织部）</option>
+          <option>质量安全环保部</option>
+          <option>开发管理部</option>
+          <option>地质工程部</option>
+          <option>地面建设工程部</option>
+          <option>党群工作部（纪委办公室）</option>
+          <option>生产指挥中心</option>
+        </select>
+      </div>
+      <div class="field"><span>考核等次</span>
+        <select style="width:100px;"><option value="">全部</option><option>优秀</option><option>称职</option></select>
+      </div>
+      <div class="field"><span>姓名</span>
+        <input placeholder="请输入" style="width:120px;">
+      </div>
+      <button class="btn">查询</button>
+      <button class="btn">重置</button>
+      <button class="btn" style="margin-left:auto;" onclick="exportData('general')">导出</button>
+    </div>
+    <section class="card table-card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th class="col-seq">序号</th>
+            <th>单位（部门）</th>
+            <th>姓名</th>
+            <th>岗位</th>
+            <th>民主测评分数</th>
+            <th>分数内部排名</th>
+            <th>等次评价优秀率(%)</th>
+            <th style="min-width:120px;">部门负责人考核意见</th>
+            <th>综合考核等次建议</th>
+            <th class="col-action">操作</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="col-seq">1</td><td>人力资源部（党委组织部）</td><td>张三</td><td>培训、员工管理</td><td>88.5</td><td>3</td><td>75.0</td><td>工作认真</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">2</td><td>人力资源部（党委组织部）</td><td>李四</td><td>劳动组织、社保公积金管理</td><td>85.2</td><td>5</td><td>68.0</td><td>履职到位</td><td><span class="status">称职</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">3</td><td>财务资产部</td><td>王晓梅</td><td>总账</td><td>90.1</td><td>1</td><td>80.0</td><td>业务能力强</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">4</td><td>财务资产部</td><td>陈刚</td><td>出纳</td><td>84.6</td><td>4</td><td>65.0</td><td>工作稳定</td><td><span class="status">称职</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+            <tr><td class="col-seq">5</td><td>开发管理部</td><td>刘建国</td><td>采气场站管理</td><td>87.3</td><td>2</td><td>72.0</td><td>经验丰富</td><td><span class="status green">优秀</span></td><td class="col-action"><a class="btn link">查看详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- 导入弹框 -->
+  <div class="modal-mask" id="importModal">
+    <div class="modal-box" style="width:520px;">
+      <h3>导入民主测评数据</h3>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 年度</span>
+        <select><option>2026</option><option>2025</option><option>2024</option></select>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 人员类型</span>
+        <select>
+          <option value="">请选择</option>
+          <option>三级正副职管理人员</option>
+          <option>一般管理人员</option>
+        </select>
+      </div>
+      <div class="mrow">
+        <span class="label-text"><span class="required">*</span> 上传文件</span>
+        <div class="import-zone" onclick="document.getElementById('fileInput').click()">
+          <div class="icon">📄</div>
+          <p>点击或拖拽文件到此处上传</p>
+          <small>支持 .xlsx、.xls 格式，单次最多 500 条数据</small>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
+        </div>
+      </div>
+      <div class="notice" style="margin-bottom:14px;">
+        <strong>导入说明：</strong><br>
+        1. 请先下载模板，按模板格式填写数据<br>
+        2. 三级正副职人员需填写「职务」字段，一般人员需填写「岗位」字段<br>
+        3. 重复导入同一年度同一人员将覆盖原数据
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('importModal')">取消</button>
+        <button class="btn primary" onclick="doImport()">确认导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 详情弹框 -->
+  <div class="modal-mask" id="detailModal">
+    <div class="modal-box" style="width:560px;">
+      <h3>民主测评详情</h3>
+      <div class="modal-emp">
+        <span>姓名：<strong>张三</strong></span>
+        <span>部门：<strong>人力资源部（党委组织部）</strong></span>
+        <span>岗位：<strong>培训、员工管理</strong></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:14px;">
+        <div><span style="color:#5f7080;">年度：</span><strong>2026</strong></div>
+        <div><span style="color:#5f7080;">民主测评分数：</span><strong style="color:#00AAB7;">88.5</strong></div>
+        <div><span style="color:#5f7080;">分数内部排名：</span><strong>3</strong></div>
+        <div><span style="color:#5f7080;">等次评价优秀率：</span><strong>75.0%</strong></div>
+        <div style="grid-column:1/-1;"><span style="color:#5f7080;">部门负责人考核意见：</span><strong>工作认真</strong></div>
+        <div style="grid-column:1/-1;"><span style="color:#5f7080;">综合考核等次建议：</span><span class="status green">优秀</span></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('detailModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/nav.js"></script>
+<script>
+// Tab 切换
+document.querySelectorAll('.main-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.main-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function showImportModal(){ document.getElementById('importModal').classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function downloadTemplate(){ alert('下载民主测评导入模板（原型演示）'); }
+function doImport(){ alert('数据导入成功（原型演示）'); closeModal('importModal'); }
+function exportData(type){ alert('导出' + (type === 'manager' ? '三级正副职' : '一般管理人员') + '数据（原型演示）'); }
+
+// 查看详情
+document.querySelectorAll('.btn.link').forEach(function(btn){
+  if(btn.textContent === '查看详情'){
+    btn.addEventListener('click', function(){ document.getElementById('detailModal').classList.add('show'); });
+  }
+});
+
+document.querySelectorAll('.modal-mask').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target === m) m.classList.remove('show'); });
+});
+</script>
+</body>
+</html>

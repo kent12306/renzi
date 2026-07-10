@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>社保信息</title>
+  <link rel="stylesheet" href="../shared/prototype.css">
+</head>
+<body data-module="employees">
+  <main class="page-content" data-title="新增/编辑员工" data-desc="第 3 步：关联社保方案，用于自动计算社保和公积金缴纳情况。" data-actions='<a class="btn" href="./regular-employees.html">返回列表</a>'>
+    <div class="stepper"><a class="step" href="./employee-form.html">1 基础信息</a><a class="step" href="./employee-contract.html">2 合同信息</a><div class="step active">3 社保信息</div></div>
+    <section class="card form-page">
+      <div class="form-grid social-security-grid">
+        <label>关联参保方案
+          <select>
+            <option>2026五险一金方案</option>
+            <option>在编人员五险一金方案</option>
+            <option>外包人员参保方案</option>
+          </select>
+        </label>
+      </div>
+      <div class="notice">关联参保方案后，系统根据方案规则自动计算员工社保、公积金及相关保险缴纳情况。</div>
+      <div class="page-actions">
+        <a class="btn" href="./employee-contract.html">上一步</a>
+        <a class="btn primary" href="./regular-employees.html">完成</a>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/nav.js"></script>
+</body>
+</html>
